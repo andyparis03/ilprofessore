@@ -233,6 +233,7 @@ function draw() {
 
 
 
+
 // Game loop
 function gameLoop() {
   update();
