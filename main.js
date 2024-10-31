@@ -138,26 +138,33 @@ function update() {
       professor.frame = (professor.frame + 1) % professor.totalFrames;
     }
 
+    // Boundary checks for mobile and desktop
     if (isMobileDevice()) {
       // Adjust camera position, checking for boundaries
       if (keys.ArrowRight && cameraX + professor.width < canvas.width) {
+      // Adjust camera position, checking for boundaries on mobile
+      if (keys.ArrowRight && cameraX + canvas.width / 2 + professor.width / 2 < worldWidth) {
         cameraX += professor.speed;
         professor.direction = 'right';
       }
       if (keys.ArrowLeft && cameraX > 0) {
+      if (keys.ArrowLeft && cameraX - canvas.width / 2 + professor.width / 2 > 0) {
         cameraX -= professor.speed;
         professor.direction = 'left';
       }
       if (keys.ArrowDown && cameraY + professor.height < canvas.height) {
+      if (keys.ArrowDown && cameraY + canvas.height / 2 + professor.height / 2 < worldHeight) {
         cameraY += professor.speed;
         professor.direction = 'down';
       }
       if (keys.ArrowUp && cameraY > 0) {
+      if (keys.ArrowUp && cameraY - canvas.height / 2 + professor.height / 2 > 0) {
         cameraY -= professor.speed;
         professor.direction = 'up';
       }
     } else {
       // Restrict movement within canvas borders on desktop
+      // Desktop view: Move `professor.x` and `professor.y`, checking boundaries
       if (keys.ArrowRight && professor.x + professor.width < canvas.width) {
         professor.x += professor.speed;
         professor.direction = 'right';
@@ -179,6 +186,7 @@ function update() {
     professor.frame = 0; // Reset to the idle frame
   }
 }
+
 
 
 
@@ -231,14 +239,10 @@ function draw() {
 
 
 
-
-
-
 // Game loop
 function gameLoop() {
   update();
   draw();
   requestAnimationFrame(gameLoop);
 }
-
 
