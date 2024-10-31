@@ -140,30 +140,24 @@ function update() {
 
     // Boundary checks for mobile and desktop
     if (isMobileDevice()) {
-      // Adjust camera position, checking for boundaries
-      if (keys.ArrowRight && cameraX + professor.width < canvas.width) {
       // Adjust camera position, checking for boundaries on mobile
       if (keys.ArrowRight && cameraX + canvas.width / 2 + professor.width / 2 < worldWidth) {
         cameraX += professor.speed;
         professor.direction = 'right';
       }
-      if (keys.ArrowLeft && cameraX > 0) {
       if (keys.ArrowLeft && cameraX - canvas.width / 2 + professor.width / 2 > 0) {
         cameraX -= professor.speed;
         professor.direction = 'left';
       }
-      if (keys.ArrowDown && cameraY + professor.height < canvas.height) {
       if (keys.ArrowDown && cameraY + canvas.height / 2 + professor.height / 2 < worldHeight) {
         cameraY += professor.speed;
         professor.direction = 'down';
       }
-      if (keys.ArrowUp && cameraY > 0) {
       if (keys.ArrowUp && cameraY - canvas.height / 2 + professor.height / 2 > 0) {
         cameraY -= professor.speed;
         professor.direction = 'up';
       }
     } else {
-      // Restrict movement within canvas borders on desktop
       // Desktop view: Move `professor.x` and `professor.y`, checking boundaries
       if (keys.ArrowRight && professor.x + professor.width < canvas.width) {
         professor.x += professor.speed;
@@ -188,13 +182,14 @@ function update() {
 }
 
 
-
-
 // Draw function
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const isMoving = keys.ArrowRight || keys.ArrowLeft || keys.ArrowDown || keys.ArrowUp;
 
+  // Calculate the correct sprite based on direction
+  const spriteX = professor.frame * professor.width;
+  const spriteY = directions[professor.direction] * professor.height;
   if (isMobileDevice()) {
     // Centered on mobile
     if (isMoving) {
@@ -245,4 +240,3 @@ function gameLoop() {
   draw();
   requestAnimationFrame(gameLoop);
 }
-
