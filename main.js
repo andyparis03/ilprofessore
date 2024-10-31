@@ -160,7 +160,10 @@ function update() {
         professor.direction = 'up';
         console.log("Moving Up, direction set to:", professor.direction);
       }
-    } else {
+    } 
+    
+    /*
+    else {
       // Desktop view: Move `professor.x` and `professor.y`, checking boundaries
       if (keys.ArrowRight && professor.x + professor.width < canvas.width) {
         professor.x += professor.speed;
@@ -180,11 +183,14 @@ function update() {
         console.log("Moving Up, direction set to:", professor.direction);
       }
     }
+    */
+    
   } else {
     professor.frame = 0; // Reset to the idle frame
   }
 }
 
+  
 
 
 // Draw function
