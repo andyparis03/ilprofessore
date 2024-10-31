@@ -187,11 +187,13 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const isMoving = keys.ArrowRight || keys.ArrowLeft || keys.ArrowDown || keys.ArrowUp;
 
+  // Calculate the correct sprite based on direction
+  const spriteX = professor.frame * professor.width;
+  const spriteY = directions[professor.direction] * professor.height;
+
   if (isMobileDevice()) {
     // Centered on mobile
     if (isMoving) {
-      const spriteX = professor.frame * professor.width;
-      const spriteY = directions[professor.direction] * professor.height;
       ctx.drawImage(
         professorSprite,
         spriteX, spriteY, professor.width, professor.height,
@@ -210,8 +212,6 @@ function draw() {
   } else {
     // Position normally on PC
     if (isMoving) {
-      const spriteX = professor.frame * professor.width;
-      const spriteY = directions[professor.direction] * professor.height;
       ctx.drawImage(
         professorSprite,
         spriteX, spriteY, professor.width, professor.height,
@@ -227,6 +227,7 @@ function draw() {
     }
   }
 }
+
 
 
 
