@@ -15,6 +15,13 @@ professorSprite.src = 'professore-spritesheet.png';
 const idleSprite = new Image();
 idleSprite.src = 'professore-idle.png';
 
+// Start the game loop once sprites are fully loaded
+professorSprite.onload = () => {
+  idleSprite.onload = () => {
+    gameLoop();
+  };
+};
+
 // Set canvas to full screen for mobile
 function resizeCanvas() {
   if (window.innerWidth < 768) {  // mobile view
@@ -207,9 +214,4 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// Start the game loop once sprites are fully loaded
-professorSprite.onload = () => {
-  idleSprite.onload = () => {
-    gameLoop();
-  };
-};
+
