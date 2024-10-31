@@ -17,10 +17,14 @@ idleSprite.src = 'professore-idle.png';
 
 // Start the game loop once sprites are fully loaded
 professorSprite.onload = () => {
-  idleSprite.onload = () => {
+    console.log('professorSprite loaded');
+  idleSprite.onload = () => {    
+    console.log('idleSprite loaded');
     gameLoop();
   };
 };
+
+
 
 // Set canvas to full screen for mobile
 function resizeCanvas() {
