@@ -1,30 +1,35 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-
-
 let cameraX = 0;
 let cameraY = 0;
 const worldWidth = 1000;
 const worldHeight = 1000;
 
-// Load sprites
-const professorSprite = new Image();
-professorSprite.src = 'professore-spritesheet.png';
+// Function to load an image with a Promise
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+  });
+}
 
-const idleSprite = new Image();
-idleSprite.src = 'professore-idle.png';
-
-// Start the game loop once sprites are fully loaded
-professorSprite.onload = () => {
-    console.log('professorSprite loaded');
-  idleSprite.onload = () => {    
-    console.log('idleSprite loaded');
-    gameLoop();
-  };
-};
-
-
+// Load all assets with Promise.all
+let professorSprite, idleSprite;
+Promise.all([
+  loadImage('professore-spritesheet.png'),
+  loadImage('professore-idle.png')
+]).then(([loadedProfessorSprite, loadedIdleSprite]) => {
+  professorSprite = loadedProfessorSprite;
+  idleSprite = loadedIdleSprite;
+  
+  console.log('All assets loaded');
+  gameLoop();  // Start the game loop once assets are loaded
+}).catch(error => {
+  console.error('An asset failed to load', error);
+});
 
 // Set canvas to full screen for mobile
 function resizeCanvas() {
@@ -40,10 +45,10 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-////////
+//////// Movement Functions
 
 function moveLeft() {
-  player.vx = -player.speed;  // Example setting velocity
+  player.vx = -player.speed;
 }
 
 function moveRight() {
@@ -103,20 +108,18 @@ document.getElementById('left').addEventListener('touchend', () => keys.ArrowLef
 document.getElementById('right').addEventListener('touchstart', () => keys.ArrowRight = true);
 document.getElementById('right').addEventListener('touchend', () => keys.ArrowRight = false);
 
-
 // Example: Add touch events for each button if on a mobile screen
 if (window.innerWidth < 768) {  // Check if on mobile device (optional)
-  document.getElementById('left-button').addEventListener('touchstart', () => moveLeft());
-  document.getElementById('right-button').addEventListener('touchstart', () => moveRight());
-  document.getElementById('up-button').addEventListener('touchstart', () => moveUp());
-  document.getElementById('down-button').addEventListener('touchstart', () => moveDown());
+  document.getElementById('left-button').addEventListener('touchstart', moveLeft);
+  document.getElementById('right-button').addEventListener('touchstart', moveRight);
+  document.getElementById('up-button').addEventListener('touchstart', moveUp);
+  document.getElementById('down-button').addEventListener('touchstart', moveDown);
 
   document.getElementById('left-button').addEventListener('touchend', stopMovement);
   document.getElementById('right-button').addEventListener('touchend', stopMovement);
   document.getElementById('up-button').addEventListener('touchend', stopMovement);
   document.getElementById('down-button').addEventListener('touchend', stopMovement);
 }
-
 
 // Keyboard controls for desktop testing
 window.addEventListener('keydown', (e) => { if (e.key in keys) keys[e.key] = true; });
@@ -125,7 +128,6 @@ window.addEventListener('keyup', (e) => { if (e.key in keys) keys[e.key] = false
 function isMobileDevice() {
   return window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
-
 
 // Update function
 function update() {
@@ -138,9 +140,7 @@ function update() {
       professor.frame = (professor.frame + 1) % professor.totalFrames;
     }
 
-    // Boundary checks for mobile and desktop
     if (isMobileDevice()) {
-      // Adjust camera position, checking for boundaries on mobile
       if (keys.ArrowRight && cameraX + canvas.width / 2 + professor.width / 2 < worldWidth) {
         cameraX += professor.speed;
         professor.direction = 'right';
@@ -158,7 +158,6 @@ function update() {
         professor.direction = 'up';
       }
     } else {
-      // Desktop view: Move `professor.x` and `professor.y`, checking boundaries
       if (keys.ArrowRight && professor.x + professor.width < canvas.width) {
         professor.x += professor.speed;
         professor.direction = 'right';
@@ -181,58 +180,29 @@ function update() {
   }
 }
 
-
 // Draw function
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const isMoving = keys.ArrowRight || keys.ArrowLeft || keys.ArrowDown || keys.ArrowUp;
 
-  // Calculate the correct sprite based on direction
   const spriteX = professor.frame * professor.width;
   const spriteY = directions[professor.direction] * professor.height;
+
   if (isMobileDevice()) {
-    // Centered on mobile
     if (isMoving) {
-      const spriteX = professor.frame * professor.width;
-      const spriteY = directions[professor.direction] * professor.height;
-      ctx.drawImage(
-        professorSprite,
-        spriteX, spriteY, professor.width, professor.height,
-        canvas.width / 2 - professor.width / 2, // Center X
-        canvas.height / 2 - professor.height / 2, // Center Y
-        professor.width, professor.height
-      );
+      ctx.drawImage(professorSprite, spriteX, spriteY, professor.width, professor.height, 
+        canvas.width / 2 - professor.width / 2, canvas.height / 2 - professor.height / 2, professor.width, professor.height);
     } else {
-      ctx.drawImage(
-        idleSprite,
-        canvas.width / 2 - professor.width / 2, // Center X
-        canvas.height / 2 - professor.height / 2, // Center Y
-        professor.width, professor.height
-      );
+      ctx.drawImage(idleSprite, canvas.width / 2 - professor.width / 2, canvas.height / 2 - professor.height / 2, professor.width, professor.height);
     }
   } else {
-    // Position normally on PC
     if (isMoving) {
-      const spriteX = professor.frame * professor.width;
-      const spriteY = directions[professor.direction] * professor.height;
-      ctx.drawImage(
-        professorSprite,
-        spriteX, spriteY, professor.width, professor.height,
-        professor.x, professor.y,
-        professor.width, professor.height
-      );
+      ctx.drawImage(professorSprite, spriteX, spriteY, professor.width, professor.height, professor.x, professor.y, professor.width, professor.height);
     } else {
-      ctx.drawImage(
-        idleSprite,
-        professor.x, professor.y,
-        professor.width, professor.height
-      );
+      ctx.drawImage(idleSprite, professor.x, professor.y, professor.width, professor.height);
     }
   }
 }
-
-
-
 
 // Game loop
 function gameLoop() {
