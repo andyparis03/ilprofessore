@@ -181,7 +181,7 @@ function update() {
 }
 
     
-    /*
+    
     else {
       // Desktop view: Move `professor.x` and `professor.y`, checking boundaries
       if (keys.ArrowRight && professor.x + professor.width < canvas.width) {
@@ -202,7 +202,7 @@ function update() {
         console.log("Moving Up, direction set to:", professor.direction);
       }
     }
-    */
+    
     
   } else {
     professor.frame = 0; // Reset to the idle frame
