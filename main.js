@@ -140,7 +140,9 @@ function update() {
       professor.frame = (professor.frame + 1) % professor.totalFrames;
     }
 
+    // Boundary checks for mobile and desktop
     if (isMobileDevice()) {
+      // Adjust camera position, checking for boundaries on mobile
       if (keys.ArrowRight && cameraX + canvas.width / 2 + professor.width / 2 < worldWidth) {
         cameraX += professor.speed;
         professor.direction = 'right';
@@ -158,6 +160,7 @@ function update() {
         professor.direction = 'up';
       }
     } else {
+      // Desktop view: Move `professor.x` and `professor.y`, checking boundaries
       if (keys.ArrowRight && professor.x + professor.width < canvas.width) {
         professor.x += professor.speed;
         professor.direction = 'right';
@@ -179,6 +182,7 @@ function update() {
     professor.frame = 0; // Reset to the idle frame
   }
 }
+
 
 // Draw function
 function draw() {
