@@ -10,10 +10,10 @@ const worldHeight = 1000;
 
 // Load sprites
 const professorSprite = new Image();
-professorSprite.src = './professore-spritesheet.png';
+professorSprite.src = 'professore-spritesheet.png';
 
 const idleSprite = new Image();
-idleSprite.src = './professore-idle.png';
+idleSprite.src = 'professore-idle.png';
 
 // Set canvas to full screen for mobile
 function resizeCanvas() {
