@@ -138,27 +138,48 @@ function update() {
       professor.frame = (professor.frame + 1) % professor.totalFrames;
     }
 
-    // Adjust camera only if on mobile
     if (isMobileDevice()) {
-      if (keys.ArrowRight) { cameraX += professor.speed; professor.direction = 'right'; }
-      if (keys.ArrowLeft) { cameraX -= professor.speed; professor.direction = 'left'; }
-      if (keys.ArrowDown) { cameraY += professor.speed; professor.direction = 'down'; }
-      if (keys.ArrowUp) { cameraY -= professor.speed; professor.direction = 'up'; }
-
-      // Optional: Limit camera position to world boundaries
-      cameraX = Math.max(0, Math.min(cameraX, worldWidth - canvas.width));
-      cameraY = Math.max(0, Math.min(cameraY, worldHeight - canvas.height));
+      // Adjust camera position, checking for boundaries
+      if (keys.ArrowRight && cameraX + professor.width < canvas.width) {
+        cameraX += professor.speed;
+        professor.direction = 'right';
+      }
+      if (keys.ArrowLeft && cameraX > 0) {
+        cameraX -= professor.speed;
+        professor.direction = 'left';
+      }
+      if (keys.ArrowDown && cameraY + professor.height < canvas.height) {
+        cameraY += professor.speed;
+        professor.direction = 'down';
+      }
+      if (keys.ArrowUp && cameraY > 0) {
+        cameraY -= professor.speed;
+        professor.direction = 'up';
+      }
     } else {
-      // If on PC, update `professor.x` and `professor.y` directly
-      if (keys.ArrowRight) { professor.x += professor.speed; professor.direction = 'right'; }
-      if (keys.ArrowLeft) { professor.x -= professor.speed; professor.direction = 'left'; }
-      if (keys.ArrowDown) { professor.y += professor.speed; professor.direction = 'down'; }
-      if (keys.ArrowUp) { professor.y -= professor.speed; professor.direction = 'up'; }
+      // Restrict movement within canvas borders on desktop
+      if (keys.ArrowRight && professor.x + professor.width < canvas.width) {
+        professor.x += professor.speed;
+        professor.direction = 'right';
+      }
+      if (keys.ArrowLeft && professor.x > 0) {
+        professor.x -= professor.speed;
+        professor.direction = 'left';
+      }
+      if (keys.ArrowDown && professor.y + professor.height < canvas.height) {
+        professor.y += professor.speed;
+        professor.direction = 'down';
+      }
+      if (keys.ArrowUp && professor.y > 0) {
+        professor.y -= professor.speed;
+        professor.direction = 'up';
+      }
     }
   } else {
     professor.frame = 0; // Reset to the idle frame
   }
 }
+
 
 
 
