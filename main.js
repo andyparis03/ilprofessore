@@ -30,7 +30,7 @@ professorSprite.onload = () => {
 function resizeCanvas() {
   if (window.innerWidth < 768) {  // mobile view
     canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.height = window.innerHeight - document.getElementById('controls').offsetHeight;
   } else {  // desktop view
     canvas.width = 800;  // or your desired desktop width
     canvas.height = 600; // or your desired desktop height
