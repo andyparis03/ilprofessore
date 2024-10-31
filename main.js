@@ -140,77 +140,45 @@ function update() {
       professor.frame = (professor.frame + 1) % professor.totalFrames;
     }
 
-    // Boundary checks for mobile
     if (isMobileDevice()) {
-      if (keys.ArrowRight) {
-        if (cameraX + canvas.width / 2 + professor.width / 2 < worldWidth) {
-          cameraX += professor.speed;
-          professor.direction = 'right';
-        }
-        console.log("Key Right pressed. Moving Right, direction set to:", professor.direction);
+      if (keys.ArrowRight && cameraX + canvas.width / 2 + professor.width / 2 < worldWidth) {
+        cameraX += professor.speed;
+        professor.direction = 'right';
       }
-      
-      if (keys.ArrowLeft) {
-        if (cameraX - canvas.width / 2 + professor.width / 2 > 0) {
-          cameraX -= professor.speed;
-          professor.direction = 'left';
-        }
-        console.log("Key Left pressed. Moving Left, direction set to:", professor.direction);
+      if (keys.ArrowLeft && cameraX - canvas.width / 2 + professor.width / 2 > 0) {
+        cameraX -= professor.speed;
+        professor.direction = 'left';
       }
-      
-      if (keys.ArrowDown) {
-        if (cameraY + canvas.height / 2 + professor.height / 2 < worldHeight) {
-          cameraY += professor.speed;
-          professor.direction = 'down';
-        }
-        console.log("Key Down pressed. Moving Down, direction set to:", professor.direction);
+      if (keys.ArrowDown && cameraY + canvas.height / 2 + professor.height / 2 < worldHeight) {
+        cameraY += professor.speed;
+        professor.direction = 'down';
       }
-      
-      if (keys.ArrowUp) {
-        if (cameraY - canvas.height / 2 + professor.height / 2 > 0) {
-          cameraY -= professor.speed;
-          professor.direction = 'up';
-        }
-        console.log("Key Up pressed. Moving Up, direction set to:", professor.direction);
+      if (keys.ArrowUp && cameraY - canvas.height / 2 + professor.height / 2 > 0) {
+        cameraY -= professor.speed;
+        professor.direction = 'up';
       }
-    }
-  } else {
-    professor.frame = 0; // Reset to the idle frame if not moving
-    console.log("No movement keys pressed. Resetting to idle.");
-  }
-}
-
-    
-    
-    else {
-      // Desktop view: Move `professor.x` and `professor.y`, checking boundaries
+    } else {
       if (keys.ArrowRight && professor.x + professor.width < canvas.width) {
         professor.x += professor.speed;
         professor.direction = 'right';
-        console.log("Moving Right, direction set to:", professor.direction);
-      } else if (keys.ArrowLeft && professor.x > 0) {
+      }
+      if (keys.ArrowLeft && professor.x > 0) {
         professor.x -= professor.speed;
         professor.direction = 'left';
-        console.log("Moving Left, direction set to:", professor.direction);
-      } else if (keys.ArrowDown && professor.y + professor.height < canvas.height) {
+      }
+      if (keys.ArrowDown && professor.y + professor.height < canvas.height) {
         professor.y += professor.speed;
         professor.direction = 'down';
-        console.log("Moving Down, direction set to:", professor.direction);
-      } else if (keys.ArrowUp && professor.y > 0) {
+      }
+      if (keys.ArrowUp && professor.y > 0) {
         professor.y -= professor.speed;
         professor.direction = 'up';
-        console.log("Moving Up, direction set to:", professor.direction);
       }
     }
-    
-    
   } else {
     professor.frame = 0; // Reset to the idle frame
   }
 }
-
-  
-
 
 // Draw function
 function draw() {
