@@ -135,58 +135,35 @@ function isMobileDevice() {
 // Update function
 function update() {
   const isMoving = keys.ArrowRight || keys.ArrowLeft || keys.ArrowDown || keys.ArrowUp;
-
+  
   if (isMoving) {
     professor.frameCount++;
     if (professor.frameCount >= professor.frameDelay) {
       professor.frameCount = 0;
       professor.frame = (professor.frame + 1) % professor.totalFrames;
     }
-
-    // Boundary checks for mobile and desktop
-    if (isMobileDevice()) {
-      // Adjust camera position, checking for boundaries on mobile
-      if (keys.ArrowRight && cameraX + canvas.width / 2 + professor.width / 2 < worldWidth) {
-        cameraX += professor.speed;
-        professor.direction = 'right';
-        console.log("Moving Right, direction set to:", professor.direction);
-      } else if (keys.ArrowLeft && cameraX - canvas.width / 2 + professor.width / 2 > 0) {
-        cameraX -= professor.speed;
-        professor.direction = 'left';
-        console.log("Moving Left, direction set to:", professor.direction);
-      } else if (keys.ArrowDown && cameraY + canvas.height / 2 + professor.height / 2 < worldHeight) {
-        cameraY += professor.speed;
-        professor.direction = 'down';
-        console.log("Moving Down, direction set to:", professor.direction);
-      } else if (keys.ArrowUp && cameraY - canvas.height / 2 + professor.height / 2 > 0) {
-        cameraY -= professor.speed;
-        professor.direction = 'up';
-        console.log("Moving Up, direction set to:", professor.direction);
-      }
-    } else {
-      // Desktop view: Move `professor.x` and `professor.y`, checking boundaries
-      if (keys.ArrowRight && professor.x + professor.width < canvas.width) {
-        professor.x += professor.speed;
-        professor.direction = 'right';
-        console.log("Moving Right, direction set to:", professor.direction);
-      } else if (keys.ArrowLeft && professor.x > 0) {
-        professor.x -= professor.speed;
-        professor.direction = 'left';
-        console.log("Moving Left, direction set to:", professor.direction);
-      } else if (keys.ArrowDown && professor.y + professor.height < canvas.height) {
-        professor.y += professor.speed;
-        professor.direction = 'down';
-        console.log("Moving Down, direction set to:", professor.direction);
-      } else if (keys.ArrowUp && professor.y > 0) {
-        professor.y -= professor.speed;
-        professor.direction = 'up';
-        console.log("Moving Up, direction set to:", professor.direction);
-      }
+    
+    if (keys.ArrowRight) {
+      professor.x = Math.min(professor.x + professor.speed, canvas.width - professor.width);
+      professor.direction = 'right';
+    }
+    if (keys.ArrowLeft) {
+      professor.x = Math.max(professor.x - professor.speed, 0);
+      professor.direction = 'left';
+    }
+    if (keys.ArrowDown) {
+      professor.y = Math.min(professor.y + professor.speed, canvas.height - professor.height);
+      professor.direction = 'down';
+    }
+    if (keys.ArrowUp) {
+      professor.y = Math.max(professor.y - professor.speed, 0);
+      professor.direction = 'up';
     }
   } else {
-    professor.frame = 0; // Reset to the idle frame
+    professor.frame = 0;  // Set to idle frame
   }
 }
+
 
 
 // Draw function
