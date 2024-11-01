@@ -1,22 +1,18 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-let cameraX = 0;
-let cameraY = 0;
-const worldWidth = 1000;
-const worldHeight = 1000;
+const worldWidth = 1000, worldHeight = 1000;
+let cameraX = 0, cameraY = 0;
 
 // Function to load an image with a Promise
-function loadImage(src) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = src;
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-  });
-}
+const loadImage = (src) => new Promise((resolve, reject) => {
+  const img = new Image();
+  img.src = src;
+  img.onload = () => resolve(img);
+  img.onerror = reject;
+});
 
-// Load all assets with Promise.all
+// Load assets with Promise.all
 let professorSprite, idleSprite;
 Promise.all([
   loadImage('professore-spritesheet.png'),
@@ -24,56 +20,27 @@ Promise.all([
 ]).then(([loadedProfessorSprite, loadedIdleSprite]) => {
   professorSprite = loadedProfessorSprite;
   idleSprite = loadedIdleSprite;
-  
   console.log('All assets loaded');
-  gameLoop();  // Start the game loop once assets are loaded
-}).catch(error => {
-  console.error('An asset failed to load', error);
-});
+  gameLoop();
+}).catch(error => console.error('An asset failed to load', error));
 
-// Set canvas to full screen for mobile
-function resizeCanvas() {
-  if (window.innerWidth < 768) {  // mobile view
+// Resize canvas based on screen size
+const resizeCanvas = () => {
+  if (window.innerWidth < 768) {
     canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight - document.getElementById('controls').offsetHeight;
-  } else {  // desktop view
-    canvas.width = 800;  // or your desired desktop width
-    canvas.height = 600; // or your desired desktop height
+    canvas.height = window.innerHeight - document.getElementById('controls')?.offsetHeight || 0;
+  } else {
+    canvas.width = 800;
+    canvas.height = 600;
   }
-}
-
+};
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-//////// Movement Functions
-
-function moveLeft() {
-  player.vx = -player.speed;
-}
-
-function moveRight() {
-  player.vx = player.speed;
-}
-
-function moveUp() {
-  player.vy = -player.speed;
-}
-
-function moveDown() {
-  player.vy = player.speed;
-}
-
-function stopMovement() {
-  player.vx = 0;
-  player.vy = 0;
-}
-
-////////
-
-// Define the player (Il Professore) object
+// Player object
 const professor = {
-  x: canvas.width / 2 - 34, // Centered horizontally for 68x68 size
-  y: canvas.height / 2 - 34, // Centered vertically for 68x68 size
+  x: canvas.width / 2 - 34,
+  y: canvas.height / 2 - 34,
   width: 68,
   height: 68,
   speed: 2,
@@ -81,118 +48,61 @@ const professor = {
   frame: 0,
   totalFrames: 4,
   frameDelay: 4,
-  frameCount: 0
+  frameCount: 0,
 };
 
-// Movement directions
-const directions = {
-  down: 0,
-  left: 1,
-  right: 2,
-  up: 3
-};
-
-// Track keys and touch events
+const directions = { down: 0, left: 1, right: 2, up: 3 };
 const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
 
-// Touch control event listeners
-document.getElementById('up').addEventListener('touchstart', () => keys.ArrowUp = true);
-document.getElementById('up').addEventListener('touchend', () => keys.ArrowUp = false);
+// Check if device is mobile
+const isMobileDevice = () => window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-document.getElementById('down').addEventListener('touchstart', () => keys.ArrowDown = true);
-document.getElementById('down').addEventListener('touchend', () => keys.ArrowDown = false);
-
-document.getElementById('left').addEventListener('touchstart', () => keys.ArrowLeft = true);
-document.getElementById('left').addEventListener('touchend', () => keys.ArrowLeft = false);
-
-document.getElementById('right').addEventListener('touchstart', () => keys.ArrowRight = true);
-document.getElementById('right').addEventListener('touchend', () => keys.ArrowRight = false);
-
-// Example: Add touch events for each button if on a mobile screen
-if (window.innerWidth < 768) {  // Check if on mobile device
-document.getElementById('up').addEventListener('touchstart', () => keys.ArrowUp = true);
-document.getElementById('up').addEventListener('touchend', () => keys.ArrowUp = false);
-
-document.getElementById('down').addEventListener('touchstart', () => keys.ArrowDown = true);
-document.getElementById('down').addEventListener('touchend', () => keys.ArrowDown = false);
-
-document.getElementById('left').addEventListener('touchstart', () => keys.ArrowLeft = true);
-document.getElementById('left').addEventListener('touchend', () => keys.ArrowLeft = false);
-
-document.getElementById('right').addEventListener('touchstart', () => keys.ArrowRight = true);
-document.getElementById('right').addEventListener('touchend', () => keys.ArrowRight = false);
-
-}
-
-// Keyboard controls for desktop testing
-window.addEventListener('keydown', (e) => { if (e.key in keys) keys[e.key] = true; });
-window.addEventListener('keyup', (e) => { if (e.key in keys) keys[e.key] = false; });
-
-function isMobileDevice() {
-  return window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-}
+// Movement functions
+const setDirection = (direction) => { professor.direction = direction; };
+const move = () => {
+  if (keys.ArrowRight) { professor.x = Math.min(professor.x + professor.speed, canvas.width - professor.width); setDirection('right'); }
+  if (keys.ArrowLeft) { professor.x = Math.max(professor.x - professor.speed, 0); setDirection('left'); }
+  if (keys.ArrowDown) { professor.y = Math.min(professor.y + professor.speed, canvas.height - professor.height); setDirection('down'); }
+  if (keys.ArrowUp) { professor.y = Math.max(professor.y - professor.speed, 0); setDirection('up'); }
+};
 
 // Update function
-function update() {
-  const isMoving = keys.ArrowRight || keys.ArrowLeft || keys.ArrowDown || keys.ArrowUp;
-  
+const update = () => {
+  const isMoving = Object.values(keys).some(Boolean);
   if (isMoving) {
-    professor.frameCount++;
-    if (professor.frameCount >= professor.frameDelay) {
-      professor.frameCount = 0;
-      professor.frame = (professor.frame + 1) % professor.totalFrames;
-    }
-    
-    if (keys.ArrowRight) {
-      professor.x = Math.min(professor.x + professor.speed, canvas.width - professor.width);
-      professor.direction = 'right';
-    }
-    if (keys.ArrowLeft) {
-      professor.x = Math.max(professor.x - professor.speed, 0);
-      professor.direction = 'left';
-    }
-    if (keys.ArrowDown) {
-      professor.y = Math.min(professor.y + professor.speed, canvas.height - professor.height);
-      professor.direction = 'down';
-    }
-    if (keys.ArrowUp) {
-      professor.y = Math.max(professor.y - professor.speed, 0);
-      professor.direction = 'up';
-    }
-  } else {
-    professor.frame = 0;  // Set to idle frame
-  }
-}
-
-
+    professor.frameCount = (professor.frameCount + 1) % professor.frameDelay;
+    if (professor.frameCount === 0) professor.frame = (professor.frame + 1) % professor.totalFrames;
+    move();
+  } else professor.frame = 0;
+};
 
 // Draw function
-function draw() {
+const draw = () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const isMoving = keys.ArrowRight || keys.ArrowLeft || keys.ArrowDown || keys.ArrowUp;
+  const { frame, width, height, direction, x, y } = professor;
+  const spriteX = frame * width;
+  const spriteY = directions[direction] * height;
+  const sprite = Object.values(keys).some(Boolean) ? professorSprite : idleSprite;
 
-  const spriteX = professor.frame * professor.width;
-  const spriteY = directions[professor.direction] * professor.height;
+  const drawX = isMobileDevice() ? (canvas.width - width) / 2 : x;
+  const drawY = isMobileDevice() ? (canvas.height - height) / 2 : y;
+  ctx.drawImage(sprite, spriteX, spriteY, width, height, drawX, drawY, width, height);
+};
 
-  if (isMobileDevice()) {
-    if (isMoving) {
-      ctx.drawImage(professorSprite, spriteX, spriteY, professor.width, professor.height, 
-        canvas.width / 2 - professor.width / 2, canvas.height / 2 - professor.height / 2, professor.width, professor.height);
-    } else {
-      ctx.drawImage(idleSprite, canvas.width / 2 - professor.width / 2, canvas.height / 2 - professor.height / 2, professor.width, professor.height);
-    }
-  } else {
-    if (isMoving) {
-      ctx.drawImage(professorSprite, spriteX, spriteY, professor.width, professor.height, professor.x, professor.y, professor.width, professor.height);
-    } else {
-      ctx.drawImage(idleSprite, professor.x, professor.y, professor.width, professor.height);
-    }
-  }
-}
+// Control events for both mobile and desktop
+const controlKeys = (key, value) => { if (keys.hasOwnProperty(key)) keys[key] = value; };
+window.addEventListener('keydown', (e) => controlKeys(e.key, true));
+window.addEventListener('keyup', (e) => controlKeys(e.key, false));
 
-// Game loop
-function gameLoop() {
+['up', 'down', 'left', 'right'].forEach(dir => {
+  const element = document.getElementById(dir);
+  element?.addEventListener('touchstart', () => controlKeys(`Arrow${dir.charAt(0).toUpperCase() + dir.slice(1)}`, true));
+  element?.addEventListener('touchend', () => controlKeys(`Arrow${dir.charAt(0).toUpperCase() + dir.slice(1)}`, false));
+});
+
+// Main game loop
+const gameLoop = () => {
   update();
   draw();
   requestAnimationFrame(gameLoop);
-}
+};
