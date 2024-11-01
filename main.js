@@ -110,15 +110,15 @@ document.getElementById('right').addEventListener('touchend', () => keys.ArrowRi
 
 // Example: Add touch events for each button if on a mobile screen
 if (window.innerWidth < 768) {  // Check if on mobile device (optional)
-  document.getElementById('left-button').addEventListener('touchstart', moveLeft);
-  document.getElementById('right-button').addEventListener('touchstart', moveRight);
-  document.getElementById('up-button').addEventListener('touchstart', moveUp);
-  document.getElementById('down-button').addEventListener('touchstart', moveDown);
+  document.getElementById('left').addEventListener('touchstart', moveLeft);
+  document.getElementById('right').addEventListener('touchstart', moveRight);
+  document.getElementById('up').addEventListener('touchstart', moveUp);
+  document.getElementById('down').addEventListener('touchstart', moveDown);
 
-  document.getElementById('left-button').addEventListener('touchend', stopMovement);
-  document.getElementById('right-button').addEventListener('touchend', stopMovement);
-  document.getElementById('up-button').addEventListener('touchend', stopMovement);
-  document.getElementById('down-button').addEventListener('touchend', stopMovement);
+  document.getElementById('left').addEventListener('touchend', stopMovement);
+  document.getElementById('right').addEventListener('touchend', stopMovement);
+  document.getElementById('up').addEventListener('touchend', stopMovement);
+  document.getElementById('down').addEventListener('touchend', stopMovement);
 }
 
 // Keyboard controls for desktop testing
