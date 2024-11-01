@@ -92,42 +92,53 @@ const directions = {
   up: 3
 };
 
-// Track keys and touch events
-const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+// Wait for the DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Track keys and touch events
+    const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
 
-// Touch control event listeners
-document.getElementById('up').addEventListener('touchstart', () => keys.ArrowUp = true);
-document.getElementById('up').addEventListener('touchend', () => keys.ArrowUp = false);
+    // Helper function to handle key state
+    function setKey(key, state) {
+        keys[key] = state;
+    }
 
-document.getElementById('down').addEventListener('touchstart', () => keys.ArrowDown = true);
-document.getElementById('down').addEventListener('touchend', () => keys.ArrowDown = false);
+    // Set up directional buttons for touch or pointer events
+    function setupDirectionalButton(id, key) {
+        const button = document.getElementById(id);
+        if (button) {
+            button.addEventListener('pointerdown', () => setKey(key, true));
+            button.addEventListener('pointerup', () => setKey(key, false));
+            button.addEventListener('pointerleave', () => setKey(key, false)); // Ensure release if touch leaves button area
+        }
+    }
 
-document.getElementById('left').addEventListener('touchstart', () => keys.ArrowLeft = true);
-document.getElementById('left').addEventListener('touchend', () => keys.ArrowLeft = false);
+    // Set up directional buttons for both mobile and desktop
+    setupDirectionalButton('up', 'ArrowUp');
+    setupDirectionalButton('down', 'ArrowDown');
+    setupDirectionalButton('left', 'ArrowLeft');
+    setupDirectionalButton('right', 'ArrowRight');
 
-document.getElementById('right').addEventListener('touchstart', () => keys.ArrowRight = true);
-document.getElementById('right').addEventListener('touchend', () => keys.ArrowRight = false);
+    // Keyboard controls for desktop testing
+    window.addEventListener('keydown', (e) => {
+        if (e.key in keys) setKey(e.key, true);
+    });
+    window.addEventListener('keyup', (e) => {
+        if (e.key in keys) setKey(e.key, false);
+    });
 
-// Example: Add touch events for each button if on a mobile screen
-if (window.innerWidth < 768) {  // Check if on mobile device (optional)
-  document.getElementById('left-button').addEventListener('touchstart', moveLeft);
-  document.getElementById('right-button').addEventListener('touchstart', moveRight);
-  document.getElementById('up-button').addEventListener('touchstart', moveUp);
-  document.getElementById('down-button').addEventListener('touchstart', moveDown);
+    // Function to detect if the user is on a mobile device
+    function isMobileDevice() {
+        return window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    }
 
-  document.getElementById('left-button').addEventListener('touchend', stopMovement);
-  document.getElementById('right-button').addEventListener('touchend', stopMovement);
-  document.getElementById('up-button').addEventListener('touchend', stopMovement);
-  document.getElementById('down-button').addEventListener('touchend', stopMovement);
-}
-
-// Keyboard controls for desktop testing
-window.addEventListener('keydown', (e) => { if (e.key in keys) keys[e.key] = true; });
-window.addEventListener('keyup', (e) => { if (e.key in keys) keys[e.key] = false; });
-
-function isMobileDevice() {
-  return window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-}
+    // Add optional mobile-specific touch controls if on a mobile device
+    if (isMobileDevice()) {
+        setupDirectionalButton('left-button', 'ArrowLeft');
+        setupDirectionalButton('right-button', 'ArrowRight');
+        setupDirectionalButton('up-button', 'ArrowUp');
+        setupDirectionalButton('down-button', 'ArrowDown');
+    }
+});
 
 // Update function
 function update() {
