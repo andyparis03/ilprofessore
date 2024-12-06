@@ -1394,7 +1394,6 @@ export class Suina1 extends BaseCharacter {
             this.runAwayFrom(player, deltaTime, worldBounds);
             this.isIdle = false;
         } else {
-            // Attempt multiple moves; if no success, face away from the corner
             if (!this.attemptMultipleMoves(deltaTime, worldBounds, 3)) {
                 this.goIdleFacingAwayFromCorner(worldBounds);
             }
@@ -1418,38 +1417,88 @@ export class Suina1 extends BaseCharacter {
     }
 
     randomizeDirection({ width, height }) {
-        // Base directions including idle
-        let directions = ['up', 'down', 'left', 'right', 'idle'];
-
-        // Bias away from edges:
-        const edgeBuffer = 50; // Distance from edge considered "near"
+        const edgeBuffer = 50; 
+        const cornerBuffer = 80; // Off-limit zone: 80x80 pixels around each corner
         const nearLeft = this.x < edgeBuffer;
         const nearRight = this.x > width - this.width - edgeBuffer;
         const nearTop = this.y < edgeBuffer;
         const nearBottom = this.y > height - this.height - edgeBuffer;
 
-        // If near a border, remove or reduce likelihood of choosing that direction
-        if (nearLeft) directions = directions.filter(d => d !== 'left');
-        if (nearRight) directions = directions.filter(d => d !== 'right');
-        if (nearTop) directions = directions.filter(d => d !== 'up');
-        if (nearBottom) directions = directions.filter(d => d !== 'down');
+        // Determine if we are inside an off-limit corner zone
+        const inTopLeftCorner = (this.x < cornerBuffer && this.y < cornerBuffer);
+        const inTopRightCorner = (this.x > width - cornerBuffer - this.width && this.y < cornerBuffer);
+        const inBottomLeftCorner = (this.x < cornerBuffer && this.y > height - cornerBuffer - this.height);
+        const inBottomRightCorner = (this.x > width - cornerBuffer - this.width && this.y > height - cornerBuffer - this.height);
 
-        // If we removed all movement directions due to edges, keep at least one:
-        if (directions.every(d => d === 'idle')) {
-            // If all that’s left is idle, re-allow some directions to prevent being stuck
-            directions = ['idle', 'up', 'down', 'left', 'right'];
+        let directions;
+
+        // If inside a forbidden corner zone, force directions away from it
+        if (inTopLeftCorner) {
+            directions = ['right', 'down'];
+        } else if (inTopRightCorner) {
+            directions = ['left', 'down'];
+        } else if (inBottomLeftCorner) {
+            directions = ['right', 'up'];
+        } else if (inBottomRightCorner) {
+            directions = ['left', 'up'];
+        } else {
+            // Not in a forbidden zone, proceed with normal logic plus idle
+            directions = ['up', 'down', 'left', 'right', 'idle'];
+
+            // Remove directions leading directly into edges if near them
+            if (nearLeft) directions = directions.filter(d => d !== 'left');
+            if (nearRight) directions = directions.filter(d => d !== 'right');
+            if (nearTop) directions = directions.filter(d => d !== 'up');
+            if (nearBottom) directions = directions.filter(d => d !== 'down');
+
+            // If all that’s left is idle, reintroduce all directions
+            if (directions.every(d => d === 'idle')) {
+                directions = ['idle', 'up', 'down', 'left', 'right'];
+            }
+
+            // Avoid directions that would lead into a forbidden corner zone
+            directions = this.filterDirectionsAvoidingForbiddenZones(directions, { width, height, cornerBuffer });
         }
 
         const chosen = directions[Math.floor(Math.random() * directions.length)];
 
+        // FIX FOR POINT 1 (Idle State vs. Direction):
+        // If idle is chosen, just set isIdle = true and do NOT overwrite direction 
+        // with lastNonIdleDirection. This ensures no logical contradiction.
         if (chosen === 'idle') {
             this.isIdle = true;
-            this.direction = this.lastNonIdleDirection;
+            // Keep the current direction as is; direction now represents facing, not movement.
+            // Do not change direction here to avoid contradictory states.
         } else {
             this.isIdle = false;
             this.direction = chosen;
             this.lastNonIdleDirection = chosen;
         }
+    }
+
+    filterDirectionsAvoidingForbiddenZones(directions, { width, height, cornerBuffer }) {
+        return directions.filter(dir => {
+            let testX = this.x;
+            let testY = this.y;
+            const testStep = 10; // A small step to test future position
+            switch (dir) {
+                case 'up': testY -= testStep; break;
+                case 'down': testY += testStep; break;
+                case 'left': testX -= testStep; break;
+                case 'right': testX += testStep; break;
+                case 'idle':
+                    // Idle won't move into a forbidden zone by itself, keep it
+                    return true;
+            }
+
+            const inTopLeft = testX < cornerBuffer && testY < cornerBuffer;
+            const inTopRight = testX > width - cornerBuffer - this.width && testY < cornerBuffer;
+            const inBottomLeft = testX < cornerBuffer && testY > height - cornerBuffer - this.height;
+            const inBottomRight = testX > width - cornerBuffer - this.width && testY > height - cornerBuffer - this.height;
+
+            // If moving in that direction puts us in a forbidden zone, exclude it
+            return !(inTopLeft || inTopRight || inBottomLeft || inBottomRight);
+        });
     }
 
     runAwayFrom(professore, deltaTime, { width, height }) {
@@ -1490,7 +1539,8 @@ export class Suina1 extends BaseCharacter {
             moved = false;
         }
 
-        if (!moved && this.direction !== 'idle') {
+        // If no actual movement occurred, return false to allow further attempts.
+        if (!moved) {
             return false;
         } else {
             this.isIdle = (this.direction === 'idle');
