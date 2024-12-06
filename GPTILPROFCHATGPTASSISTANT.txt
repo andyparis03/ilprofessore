@@ -1,0 +1,1638 @@
+
+
+>>>>>tell me if you find bugs or discrepancies or inconsistency <<<<<<
+
+
+Coding a videogame in javascript, html5 and css: find below in text the tree structure (TREEilprofessore) and I attached to this chat all the files that compose a videogame called "IL PROFESSORE"  (config.js, index.html, main.js, Player.js, Suina1.js, Suina2.js, SuinaEvil.js, Walter.js, Diego.js, Milly.js, AudioManager.js, Camera.js, Input.js, Renderer.js, style.css, LevelManager.js, AssetLoader.js) is an action adventure with elements of top-down puzzle platformer. "Il Professore" is the protagonist of the game. "Il Professore" Is a Player Character in the style of Mario bros. 
+Consider that the createCharacter method is designed to allow for progressive activation of characters. As new functionality are implemented for more characters, their types will be added to the activeCharacters.
+
+Please only answer with effective solutions assuming that all the assests are in place in the right directories, I only want you to focus on Suina1 and Il Professore (do not consider the other characters). There is no need to verify that the code is correctly defined as the code I gave to you is at is it. 
+Only focus on the code logic and find the cause that is generating the error then give the solutions:
+ 
+1. Assume All Provided Code is Correct and Present
+I will focus solely on logical flow and interactions between the code components without redundantly suggesting corrections to lines or assets you have already confirmed.
+
+2. Focus on Logical Causes Only
+I will analyze the problem based on the symptoms (like your error logs or outputs) and provide targeted suggestions for the root cause without assuming missing assets or functionality.
+
+3. Skip Verifications Unless You Request Them
+I will avoid generic debugging suggestions (like verifying asset directories or sprite mappings) unless the issue specifically points to those.
+
+4. Consolidate Steps into Clear, Minimal Actions
+I’ll ensure my responses are precise, avoiding redundant or unnecessary steps, and focus on changes or analysis directly tied to the problem.
+
+5. For every piece of code you write always remember to put on the top of the code as a label the name of the original Module you are referring (ie LevelManager.js or main.js or AssetLoader.js etc.)
+
+Don't do anything, just analyze all the files, understand the game and its structure and wait for my next request, answer OK
+
+
+
+
+TREEilprofessore:
+Ilprofessore
+│ 
+│   config.js
+│   index.html
+│   main.js
+│
+├───assets
+│   ├───maps
+│   │       level1.json
+│   │
+│   ├───sounds
+│   │       prof-fuck.mp3
+│   │       prof-punch.mp3
+│   │       prof-smack.mp3
+│   │       prof-step.mp3
+│   │       prof-theme.mp3
+│   │       suina-fuck.mp3
+│   │       suina-sound.mp3
+│   │       suina-evil.mp3
+│   │       suina-walk.mp3
+│   │       walter-sound.mp3
+│   │       walter-welcome.mp3
+│   │       diego-sound.mp3
+│   │       milly-sound.mp3
+│   │
+│   └───sprites               
+│       │   background.png
+│       │   background2.png
+│       │   background3.png
+│       │   background4.png
+│       │   background5.png
+│       │   fallback-background.png
+│       │   fallback-idle.png
+│       │   fallback-spritesheet.png
+│       │
+│       ├───professore        
+│       │       professore-idle.png
+│       │       professore-spritesheet.png
+│       │
+│       ├───milly             
+│       │       milly-idle.png
+│       │       milly-spritesheet.png
+│       │       milly-interact.png
+│       │
+│       ├───suina1            
+│       │       suina1-idle.png
+│       │       suina1-spritesheet.png
+│       │       suina1-attack.png
+│       │
+│       ├───suina2            
+│       │       suina2-idle.png
+│       │       suina2-spritesheet.png
+│       │       suina2-attack.png
+│       │
+│       ├───suinaEvil          
+│       │       suinaEvil-idle.png
+│       │       suinaEvil-spritesheet.png
+│       │       suinaEvil-attack.png
+│       │
+│       ├───walter            
+│       │       walter-idle.png
+│       │       walter-spritesheet.png
+│       │       walter-attack.png
+│       │
+│       └───diego              
+│               diego-idle.png
+│               diego-spritesheet.png
+│               diego-attack.png
+├───characters
+│   │   Player.js
+│   │   Suina1.js
+│   │   Suina2.js
+│   │   SuinaEvil.js
+│   │   Walter.js
+│   │   Diego.js
+│   │   Milly.js
+│   │   BaseCharacter.js
+│
+├───js
+│   └───engine
+│           AudioManager.js
+│           Camera.js
+│           Input.js
+│           Renderer.js
+│
+├───levels
+│       LevelManager.js
+│
+│
+├───styles
+│       style.css
+│
+└───utils
+        AssetLoader.js
+
+
+
+------------------
+
+
+
+main.js:
+// main.js
+import { CONFIG } from './config.js';
+import { Camera } from './js/engine/Camera.js';
+import { InputHandler } from './js/engine/Input.js';
+import { Player } from './characters/Player.js';
+import { Renderer } from './js/engine/Renderer.js';
+import { AssetLoader } from './utils/AssetLoader.js';
+import { AudioManager } from './js/engine/AudioManager.js';
+import { LevelManager } from './levels/LevelManager.js';
+
+const audioManager = new AudioManager();
+
+window.addEventListener('click', async () => {
+    try {
+        if (!audioManager.initialized) {
+            await audioManager.init();
+        }
+        console.log('Starting the game...');
+        game.init();
+    } catch (error) {
+        console.error('Error initializing the game:', error);
+    }
+});
+
+window.addEventListener('touchmove', (event) => {
+    event.preventDefault();
+}, { passive: false });
+
+window.addEventListener('gesturestart', (event) => {
+    event.preventDefault();
+}, { passive: false });
+
+window.addEventListener('gesturechange', (event) => {
+    event.preventDefault();
+}, { passive: false });
+
+window.addEventListener('gestureend', (event) => {
+    event.preventDefault();
+}, { passive: false });
+
+function toggleControls() {
+    const controlsContainer = document.getElementById('controls-container');
+    if (window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT) {
+        controlsContainer.style.display = 'flex';
+    } else {
+        controlsContainer.style.display = 'none';
+    }
+}
+
+window.addEventListener('load', toggleControls);
+window.addEventListener('resize', toggleControls);
+
+class Game {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.camera = new Camera(CONFIG.CANVAS.DEFAULT_WIDTH, CONFIG.CANVAS.DEFAULT_HEIGHT);
+        this.setupCanvas();
+
+        this.input = new InputHandler();
+        this.audioManager = audioManager;
+
+        this.player = new Player(
+            CONFIG.WORLD.WIDTH / 2,
+            CONFIG.WORLD.HEIGHT / 2,
+            CONFIG.PLAYER.WIDTH,
+            CONFIG.PLAYER.HEIGHT,
+            null,  // We'll set sprites after assets load
+            'professore'
+        );
+
+        window.addEventListener('resize', () => this.setupCanvas());
+    }
+
+    setupCanvas() {
+        const isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT;
+        if (isMobile) {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            this.canvas.style.width = '100%';
+            this.canvas.style.height = '100%';
+        } else {
+            this.canvas.width = CONFIG.CANVAS.DEFAULT_WIDTH;
+            this.canvas.height = CONFIG.CANVAS.DEFAULT_HEIGHT;
+            this.canvas.style.width = `${CONFIG.CANVAS.DEFAULT_WIDTH}px`;
+            this.canvas.style.height = `${CONFIG.CANVAS.DEFAULT_HEIGHT}px`;
+            this.canvas.style.position = 'absolute';
+            this.canvas.style.top = '50%';
+            this.canvas.style.left = '50%';
+            this.canvas.style.transform = 'translate(-50%, -50%)';
+        }
+        this.camera.width = this.canvas.width;
+        this.camera.height = this.canvas.height;
+    }
+
+    async init() {
+        try {
+            const assets = await AssetLoader.loadAssets();
+            console.log('Loaded assets:', assets);
+            this.assets = assets;
+            this.player.sprites = assets.sprites.professore;
+
+            this.levelManager = new LevelManager(assets);
+            this.renderer = new Renderer(this.ctx, this.levelManager);
+            await this.audioManager.init();
+
+            this.levelManager.loadLevel(1);
+            this.gameLoop();
+        } catch (error) {
+            console.error('Game initialization failed:', error);
+        }
+    }
+
+    update() {
+        // Player uses input, NPC uses player
+        this.player.update(this.input, {
+            width: CONFIG.WORLD.WIDTH,
+            height: CONFIG.WORLD.HEIGHT
+        });
+
+        this.levelManager.update(this.player);
+        if (this.levelManager.checkLevelTransition(this.player)) {
+            console.log(`Transitioned to Level ${this.levelManager.currentLevel}`);
+        }
+
+        this.camera.follow(this.player, CONFIG.WORLD.WIDTH, CONFIG.WORLD.HEIGHT);
+        this.audioManager.handleFootsteps(this.player, !this.player.isIdle);
+    }
+
+    draw() {
+        this.renderer.clear();
+        this.renderer.drawBackground(this.levelManager.getCurrentLevelBackground(), this.camera);
+        this.renderer.drawCharacters(this.assets.sprites, this.camera);
+        this.renderer.drawPlayer(this.player, this.assets.sprites.professore, this.camera);
+    }
+
+    gameLoop() {
+        this.update();
+        this.draw();
+        requestAnimationFrame(() => this.gameLoop());
+    }
+}
+
+const game = new Game();
+game.init().catch(console.error);
+
+
+
+
+
+
+
+
+
+
+index.html:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Il Professore Game</title>
+  <link rel="stylesheet" href="./styles/style.css">
+</head>
+<body>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div id="controls-container">
+    <div id="controls">
+      <button id="bacio">B</button>
+      <button id="left">←</button>
+      <button id="up">↑</button>
+      <button id="down">↓</button>
+      <button id="right">→</button>
+      <button id="fuck">F</button>
+    </div>
+  </div>
+  <script src="./main.js" type="module"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+config.sys:
+// config.js
+export const CONFIG = {
+    CANVAS: {
+        DEFAULT_WIDTH: 800,
+        DEFAULT_HEIGHT: 600,
+        MOBILE_BREAKPOINT: 768
+    },
+    WORLD: {
+        WIDTH: 800,
+        HEIGHT: 600
+    },
+    PLAYER: {
+        WIDTH: 68,
+        HEIGHT: 68,
+        SPEED: 1,
+        TOTAL_FRAMES: 4,
+        FRAME_DELAY: 4,
+        SPEED_MULTIPLIERS: {
+            DESKTOP: 1.0,
+            MOBILE: 2.0,
+            TABLET: 0.85
+        }
+    },
+    AUDIO: {
+        MUSIC_VOLUME: 0.1,
+        SFX_VOLUME: 0.3,
+        FOOTSTEP_INTERVAL: 300
+    },
+    LEVELS: {
+        1: {
+            name: 'StartingLevel',
+            backgroundKey: 'background1',
+            transitions: {
+                TEATRO: { x: { min: 0, max: 150 }, y: { min: 0, max: 100 }, nextLevel: 2 },
+                MALAFAMA: { x: { min: 550, max: 800 }, y: { min: 0, max: 100 }, nextLevel: 3 },
+                GUSTO: { x: { min: 0, max: 150 }, y: { min: 400, max: 600 }, nextLevel: 4 },
+                CHESTER: { x: { min: 600, max: 800 }, y: { min: 450, max: 600 }, nextLevel: 5 }
+            }
+        },
+        2: { name: 'Teatro', backgroundKey: 'background2' },
+        3: { name: 'Malafama', backgroundKey: 'background3' },
+        4: { name: 'Gusto', backgroundKey: 'background4' },
+        5: { name: 'Chester', backgroundKey: 'background5' }
+    }
+};
+
+
+
+
+
+
+
+
+assetLoader.js:
+// AssetLoader.js
+export class AssetLoader {
+    static async loadImage(src, fallbackSrc = null) {
+        const img = new Image();
+        img.src = src;
+        return new Promise((resolve, reject) => {
+            img.onload = () => resolve(img);
+            img.onerror = () => {
+                if (fallbackSrc) {
+                    console.warn(`Failed to load ${src}, trying fallback: ${fallbackSrc}`);
+                    img.src = fallbackSrc;
+                    img.onload = () => resolve(img);
+                    img.onerror = () => reject(new Error(`Failed to load fallback image: ${fallbackSrc}`));
+                } else {
+                    reject(new Error(`Failed to load image: ${src}`));
+                }
+            };
+        });
+    }
+
+    static async loadSound(audioContext, url) {
+        try {
+            const response = await fetch(url);
+            const arrayBuffer = await response.arrayBuffer();
+            return await audioContext.decodeAudioData(arrayBuffer);
+        } catch (error) {
+            console.error(`Failed to load sound: ${url}`, error);
+            throw new Error(`Failed to load sound: ${url}`);
+        }
+    }
+
+    static async loadAssets() {
+        try {
+            const audioContext = new AudioContext(); 
+            const [
+                professoreidle,
+                professorewalking,
+                millyidle,
+                millyspritesheet,
+                millyinteract,
+                suina1idle,
+                suina1walking,
+                suina1attack,
+                suina2idle,
+                suina2walking,
+                suina2attack,
+                suinaevilidle,
+                suinaevilwalking,
+                suinaevilattack,
+                walteridle,
+                walterwalking,
+                walterattack,
+                diegoidle,
+                diegowalking,
+                diegoattack,
+                background1,
+                background2,
+                background3,
+                background4,
+                background5,
+                proffuck,
+                profpunch,
+                profsmack,
+                profstep,
+                proftheme,
+                suinafuck,
+                suinasound,
+                suinaevil,
+                suinawalk,
+                waltersound,
+                walterwelcome,
+                diegosound,
+                millysound
+            ] = await Promise.all([
+                this.loadImage('./assets/sprites/professore/professore-idle.png'),
+                this.loadImage('./assets/sprites/professore/professore-spritesheet.png'),
+                this.loadImage('./assets/sprites/milly/milly-idle.png'),
+                this.loadImage('./assets/sprites/milly/milly-spritesheet.png'),
+                this.loadImage('./assets/sprites/milly/milly-interact.png'),
+                this.loadImage('./assets/sprites/suina1/suina1-idle.png'),
+                this.loadImage('./assets/sprites/suina1/suina1-spritesheet.png'),
+                this.loadImage('./assets/sprites/suina1/suina1-attack.png'),
+                this.loadImage('./assets/sprites/suina2/suina2-idle.png'),
+                this.loadImage('./assets/sprites/suina2/suina2-spritesheet.png'),
+                this.loadImage('./assets/sprites/suina2/suina2-attack.png'),
+                this.loadImage('./assets/sprites/suinaEvil/suinaevil-idle.png'),
+                this.loadImage('./assets/sprites/suinaEvil/suinaevil-spritesheet.png'),
+                this.loadImage('./assets/sprites/suinaEvil/suinaevil-attack.png'),
+                this.loadImage('./assets/sprites/walter/walter-idle.png'),
+                this.loadImage('./assets/sprites/walter/walter-spritesheet.png'),
+                this.loadImage('./assets/sprites/walter/walter-attack.png'),
+                this.loadImage('./assets/sprites/diego/diego-idle.png'),
+                this.loadImage('./assets/sprites/diego/diego-spritesheet.png'),
+                this.loadImage('./assets/sprites/diego/diego-attack.png'),
+                this.loadImage('./assets/sprites/background.png'),
+                this.loadImage('./assets/sprites/background2.png'),
+                this.loadImage('./assets/sprites/background3.png'),
+                this.loadImage('./assets/sprites/background4.png'),
+                this.loadImage('./assets/sprites/background5.png'),
+                this.loadSound(audioContext, './assets/sounds/prof-fuck.mp3'),
+                this.loadSound(audioContext, './assets/sounds/prof-punch.mp3'),
+                this.loadSound(audioContext, './assets/sounds/prof-smack.mp3'),
+                this.loadSound(audioContext, './assets/sounds/prof-step.mp3'),
+                this.loadSound(audioContext, './assets/sounds/prof-theme.mp3'),
+                this.loadSound(audioContext, './assets/sounds/suina-fuck.mp3'),
+                this.loadSound(audioContext, './assets/sounds/suina-sound.mp3'),
+                this.loadSound(audioContext, './assets/sounds/suina-evil.mp3'),
+                this.loadSound(audioContext, './assets/sounds/suina-walk.mp3'),
+                this.loadSound(audioContext, './assets/sounds/walter-sound.mp3'),
+                this.loadSound(audioContext, './assets/sounds/walter-welcome.mp3'),
+                this.loadSound(audioContext, './assets/sounds/diego-sound.mp3'),
+                this.loadSound(audioContext, './assets/sounds/milly-sound.mp3')
+            ]);
+
+            return {
+                sprites: {
+                    professore: { idle: professoreidle, walking: professorewalking },
+                    milly: { idle: millyidle, spritesheet: millyspritesheet, interact: millyinteract },
+                    suina1: { idle: suina1idle, walking: suina1walking, attack: suina1attack },
+                    suina2: { idle: suina2idle, walking: suina2walking, attack: suina2attack },
+                    suinaevil: { idle: suinaevilidle, walking: suinaevilwalking, attack: suinaevilattack },
+                    walter: { idle: walteridle, walking: walterwalking, attack: walterattack },
+                    diego: { idle: diegoidle, walking: diegowalking, attack: diegoattack }
+                },
+                backgrounds: {
+                    background1,
+                    background2,
+                    background3,
+                    background4,
+                    background5
+                },
+                sounds: {
+                    proffuck,
+                    profpunch,
+                    profsmack,
+                    profstep,
+                    proftheme,
+                    suinafuck,
+                    suinasound,
+                    suinaevil,
+                    suinawalk,
+                    waltersound,
+                    walterwelcome,
+                    diegosound,
+                    millysound
+                },
+                audioContext
+            };
+        } catch (error) {
+            console.error('Error loading assets:', error);
+            throw new Error('Failed to load assets.');
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+style.css:
+/* style.css */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: block;
+  background-color: #f0f0f0;
+}
+
+@media (max-width: 768px) {
+  canvas {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: none;
+  }
+}
+
+#controls-container {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  z-index: 10;
+}
+
+#controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px;
+  justify-content: center;
+}
+
+#controls button {
+  width: 60px;
+  height: 60px;
+  font-size: 24px;
+  border: none;
+  border-radius: 50%;
+  background-color: #333;
+  color: white;
+  opacity: 0.8;
+  transition: all 0.2s ease;
+}
+
+#controls button:active,
+#controls button:hover {
+  opacity: 1;
+}
+
+#controls button.active {
+  background-color: #555;
+  transform: scale(0.95);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 768px) {
+  #controls button {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+  #controls-container {
+    flex-direction: column;
+  }
+}
+
+@media (min-width: 769px) {
+    #controls-container {
+        display: none;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+AudioManager.js:
+// AudioManager.js
+import { CONFIG } from '../../config.js';
+
+export class AudioManager {
+    constructor() {
+        this.sounds = {};
+        this.music = {};
+        this.audioContext = null;
+        this.musicGainNode = null;
+        this.sfxGainNode = null;
+        this.currentMusicSource = null;
+        this.initialized = false;
+    }
+
+    async init() {
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.musicGainNode = this.audioContext.createGain();
+            this.sfxGainNode = this.audioContext.createGain();
+            this.musicGainNode.connect(this.audioContext.destination);
+            this.sfxGainNode.connect(this.audioContext.destination);
+
+            this.musicGainNode.gain.setValueAtTime(CONFIG.AUDIO.MUSIC_VOLUME, this.audioContext.currentTime);
+            this.sfxGainNode.gain.setValueAtTime(CONFIG.AUDIO.SFX_VOLUME, this.audioContext.currentTime);
+
+            await this.ensureAudioContextResume();
+            await this.loadAllSounds();
+            this.initialized = true;
+            console.log('AudioManager initialized successfully.');
+
+            if (this.music['theme']) {
+                this.playBackgroundMusic();
+            } else {
+                console.warn('Theme music is not loaded.');
+            }
+        } catch (error) {
+            console.error('AudioManager initialization failed:', error);
+        }
+    }
+
+    async ensureAudioContextResume() {
+        if (this.audioContext.state === 'suspended') {
+            return new Promise((resolve) => {
+                const resumeAudio = () => {
+                    this.audioContext.resume().then(() => {
+                        console.log('AudioContext resumed.');
+                        window.removeEventListener('click', resumeAudio);
+                        window.removeEventListener('keydown', resumeAudio);
+                        resolve();
+                    }).catch((error) => {
+                        console.error('Failed to resume AudioContext:', error);
+                    });
+                };
+                window.addEventListener('click', resumeAudio);
+                window.addEventListener('keydown', resumeAudio);
+            });
+        }
+    }
+
+    async loadAllSounds() {
+        console.log('Loading sounds...');
+        try {
+            await Promise.all([
+                this.loadSound('theme', './assets/sounds/prof-theme.mp3', 'music'),
+                this.loadSound('professore_step', './assets/sounds/prof-step.mp3', 'sfx'),
+                this.loadSound('professore_fuck', './assets/sounds/prof-fuck.mp3', 'sfx'),
+                this.loadSound('professore_smack', './assets/sounds/prof-smack.mp3', 'sfx')
+            ]);
+            console.log('All sounds loaded successfully.');
+        } catch (error) {
+            console.error('Failed to load some sounds:', error);
+        }
+    }
+
+    async loadSound(key, url, type = 'sfx') {
+        try {
+            const response = await fetch(url);
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+
+            if (type === 'music') {
+                this.music[key] = audioBuffer;
+            } else {
+                this.sounds[key] = audioBuffer;
+            }
+            console.log(`Sound loaded: ${key} (${type})`);
+        } catch (error) {
+            console.error(`Failed to load sound: ${key} from ${url}`, error);
+            throw new Error(`Failed to load sound: ${key}`);
+        }
+    }
+
+    playBackgroundMusic() {
+        if (!this.initialized || !this.music['theme']) {
+            console.warn('Background music not initialized or theme music not loaded.', {
+                initialized: this.initialized,
+                themeLoaded: !!this.music['theme']
+            });
+            return;
+        }
+
+        if (this.currentMusicSource) {
+            this.currentMusicSource.stop();
+        }
+
+        this.currentMusicSource = this.audioContext.createBufferSource();
+        this.currentMusicSource.buffer = this.music['theme'];
+        this.currentMusicSource.loop = true;
+        this.currentMusicSource.connect(this.musicGainNode);
+        this.currentMusicSource.start(0);
+        console.log('Background music started.');
+    }
+
+    playSound(key, type = 'sfx') {
+        if (!this.initialized) {
+            console.warn('AudioManager not initialized.');
+            return;
+        }
+
+        const buffer = type === 'music' ? this.music[key] : this.sounds[key];
+        if (!buffer) {
+            console.warn(`Sound not found: ${key}`);
+            return;
+        }
+
+        const source = this.audioContext.createBufferSource();
+        source.buffer = buffer;
+        const gainNode = type === 'music' ? this.musicGainNode : this.sfxGainNode;
+        source.connect(gainNode);
+        source.start();
+        console.log(`Playing sound: ${key}`);
+    }
+
+    handleFootsteps(player, isMoving) {
+        if (isMoving) {
+            const now = Date.now();
+            if (!this.lastFootstepTime || now - this.lastFootstepTime > CONFIG.AUDIO.FOOTSTEP_INTERVAL) {
+                this.playSound('professore_step');
+                this.lastFootstepTime = now;
+            }
+        }
+    }
+
+    setMusicVolume(volume) {
+        if (this.musicGainNode) {
+            this.musicGainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+        }
+    }
+
+    setSFXVolume(volume) {
+        if (this.sfxGainNode) {
+            this.sfxGainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+Camera.js:
+// Camera.js
+import { CONFIG } from '../../config.js';
+
+export class Camera {
+    constructor(width, height) {
+        this.x = 0;
+        this.y = 0;
+        this.width = width;
+        this.height = height;
+    }
+
+    follow(target, worldWidth, worldHeight) {
+        const idealX = target.x + target.width / 2 - this.width / 2;
+        const idealY = target.y + target.height / 2 - this.height / 2;
+
+        this.x = this.clamp(idealX, 0, Math.max(0, worldWidth - this.width));
+        this.y = this.clamp(idealY, 0, Math.max(0, worldHeight - this.height));
+
+        if (worldWidth < this.width) {
+            this.x = 0;
+        }
+        if (worldHeight < this.height) {
+            this.y = 0;
+        }
+    }
+
+    clamp(value, min, max) {
+        return Math.max(min, Math.min(value, max));
+    }
+}
+
+
+
+
+
+
+
+
+Input.js:
+// Input.js
+import { CONFIG } from '../../config.js';
+
+export class InputHandler {
+    constructor() {
+        this.keys = {
+            ArrowUp: false,
+            ArrowDown: false,
+            ArrowLeft: false,
+            ArrowRight: false
+        };
+
+        this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
+            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        this.touchState = {};
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        window.addEventListener('keydown', (e) => this.setKey(e.key, true));
+        window.addEventListener('keyup', (e) => this.setKey(e.key, false));
+
+        if (this.isMobile) {
+            this.setupTouchControls();
+        }
+    }
+
+    setupTouchControls() {
+        const directions = ['up', 'down', 'left', 'right'];
+        directions.forEach((dir) => {
+            const element = document.getElementById(dir);
+            if (element) {
+                element.addEventListener('touchstart', (e) => this.handleTouch(e, dir, true));
+                element.addEventListener('touchend', (e) => this.handleTouch(e, dir, false));
+                element.addEventListener('touchcancel', (e) => this.handleTouch(e, dir, false));
+            } else {
+                console.warn(`Touch control button with ID '${dir}' not found.`);
+            }
+        });
+    }
+
+    handleTouch(event, direction, isPressed) {
+        event.preventDefault();
+        const key = `Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`;
+        if (this.touchState[key] !== isPressed) {
+            this.touchState[key] = isPressed;
+            this.setKey(key, isPressed);
+            const element = document.getElementById(direction);
+            if (element) {
+                element.classList.toggle('active', isPressed);
+            }
+        }
+    }
+
+    setKey(key, value) {
+        if (this.keys.hasOwnProperty(key)) {
+            this.keys[key] = value;
+        }
+    }
+
+    isMoving() {
+        return Object.values(this.keys).some(Boolean);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+Renderer.js:
+// Renderer.js
+import { CONFIG } from '../../config.js';
+
+export class Renderer {
+    constructor(ctx, levelManager) {
+        this.ctx = ctx;
+        this.levelManager = levelManager;
+        this.directions = { down: 0, left: 1, right: 2, up: 3 };
+    }
+
+    clear() {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    }
+
+    drawBackground(background, camera) {
+        if (background) {
+            this.ctx.drawImage(
+                background,
+                camera.x, camera.y,
+                camera.width, camera.height,
+                0, 0,
+                camera.width, camera.height
+            );
+        } else {
+            console.warn('Background image is undefined.');
+        }
+    }
+
+    drawPlayer(player, sprites, camera) {
+        const drawX = player.x - camera.x;
+        const drawY = player.y - camera.y;
+
+        if (player.isIdle) {
+            if (sprites.idle) {
+                this.ctx.drawImage(sprites.idle, drawX, drawY, player.width, player.height);
+            } else {
+                console.error('Player idle sprite is undefined.');
+            }
+        } else {
+            const directionIndex = this.directions[player.direction] !== undefined 
+                ? this.directions[player.direction] 
+                : this.directions['down'];
+            const spriteX = player.frame * player.width;
+            const spriteY = directionIndex * player.height;
+
+            if (sprites.walking) {
+                this.ctx.drawImage(
+                    sprites.walking,
+                    spriteX, spriteY,
+                    player.width, player.height,
+                    drawX, drawY,
+                    player.width, player.height
+                );
+            } else {
+                console.error('Player walking sprite is undefined.');
+            }
+        }
+    }
+
+    drawCharacters(sprites, camera) {
+        this.levelManager.characters.forEach((character) => {
+            const drawX = character.x - camera.x;
+            const drawY = character.y - camera.y;
+
+            if (!sprites[character.type]) {
+                console.error(`Sprites for character type ${character.type} are undefined.`);
+                return;
+            }
+
+            const characterSprites = sprites[character.type.toLowerCase()];
+
+            if (character.isIdle) {
+                if (characterSprites.idle) {
+                    this.ctx.drawImage(characterSprites.idle, drawX, drawY, character.width, character.height);
+                } else {
+                    console.error(`Idle sprite for character type ${character.type} is undefined.`);
+                }
+            } else {
+                const directionIndex = this.directions[character.direction] !== undefined
+                    ? this.directions[character.direction]
+                    : this.directions['down'];
+                const spriteX = character.frame * character.width;
+                const spriteY = directionIndex * character.height;
+
+                if (characterSprites.walking) {
+                    this.ctx.drawImage(
+                        characterSprites.walking,
+                        spriteX, spriteY,
+                        character.width, character.height,
+                        drawX, drawY,
+                        character.width, character.height
+                    );
+                } else {
+                    console.error(`Walking sprite for character type ${character.type} is undefined.`);
+                }
+            }
+        });
+    }
+
+    drawLevelName() {
+        const currentLevel = CONFIG.LEVELS[this.levelManager.currentLevel];
+        if (currentLevel) {
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = '20px Arial';
+            this.ctx.fillText(currentLevel.name, 10, 30);
+        } else {
+            console.warn('Current level configuration is undefined.');
+        }
+    }
+
+    render(player, sprites, camera) {
+        this.clear();
+        const background = this.levelManager.getCurrentLevelBackground();
+        this.drawBackground(background, camera);
+        this.drawCharacters(sprites, camera);
+        this.drawPlayer(player, sprites.professore, camera);
+        this.drawLevelName();
+    }
+}
+
+
+
+
+
+
+
+
+
+Levelmanager.js:
+// LevelManager.js
+import { CONFIG } from '../config.js';
+import { Suina1 } from '../characters/Suina1.js';
+import { Suina2 } from '../characters/Suina2.js';
+import { SuinaEvil } from '../characters/SuinaEvil.js';
+import { Walter } from '../characters/Walter.js';
+import { Diego } from '../characters/Diego.js';
+import { Milly } from '../characters/Milly.js';
+
+export class LevelManager {
+    constructor(assets) {
+        this.assets = assets;
+        this.currentLevel = 1;
+        this.characters = [];
+    }
+
+    loadLevel(levelNumber) {
+        const levelConfig = CONFIG.LEVELS[levelNumber];
+        if (!levelConfig) {
+            console.error(`Level ${levelNumber} configuration not found.`);
+            return;
+        }
+
+        this.currentLevel = levelNumber;
+        this.characters = [];
+        this.loadCharactersForLevel(levelNumber);
+
+        console.log(`Loaded level ${levelNumber}:`, levelConfig);
+        console.log(this.characters);
+    }
+
+    loadCharactersForLevel(levelNumber) {
+        const levelCharacters = {
+            2: [
+                { type: 'suina1', x: 300, y: 200 },
+                { type: 'suina2', x: 400, y: 250 }
+            ],
+            3: [
+                { type: 'suinaevil', x: 500, y: 100 },
+                { type: 'walter', x: 350, y: 300 }
+            ],
+            4: [
+                { type: 'diego', x: 600, y: 200 }
+            ]
+        };
+
+        const charactersConfig = levelCharacters[levelNumber];
+        if (!charactersConfig) {
+            console.warn(`No characters defined for level ${levelNumber}.`);
+            return;
+        }
+
+        charactersConfig.forEach((config) => {
+            const character = this.createCharacter(config);
+            if (character) {
+                this.characters.push(character);
+            }
+        });
+    }
+
+    createCharacter({ type, x, y }) {
+        const activeCharacters = ['suina1', 'suina2', 'suinaevil', 'walter', 'diego', 'milly'];
+        if (!activeCharacters.includes(type.toLowerCase())) {
+            console.warn(`Skipping inactive character type: ${type}`);
+            return null;
+        }
+
+        const characterClasses = {
+            suina1: Suina1,
+            suina2: Suina2,
+            suinaevil: SuinaEvil,
+            walter: Walter,
+            diego: Diego,
+            milly: Milly
+        };
+
+        const characterSprites = {
+            suina1: this.assets.sprites.suina1,
+            suina2: this.assets.sprites.suina2,
+            suinaevil: this.assets.sprites.suinaevil,
+            walter: this.assets.sprites.walter,
+            diego: this.assets.sprites.diego,
+            milly: this.assets.sprites.milly
+        };
+
+        const CharacterClass = characterClasses[type.toLowerCase()];
+        const sprites = characterSprites[type.toLowerCase()];
+
+        if (!CharacterClass || !sprites) {
+            console.error(`Character class or sprites not found for type: ${type}`);
+            return null;
+        }
+
+        return new CharacterClass(
+            x,
+            y,
+            CONFIG.PLAYER.WIDTH,
+            CONFIG.PLAYER.HEIGHT,
+            sprites,
+            type.toLowerCase()
+        );
+    }
+
+    update(player) {
+        this.characters.forEach((character) => {
+            if (!character.isCaught) {
+                character.update(player, {
+                    width: CONFIG.WORLD.WIDTH,
+                    height: CONFIG.WORLD.HEIGHT
+                });
+            }
+        });
+        console.log('Updated characters:', this.characters);
+    }
+
+    checkLevelTransition(player) {
+        const currentLevelConfig = CONFIG.LEVELS[this.currentLevel];
+        if (!currentLevelConfig || !currentLevelConfig.transitions) {
+            return false;
+        }
+
+        for (const transition of Object.values(currentLevelConfig.transitions)) {
+            if (
+                player.x >= transition.x.min && player.x <= transition.x.max &&
+                player.y >= transition.y.min && player.y <= transition.y.max
+            ) {
+                const nextLevel = transition.nextLevel;
+                this.loadLevel(nextLevel);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    getCurrentLevelBackground() {
+        const levelConfig = CONFIG.LEVELS[this.currentLevel];
+        if (!levelConfig) {
+            console.error(`Level ${this.currentLevel} configuration not found.`);
+            return null;
+        }
+
+        const backgroundKey = levelConfig.backgroundKey;
+        return this.assets.backgrounds[backgroundKey];
+    }
+}
+
+
+
+
+
+
+
+BaseCharacter.js:
+// BaseCharacter.js
+import { CONFIG } from '../config.js';
+
+export class BaseCharacter {
+    constructor(x, y, width, height, sprites, type, speedMultiplier = 1) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.sprites = sprites;
+        this.type = type.toLowerCase();
+
+        // Movement and animation
+        this.speed = CONFIG.PLAYER.SPEED * speedMultiplier;
+        this.direction = 'down';
+        this.isIdle = true;
+        this.frame = 0;
+        this.totalFrames = CONFIG.PLAYER.TOTAL_FRAMES;
+        this.animationSpeed = 100;
+        this.lastAnimationUpdate = 0;
+        this.isCaught = false;
+
+        this.lastUpdateTime = performance.now();
+    }
+
+    // For NPCs: 'player' parameter is the Player character object.
+    // For NPCs, 'player' is used to determine behavior. 'worldBounds' is the game area.
+    update(player, worldBounds) {
+        if (this.isCaught) return;
+
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - this.lastUpdateTime) / 16.67;
+        this.lastUpdateTime = currentTime;
+
+        // NPC logic uses 'player' to decide how to move/behave
+        this.updateBehavior(player, worldBounds, deltaTime);
+
+        // Update animation frames if not idle
+        if (!this.isIdle) {
+            if (currentTime - this.lastAnimationUpdate >= this.animationSpeed) {
+                this.frame = (this.frame + 1) % this.totalFrames;
+                this.lastAnimationUpdate = currentTime;
+            }
+        } else {
+            this.frame = 0;
+            this.lastAnimationUpdate = 0;
+        }
+    }
+
+    // NPC subclasses implement their own behavior, using the 'player' parameter for logic
+    updateBehavior(player, worldBounds, deltaTime) {
+        // Default (idle)
+        this.isIdle = true;
+    }
+
+    checkCollision(other) {
+        return (
+            this.x < other.x + other.width &&
+            this.x + this.width > other.x &&
+            this.y < other.y + other.height &&
+            this.y + this.height > other.y
+        );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+Player.js:
+// Player.js
+import { CONFIG } from '../config.js';
+import { BaseCharacter } from './BaseCharacter.js';
+
+export class Player extends BaseCharacter {
+    constructor(x, y, width, height, sprites, type) {
+        super(x, y, width, height, sprites, type);
+        this.speedMultiplier = this.determineSpeedMultiplier();
+        this.speed = CONFIG.PLAYER.SPEED * this.speedMultiplier;
+    }
+
+    determineSpeedMultiplier() {
+        const screenWidth = window.innerWidth;
+        if (screenWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT) {
+            return CONFIG.PLAYER.SPEED_MULTIPLIERS.MOBILE;
+        } else if (screenWidth <= 1024) {
+            return CONFIG.PLAYER.SPEED_MULTIPLIERS.TABLET;
+        }
+        return CONFIG.PLAYER.SPEED_MULTIPLIERS.DESKTOP;
+    }
+
+    // For the Player:
+    // update(input, worldBounds) - we do NOT call super.update()
+    // because super.update() expects a player parameter (for NPC logic)
+    // Instead, we handle deltaTime and call updateBehavior(input) directly.
+    update(input, worldBounds) {
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - this.lastUpdateTime) / 16.67;
+        this.lastUpdateTime = currentTime;
+
+        this.updateBehavior(input, worldBounds, deltaTime);
+
+        // Animation handling:
+        if (!this.isIdle) {
+            if (!this.lastAnimationUpdate || currentTime - this.lastAnimationUpdate >= this.animationSpeed) {
+                this.frame = (this.frame + 1) % this.totalFrames;
+                this.lastAnimationUpdate = currentTime;
+            }
+        } else {
+            this.frame = 0;
+            this.lastAnimationUpdate = 0;
+        }
+    }
+
+    // Player logic uses input instead of player object
+    updateBehavior(input, worldBounds, deltaTime) {
+        this.isIdle = !input.isMoving();
+
+        if (!this.isIdle) {
+            const adjustedSpeed = this.speed * deltaTime;
+
+            const keys = input.keys;
+            const startX = this.x;
+            const startY = this.y;
+
+            if (keys.ArrowRight) {
+                this.x = Math.min(this.x + adjustedSpeed, worldBounds.width - this.width);
+                this.direction = 'right';
+            }
+            if (keys.ArrowLeft) {
+                this.x = Math.max(this.x - adjustedSpeed, 0);
+                this.direction = 'left';
+            }
+            if (keys.ArrowDown) {
+                this.y = Math.min(this.y + adjustedSpeed, worldBounds.height - this.height);
+                this.direction = 'down';
+            }
+            if (keys.ArrowUp) {
+                this.y = Math.max(this.y - adjustedSpeed, 0);
+                this.direction = 'up';
+            }
+
+            // If no movement occurred, set idle
+            if (this.x === startX && this.y === startY) {
+                this.isIdle = true;
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+Suina1.js
+// Suina1.js
+import { BaseCharacter } from './BaseCharacter.js';
+
+export class Suina1 extends BaseCharacter {
+    constructor(x, y, width, height, sprites, type) {
+        super(x, y, width, height, sprites, type, 1.5);
+        this.moveTimer = 0;
+        this.changeDirectionInterval = 1000;
+        this.lastNonIdleDirection = 'down';
+    }
+
+    updateBehavior(player, worldBounds, deltaTime) {
+        const currentTime = performance.now();
+        if (currentTime - this.moveTimer > this.changeDirectionInterval) {
+            this.randomizeDirection(worldBounds);
+            this.moveTimer = currentTime;
+        }
+
+        const distance = Math.hypot(player.x - this.x, player.y - this.y);
+        if (distance < 150) {
+            this.runAwayFrom(player, deltaTime, worldBounds);
+            this.isIdle = false;
+        } else {
+            // Attempt multiple moves; if no success, face away from the corner
+            if (!this.attemptMultipleMoves(deltaTime, worldBounds, 3)) {
+                this.goIdleFacingAwayFromCorner(worldBounds);
+            }
+        }
+    }
+
+    attemptMultipleMoves(deltaTime, worldBounds, attempts) {
+        // Try current direction first
+        if (this.moveRandomly(deltaTime, worldBounds)) {
+            return true;
+        }
+
+        // If failed, try random directions for a given number of attempts
+        for (let i = 0; i < attempts; i++) {
+            this.randomizeDirection(worldBounds);
+            if (this.moveRandomly(deltaTime, worldBounds)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    randomizeDirection({ width, height }) {
+        // Base directions including idle
+        let directions = ['up', 'down', 'left', 'right', 'idle'];
+
+        // Bias away from edges:
+        const edgeBuffer = 50; // Distance from edge considered "near"
+        const nearLeft = this.x < edgeBuffer;
+        const nearRight = this.x > width - this.width - edgeBuffer;
+        const nearTop = this.y < edgeBuffer;
+        const nearBottom = this.y > height - this.height - edgeBuffer;
+
+        // If near a border, remove or reduce likelihood of choosing that direction
+        if (nearLeft) directions = directions.filter(d => d !== 'left');
+        if (nearRight) directions = directions.filter(d => d !== 'right');
+        if (nearTop) directions = directions.filter(d => d !== 'up');
+        if (nearBottom) directions = directions.filter(d => d !== 'down');
+
+        // If we removed all movement directions due to edges, keep at least one:
+        if (directions.every(d => d === 'idle')) {
+            // If all that’s left is idle, re-allow some directions to prevent being stuck
+            directions = ['idle', 'up', 'down', 'left', 'right'];
+        }
+
+        const chosen = directions[Math.floor(Math.random() * directions.length)];
+
+        if (chosen === 'idle') {
+            this.isIdle = true;
+            this.direction = this.lastNonIdleDirection;
+        } else {
+            this.isIdle = false;
+            this.direction = chosen;
+            this.lastNonIdleDirection = chosen;
+        }
+    }
+
+    runAwayFrom(professore, deltaTime, { width, height }) {
+        const dx = this.x - professore.x;
+        const dy = this.y - professore.y;
+        const angle = Math.atan2(dy, dx);
+
+        const adjustedSpeed = this.speed * deltaTime;
+        const oldX = this.x, oldY = this.y;
+
+        this.x = Math.min(Math.max(this.x + Math.cos(angle) * adjustedSpeed, 0), width - this.width);
+        this.y = Math.min(Math.max(this.y + Math.sin(angle) * adjustedSpeed, 0), height - this.height);
+
+        this.isIdle = false;
+        this.updateDirection(this.x - oldX, this.y - oldY);
+        this.lastNonIdleDirection = this.direction;
+    }
+
+    moveRandomly(deltaTime, { width, height }) {
+        const adjustedSpeed = this.speed * deltaTime;
+        const oldX = this.x;
+        const oldY = this.y;
+
+        let moved = false;
+        if (this.direction === 'up') {
+            this.y = Math.max(this.y - adjustedSpeed, 0);
+            moved = (this.y !== oldY);
+        } else if (this.direction === 'down') {
+            this.y = Math.min(this.y + adjustedSpeed, height - this.height);
+            moved = (this.y !== oldY);
+        } else if (this.direction === 'left') {
+            this.x = Math.max(this.x - adjustedSpeed, 0);
+            moved = (this.x !== oldX);
+        } else if (this.direction === 'right') {
+            this.x = Math.min(this.x + adjustedSpeed, width - this.width);
+            moved = (this.x !== oldX);
+        } else if (this.direction === 'idle') {
+            moved = false;
+        }
+
+        if (!moved && this.direction !== 'idle') {
+            return false;
+        } else {
+            this.isIdle = (this.direction === 'idle');
+            if (!this.isIdle) {
+                this.lastNonIdleDirection = this.direction;
+            }
+            return true;
+        }
+    }
+
+    updateDirection(dx, dy) {
+        if (Math.abs(dx) > Math.abs(dy)) {
+            this.direction = dx > 0 ? 'right' : 'left';
+        } else {
+            this.direction = dy > 0 ? 'down' : 'up';
+        }
+    }
+
+    goIdleFacingAwayFromCorner({ width, height }) {
+        const nearTop = this.y < height / 2;
+        const nearLeft = this.x < width / 2;
+
+        let horizontalPref = nearLeft ? 'right' : 'left';
+        let verticalPref = nearTop ? 'down' : 'up';
+
+        const chosen = Math.random() < 0.5 ? horizontalPref : verticalPref;
+
+        this.direction = chosen;
+        this.isIdle = true;
+        this.lastNonIdleDirection = chosen;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+Suina2.js:
+// Suina2.js
+import { BaseCharacter } from './BaseCharacter.js';
+
+export class Suina2 extends BaseCharacter {
+    constructor(x, y, width, height, sprites, type) {
+        super(x, y, width, height, sprites, type);
+    }
+
+    updateBehavior(player, worldBounds, deltaTime) {
+        // Currently no special behavior: remains idle
+        // If needed, add logic similar to Suina1 or other chars
+        this.isIdle = true;
+        this.direction = 'down';
+    }
+}
+
+
+
+
+SuinaEvil.js:
+// SuinaEvil.js
+import { BaseCharacter } from './BaseCharacter.js';
+
+export class SuinaEvil extends BaseCharacter {
+    constructor(x, y, width, height, sprites, type) {
+        super(x, y, width, height, sprites, type);
+    }
+
+    updateBehavior(player, worldBounds, deltaTime) {
+        // Placeholder: remains idle
+        this.isIdle = true;
+        this.direction = 'down';
+    }
+}
+
+
+
+
+
+Diego.js:
+// Diego.js
+import { BaseCharacter } from './BaseCharacter.js';
+
+export class Diego extends BaseCharacter {
+    constructor(x, y, width, height, sprites, type) {
+        super(x, y, width, height, sprites, type);
+    }
+
+    updateBehavior(player, worldBounds, deltaTime) {
+        // Placeholder: remains idle
+        this.isIdle = true;
+        this.direction = 'down';
+    }
+}
+
+
+
+
+
+Milly.js:
+// Milly.js
+import { BaseCharacter } from './BaseCharacter.js';
+
+export class Milly extends BaseCharacter {
+    constructor(x, y, width, height, sprites, type) {
+        super(x, y, width, height, sprites, type);
+    }
+
+    updateBehavior(player, worldBounds, deltaTime) {
+        // Placeholder: remains idle
+        this.isIdle = true;
+        this.direction = 'down';
+    }
+}
+
+
+
+
+
+Walter.js:
+// Walter.js
+import { BaseCharacter } from './BaseCharacter.js';
+
+export class Walter extends BaseCharacter {
+    constructor(x, y, width, height, sprites, type) {
+        super(x, y, width, height, sprites, type);
+    }
+
+    updateBehavior(player, worldBounds, deltaTime) {
+        // Placeholder: remains idle
+        this.isIdle = true;
+        this.direction = 'down';
+    }
+}
+
+
+
+
+
+
+
