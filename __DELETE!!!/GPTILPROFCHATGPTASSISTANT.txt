@@ -3,14 +3,12 @@
 >>>>>tell me if you find bugs or discrepancies or inconsistency <<<<<<
 
 
-
->>>>>>>>> Collision Handling: I want to handle collision between il professore and Suina1: when il professore have a collision with suina1 then Suina1 should change the spirte in suina1-attack.png ONLY FOR 1 SECOND (means revert to idle after one second) and play ONLY ONCE the sound 'suina_sound' (suina-sound.mp3) <<<<<
-
-Coding a videogame in javascript, html5 and css: find below in text the tree structure (TREEilprofessore) and I attached to this chat all the files that compose a videogame called "IL PROFESSORE"  (config.js, index.html, main.js, Player.js, Suina1.js, Suina2.js, SuinaEvil.js, Walter.js, Diego.js, Milly.js, AudioManager.js, Camera.js, Input.js, Renderer.js, style.css, LevelManager.js, AssetLoader.js) is an action adventure with elements of top-down puzzle platformer. "Il Professore" is the protagonist of the game. "Il Professore" Is a Player Character in the style of Mario bros. 
+Coding a videogame in javascript, html5 and css: find below in text the tree structure (TREEilprofessore) and I attached to this chat all the module js that compose a videogame called "IL PROFESSORE"  (config.js, index.html, main.js, Player.js, Suina1.js, Suina2.js, SuinaEvil.js, Walter.js, Diego.js, Milly.js, AudioManager.js, Camera.js, Input.js, Renderer.js, style.css, LevelManager.js, AssetLoader.js an more) is an action adventure with elements of top-down puzzle platformer. "Il Professore" is the protagonist of the game. "Il Professore" Is a Player Character in the style of Mario bros. 
 Consider that the createCharacter method is designed to allow for progressive activation of characters. As new functionality are implemented for more characters, their types will be added to the activeCharacters.
 
 Please only answer with effective solutions assuming that all the assests are in place in the right directories, I only want you to focus on Suina1 and Il Professore (do not consider the other characters). There is no need to verify that the code is correctly defined as the code I gave to you is at is it. 
 Only focus on the code logic and find the cause that is generating the error then give the solutions:
+
  
 1. Assume All Provided Code is Correct and Present
 I will focus solely on logical flow and interactions between the code components without redundantly suggesting corrections to lines or assets you have already confirmed.
@@ -25,6 +23,8 @@ I will avoid generic debugging suggestions (like verifying asset directories or 
 I’ll ensure my responses are precise, avoiding redundant or unnecessary steps, and focus on changes or analysis directly tied to the problem.
 
 5. For every piece of code you write always remember to put on the top of the code as a label the name of the original Module you are referring (ie LevelManager.js or main.js or AssetLoader.js etc.)
+
+6. REMEMBER! ALWAYS WRITE THE FULL CODE COMPLETELY EVERY TIME, NEVER GIVE ME EXTRACTS OR PIECES OF CODE BUT ALWAYS REWRITE THE ENTIRE MODULE FOR COMPLETENESS.
 
 Don't do anything, just analyze all the files, understand the game and its structure and wait for my next request, answer OK
 
@@ -675,7 +675,7 @@ export class AudioManager {
             this.initialized = true;
             console.log('AudioManager initialized successfully.');
 
-            if (this.music['prof-theme']) {
+            if (this.music['theme']) {
                 this.playBackgroundMusic();
             } else {
                 console.warn('Theme music is not loaded.');
@@ -708,19 +708,10 @@ export class AudioManager {
         console.log('Loading sounds...');
         try {
             await Promise.all([
-                this.loadSound('prof-theme', './assets/sounds/prof-theme.mp3', 'music'),
+                this.loadSound('theme', './assets/sounds/prof-theme.mp3', 'music'),
                 this.loadSound('professore_step', './assets/sounds/prof-step.mp3', 'sfx'),
                 this.loadSound('professore_fuck', './assets/sounds/prof-fuck.mp3', 'sfx'),
-                this.loadSound('professore_smack', './assets/sounds/prof-smack.mp3', 'sfx'),
-                this.loadSound('professore_punch', './assets/sounds/prof-punch.mp3', 'sfx'),
-                this.loadSound('walter_welcome', './assets/sounds/walter-welcome.mp3', 'sfx'),
-                this.loadSound('walter_sound', './assets/sounds/walter-sound.mp3', 'sfx'),
-                this.loadSound('suina_walk', './assets/sounds/suina-walk.mp3', 'sfx'),
-                this.loadSound('suina_sound', './assets/sounds/suina-sound.mp3', 'sfx'),
-                this.loadSound('suina_fuck', './assets/sounds/suina-fuck.mp3', 'sfx'),
-                this.loadSound('suina_evil', './assets/sounds/suina-evil.mp3', 'sfx'),
-                this.loadSound('milly_sound', './assets/sounds/milly-sound.mp3', 'sfx'),
-                this.loadSound('diego_sound', './assets/sounds/diego-sound.mp3', 'sfx')
+                this.loadSound('professore_smack', './assets/sounds/prof-smack.mp3', 'sfx')
             ]);
             console.log('All sounds loaded successfully.');
         } catch (error) {
@@ -747,10 +738,10 @@ export class AudioManager {
     }
 
     playBackgroundMusic() {
-        if (!this.initialized || !this.music['prof-theme']) {
+        if (!this.initialized || !this.music['theme']) {
             console.warn('Background music not initialized or theme music not loaded.', {
                 initialized: this.initialized,
-                themeLoaded: !!this.music['prof-theme']
+                themeLoaded: !!this.music['theme']
             });
             return;
         }
@@ -760,7 +751,7 @@ export class AudioManager {
         }
 
         this.currentMusicSource = this.audioContext.createBufferSource();
-        this.currentMusicSource.buffer = this.music['prof-theme'];
+        this.currentMusicSource.buffer = this.music['theme'];
         this.currentMusicSource.loop = true;
         this.currentMusicSource.connect(this.musicGainNode);
         this.currentMusicSource.start(0);
@@ -809,7 +800,6 @@ export class AudioManager {
         }
     }
 }
-
 
 
 
@@ -1586,6 +1576,7 @@ export class Suina1 extends BaseCharacter {
         this.lastNonIdleDirection = chosen;
     }
 }
+
 
 
 

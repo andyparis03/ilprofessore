@@ -44,7 +44,7 @@ export class Suina1 extends BaseCharacter {
     }
 
     randomizeDirection({ width, height }) {
-        const edgeBuffer = 50; 
+        const edgeBuffer = 80; 
         const cornerBuffer = 80; // Off-limit zone: 80x80 pixels around each corner
         const nearLeft = this.x < edgeBuffer;
         const nearRight = this.x > width - this.width - edgeBuffer;
