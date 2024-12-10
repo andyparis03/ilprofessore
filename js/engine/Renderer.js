@@ -59,13 +59,13 @@ export class Renderer {
 
     drawCharacters(sprites, camera) {
         this.levelManager.characters.forEach((character) => {
+            if (!character || !character.type || !sprites[character.type]) {
+                console.error(`Sprites for character type ${character ? character.type : 'undefined'} are undefined.`);
+                return; // Skip invalid characters
+            }
+
             const drawX = character.x - camera.x;
             const drawY = character.y - camera.y;
-
-            if (!sprites[character.type]) {
-                console.error(`Sprites for character type ${character.type} are undefined.`);
-                return;
-            }
 
             const characterSprites = sprites[character.type.toLowerCase()];
 
@@ -97,23 +97,11 @@ export class Renderer {
         });
     }
 
-    drawLevelName() {
-        const currentLevel = CONFIG.LEVELS[this.levelManager.currentLevel];
-        if (currentLevel) {
-            this.ctx.fillStyle = 'white';
-            this.ctx.font = '20px Arial';
-            this.ctx.fillText(currentLevel.name, 10, 30);
-        } else {
-            console.warn('Current level configuration is undefined.');
-        }
-    }
-
     render(player, sprites, camera) {
         this.clear();
         const background = this.levelManager.getCurrentLevelBackground();
         this.drawBackground(background, camera);
         this.drawCharacters(sprites, camera);
         this.drawPlayer(player, sprites.professore, camera);
-        this.drawLevelName();
     }
 }

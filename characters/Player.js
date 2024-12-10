@@ -5,27 +5,32 @@ import { BaseCharacter } from './BaseCharacter.js';
 export class Player extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type);
-        this.speedMultiplier = this.determineSpeedMultiplier();
-        this.speed = CONFIG.PLAYER.SPEED * this.speedMultiplier;
+        this.lastUpdateTime = performance.now(); // Initialize the last update time
+        this.updateSpeedMultiplier(); // Set the initial speed multiplier
     }
 
+    // Determines the speed multiplier based on screen size
     determineSpeedMultiplier() {
         const screenWidth = window.innerWidth;
         if (screenWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT) {
-            return CONFIG.PLAYER.SPEED_MULTIPLIERS.MOBILE;
+            return CONFIG.PLAYER.SPEED_MULTIPLIERS.MOBILE; // Faster for small screens
         } else if (screenWidth <= 1024) {
-            return CONFIG.PLAYER.SPEED_MULTIPLIERS.TABLET;
+            return CONFIG.PLAYER.SPEED_MULTIPLIERS.TABLET; // Medium speed for tablets
         }
-        return CONFIG.PLAYER.SPEED_MULTIPLIERS.DESKTOP;
+        return CONFIG.PLAYER.SPEED_MULTIPLIERS.DESKTOP; // Slower for desktops
     }
 
-    // For the Player:
-    // update(input, worldBounds) - we do NOT call super.update()
-    // because super.update() expects a player parameter (for NPC logic)
-    // Instead, we handle deltaTime and call updateBehavior(input) directly.
+    // Updates the speed multiplier and recalculates the speed
+    updateSpeedMultiplier() {
+        this.speedMultiplier = this.determineSpeedMultiplier(); // Update multiplier
+        this.speed = CONFIG.PLAYER.SPEED * this.speedMultiplier; // Update speed
+        console.log('Speed multiplier updated:', this.speedMultiplier, 'Speed:', this.speed);
+    }
+
+    // Updates the player's state each frame
     update(input, worldBounds) {
         const currentTime = performance.now();
-        const deltaTime = (currentTime - this.lastUpdateTime) / 16.67;
+        const deltaTime = (currentTime - this.lastUpdateTime) / 16.67; // Frame duration in ms
         this.lastUpdateTime = currentTime;
 
         this.updateBehavior(input, worldBounds, deltaTime);
@@ -42,9 +47,9 @@ export class Player extends BaseCharacter {
         }
     }
 
-    // Player logic uses input instead of player object
+    // Handles player movement and behavior based on input
     updateBehavior(input, worldBounds, deltaTime) {
-        this.isIdle = !input.isMoving();
+        this.isIdle = !input.isMoving(); // Check if any keys are pressed
 
         if (!this.isIdle) {
             const adjustedSpeed = this.speed * deltaTime;

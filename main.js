@@ -102,9 +102,11 @@ class Game {
 
             this.levelManager = new LevelManager(assets);
             this.renderer = new Renderer(this.ctx, this.levelManager);
+
             await this.audioManager.init();
 
-            this.levelManager.loadLevel(1);
+            // Load Level 1 and pass the player object
+            this.levelManager.loadLevel(1, this.player);
             this.gameLoop();
         } catch (error) {
             console.error('Game initialization failed:', error);
@@ -112,7 +114,6 @@ class Game {
     }
 
     update() {
-        // Player uses input, NPC uses player
         this.player.update(this.input, {
             width: CONFIG.WORLD.WIDTH,
             height: CONFIG.WORLD.HEIGHT

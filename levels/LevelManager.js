@@ -12,59 +12,79 @@ export class LevelManager {
         this.assets = assets;
         this.currentLevel = 1;
         this.characters = [];
+        this.characterTimers = {};
+        this.player = null; // Track Il Professore separately
     }
 
-    loadLevel(levelNumber) {
+    loadLevel(levelNumber, player) {
         const levelConfig = CONFIG.LEVELS[levelNumber];
         if (!levelConfig) {
             console.error(`Level ${levelNumber} configuration not found.`);
             return;
         }
 
-        this.currentLevel = levelNumber;
+        // Clear all timers and characters before loading the new level
+        this.clearTimers();
         this.characters = [];
+        this.characterTimers = {};
+
+        // Set the current level and reload characters
+        this.currentLevel = levelNumber;
         this.loadCharactersForLevel(levelNumber);
 
+        // Ensure Il Professore is managed separately
+        if (this.player !== player) {
+            this.player = player;
+        }
+
+        // Reset player state
+        this.resetPlayerState();
+
         console.log(`Loaded level ${levelNumber}:`, levelConfig);
-        console.log(this.characters);
+    }
+
+    resetPlayerState() {
+        if (!this.player) return;
+
+        // Reset critical player state variables
+        this.player.lastUpdateTime = performance.now(); // Reset timing
+        this.player.updateSpeedMultiplier(); // Recalculate speed multiplier
+
+        // Place the player at the center of the world (adjust as necessary)
+        this.player.x = CONFIG.WORLD.WIDTH / 2;
+        this.player.y = CONFIG.WORLD.HEIGHT / 2;
+
+        console.log('Player state reset.');
     }
 
     loadCharactersForLevel(levelNumber) {
-        const levelCharacters = {
-            2: [
-                { type: 'suina1', x: 300, y: 200 },
-                { type: 'suina2', x: 400, y: 250 }
-            ],
-            3: [
-                { type: 'suinaevil', x: 500, y: 100 },
-                { type: 'walter', x: 350, y: 300 }
-            ],
-            4: [
-                { type: 'diego', x: 600, y: 200 }
-            ]
-        };
-
-        const charactersConfig = levelCharacters[levelNumber];
-        if (!charactersConfig) {
-            console.warn(`No characters defined for level ${levelNumber}.`);
-            return;
+        switch (levelNumber) {
+            case 1: // StartingLevel
+                this.addRandomCharacter('milly', 10000); // Milly appears randomly every 10 seconds
+                break;
+            case 2: // Teatro
+                this.addCharacter('suina1', 300, 200);
+                this.addDelayedCharacter('suina2', 400, 250, 5000); // Suina2 appears after 5 seconds
+                this.addDelayedCharacter('suinaevil', 500, 100, 6000); // SuinaEvil appears after 6 seconds
+                break;
+            case 3: // Malafama
+                this.addCharacter('suina1', 350, 300);
+                this.addDelayedCharacter('suina2', 400, 200, 5000); // Suina2 appears after 5 seconds
+                this.addDelayedCharacter('suinaevil', 450, 150, 6000); // SuinaEvil appears after 6 seconds
+                break;
+            case 4: // Gusto
+                this.addCharacter('walter', 600, 300);
+                break;
+            case 5: // Chester
+                this.addCharacter('diego', 700, 400);
+                break;
+            default:
+                console.warn(`No characters defined for level ${levelNumber}.`);
+                break;
         }
-
-        charactersConfig.forEach((config) => {
-            const character = this.createCharacter(config);
-            if (character) {
-                this.characters.push(character);
-            }
-        });
     }
 
-    createCharacter({ type, x, y }) {
-        const activeCharacters = ['suina1', 'suina2', 'suinaevil', 'walter', 'diego', 'milly'];
-        if (!activeCharacters.includes(type.toLowerCase())) {
-            console.warn(`Skipping inactive character type: ${type}`);
-            return null;
-        }
-
+    addCharacter(type, x, y) {
         const characterClasses = {
             suina1: Suina1,
             suina2: Suina2,
@@ -74,24 +94,14 @@ export class LevelManager {
             milly: Milly
         };
 
-        const characterSprites = {
-            suina1: this.assets.sprites.suina1,
-            suina2: this.assets.sprites.suina2,
-            suinaevil: this.assets.sprites.suinaevil,
-            walter: this.assets.sprites.walter,
-            diego: this.assets.sprites.diego,
-            milly: this.assets.sprites.milly
-        };
-
+        const sprites = this.assets.sprites[type];
         const CharacterClass = characterClasses[type.toLowerCase()];
-        const sprites = characterSprites[type.toLowerCase()];
-
         if (!CharacterClass || !sprites) {
-            console.error(`Character class or sprites not found for type: ${type}`);
-            return null;
+            console.error(`Invalid character type or missing sprites: ${type}`);
+            return; // Skip invalid characters
         }
 
-        return new CharacterClass(
+        const character = new CharacterClass(
             x,
             y,
             CONFIG.PLAYER.WIDTH,
@@ -99,9 +109,35 @@ export class LevelManager {
             sprites,
             type.toLowerCase()
         );
+        this.characters.push(character);
+    }
+
+    addDelayedCharacter(type, x, y, delay) {
+        if (!this.assets.sprites[type]) {
+            console.error(`Cannot add delayed character: Missing sprites for type ${type}`);
+            return;
+        }
+        this.characterTimers[type] = setTimeout(() => {
+            this.addCharacter(type, x, y);
+            delete this.characterTimers[type];
+        }, delay);
+    }
+
+    addRandomCharacter(type, interval) {
+        const spawnRandomly = () => {
+            if (this.currentLevel !== 1) return; // Ensure Milly only spawns in Level 1
+            const x = Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH);
+            const y = Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT);
+            this.addCharacter(type, x, y);
+        };
+
+        this.characterTimers[type] = setInterval(spawnRandomly, interval);
     }
 
     update(player) {
+        // Clean up invalid characters before updating
+        this.characters = this.characters.filter(character => character && character.type);
+
         this.characters.forEach((character) => {
             if (!character.isCaught) {
                 character.update(player, {
@@ -110,7 +146,6 @@ export class LevelManager {
                 });
             }
         });
-        console.log('Updated characters:', this.characters);
     }
 
     checkLevelTransition(player) {
@@ -121,16 +156,26 @@ export class LevelManager {
 
         for (const transition of Object.values(currentLevelConfig.transitions)) {
             if (
-                player.x >= transition.x.min && player.x <= transition.x.max &&
-                player.y >= transition.y.min && player.y <= transition.y.max
+                player.x >= transition.x.min &&
+                player.x <= transition.x.max &&
+                player.y >= transition.y.min &&
+                player.y <= transition.y.max
             ) {
                 const nextLevel = transition.nextLevel;
-                this.loadLevel(nextLevel);
+                this.loadLevel(nextLevel, player); // Pass player to ensure consistent state
                 return true;
             }
         }
 
         return false;
+    }
+
+    clearTimers() {
+        for (const timer in this.characterTimers) {
+            clearTimeout(this.characterTimers[timer]);
+            clearInterval(this.characterTimers[timer]);
+        }
+        this.characterTimers = {};
     }
 
     getCurrentLevelBackground() {

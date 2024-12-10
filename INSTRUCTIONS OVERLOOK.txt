@@ -1,0 +1,173 @@
+
+ 
+The following scheme is an outlook where the characters take action in the respective levels:
+
+Level1:		Il professore start in level1 and is able to transitions in each level)
+		Milly (occasionally appears in Level1)
+Level2 Teatro: 
+		Suina1
+		Suina2
+		SuinaEvil
+Level3 Malafama:
+		Suina1
+		Suina2
+		SuinaEvil
+Level4 Gusto:
+		Walter
+Level5 Chester:
+		Diego
+
+
+Level 1: StartingLevel 
+		- Il professore (start in level1 and is able to transitions in each level)
+		- Milly (occasionally appears random in Level1)
+Level 2: Teatro
+		- Suina1 (start in level2)
+		- Suina2 (appears after 5 seconds)
+		- SuinaEvil (appears after 6 seconds)
+Level 3: Malafama
+		- Suina1 (start in level3)
+		- Suina2 (appears after 5 seconds)
+		- SuinaEvil (appears after 6 seconds)
+Level 4: Gusto
+		- Walter (start in level4)
+Level 5: Chester
+		- Diego (start in level5)
+
+
+
+Below is the description for every level plot:
+
+level2:
+  description: "Il professore transitions to Level2 and tries to catch Suina1, Suina2, or SuinaEvil."
+  transition:
+    - sound: "suinasound (played once)"
+  characters:
+    - name: "Suina1"
+      state: "Exists at the beginning of transition"
+    - name: "Suina2"
+      state: "Enters after 5 seconds"
+    - name: "SuinaEvil"
+      state: "Enters after 6 seconds"
+  interactions:
+    on_collision:
+      - targets: ["Suina1", "Suina2", "SuinaEvil"]
+        effects:
+          - "Play sound: suinasound (once)"
+          - "Change sprite to: suina1-attack.png (for 2 seconds)"
+          - "Disappear after 2 seconds"
+          - "Add animated effect of sparkles sprite when disappearing"
+    specific_actions:
+      - targets: ["Suina1", "Suina2"]
+        action: "If press F button during the 2 seconds suina1-attack.png appears"
+        effects:
+          - "Play sound: suinafuck (once)"
+          - "Increase Love score by 10 points"
+      - targets: ["Suina1", "Suina2"]
+        action: "If press B button during the 2 seconds suina1-attack.png appears"
+        effects:
+          - "Play sound: suinasound (twice)"
+          - "Increase Love score by 1 point"
+      - targets: ["SuinaEvil"]
+        action: "If press B button during the 2 seconds suina1-attack.png appears"
+        effects:
+          - "Play sound: suinaevil (once)"
+          - "Il professore goes to Jail level"
+      - targets: ["SuinaEvil"]
+        action: "Press F button during the 2 seconds suina1-attack.png appears"
+        effects:
+          - "Play sound: suinaevil (once)"
+          - "Set Love score to 0"
+          - "Set Energy score to 0"
+          - "Il professore goes to Jail level"
+
+
+level3:
+  description: "Il professore transitions to Level3 and tries to catch Suina1, Suina2, or SuinaEvil."
+  transition:
+    - sound: "suinasound (played once)"
+  characters:
+    - name: "Suina1"
+      state: "Exists at the beginning of transition"
+    - name: "Suina2"
+      state: "Enters after 5 seconds"
+    - name: "SuinaEvil"
+      state: "Enters after 6 seconds"
+  interactions:
+    on_collision:
+      - targets: ["Suina1", "Suina2", "SuinaEvil"]
+        effects:
+          - "Play sound: suinasound (once)"
+          - "Change sprite to: suina1-attack.png (for 2 seconds)"
+          - "Disappear after 2 seconds"
+          - "Add animated effect of sparkles sprite when disappearing"
+    specific_actions:
+      - targets: ["Suina1", "Suina2"]
+        action: "If press F button during the 2 seconds suina1-attack.png appears"
+        effects:
+          - "Play sound: suinafuck (once)"
+          - "Increase Love score by 10 points"
+      - targets: ["Suina1", "Suina2"]
+        action: "If press B button during the 2 seconds suina1-attack.png appears"
+        effects:
+          - "Play sound: suinasound (twice)"
+          - "Increase Love score by 1 point"
+      - targets: ["SuinaEvil"]
+        action: "If press B button during the 2 seconds suina1-attack.png appears"
+        effects:
+          - "Play sound: suinaevil (once)"
+          - "Il professore goes to Jail level"
+      - targets: ["SuinaEvil"]
+        action: "Press F button during the 2 seconds suina1-attack.png appears"
+        effects:
+          - "Play sound: suinaevil (once)"
+          - "Set Love score to 0"
+          - "Set Energy score to 0"
+          - "Il professore goes to Jail level"
+
+
+
+
+
+
+
+Scoring system:
+Display 2 score  level bars at the top of the screen: Il professore Energy level bar, Love level bar.
+Add a scoring system that work as follow:
+
+scoring_system for Il Professore:
+  energy_bars:
+    - name: "Energy"
+    - name: "Love"
+  rules:
+    - event: "Collision with Suina1 or Suina2 + Press B button"
+      effect: "Add 1 point to Love level"
+    - event: "Collision with Suina1 or Suina2 + Press F button"
+      effect: "Add 10 points to Love level"
+    - event: "Collision with SuinaEvil + Press B button"
+      effect: "Reduce Love level by 20 points"
+      effect: "Reduce Energy level by 20 points"
+    - event: "Collision with SuinaEvil + Press F button"
+      effect: "'Il professore' goes to jail level"
+
+    - event: "Collision with Diego"
+      effect: "Reduce Energy level by 20 points"
+    - event: "Collision with Walter"
+      effect: "Increase Energy level by 20 points"
+    - event: "Collision with Milly"
+      effect: "Increase 'Il professore' life x2"
+      effect: "Increase 'Il professore' love x2"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
