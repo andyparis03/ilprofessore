@@ -4,54 +4,148 @@ import { BaseCharacter } from './BaseCharacter.js';
 export class Suina1 extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type, 1.5);
+        
+        // Initialize exactly like Player.js
+        this.lastUpdateTime = performance.now();
+        this.frameTime = performance.now();
+        this.movementBuffer = { x: 0, y: 0 };
+        this.velocity = { x: 0, y: 0 };
+        this.lastX = x;
+        this.lastY = y;
+        this.currentInput = null;
+
+        // Suina1 specific properties
         this.moveTimer = 0;
         this.changeDirectionInterval = 1000;
         this.lastNonIdleDirection = 'down';
     }
 
+    update(player, worldBounds) {
+        const currentTime = performance.now();
+        
+        // Limit deltaTime just like in Player.js
+        const maxDeltaTime = 32;
+        const rawDeltaTime = (currentTime - this.lastUpdateTime) / 16.67;
+        const deltaTime = Math.min(rawDeltaTime, maxDeltaTime);
+        
+        this.lastUpdateTime = currentTime;
+        this.frameTime += deltaTime * 16.67;
+
+        // Store previous state for animation handling
+        const wasMoving = !this.isIdle;
+        
+        // Update movement and state
+        this.updateBehavior(player, worldBounds, deltaTime);
+
+        // Handle animation timing with accumulated time
+        if (!this.isIdle) {
+            if (this.frameTime - this.lastAnimationUpdate >= this.animationSpeed) {
+                this.frame = (this.frame + 1) % this.totalFrames;
+                this.lastAnimationUpdate = this.frameTime;
+            }
+        } else {
+            this.frame = 0;
+        }
+    }
+
     updateBehavior(player, worldBounds, deltaTime) {
         const currentTime = performance.now();
+        
+        // Update direction based on timer
         if (currentTime - this.moveTimer > this.changeDirectionInterval) {
             this.randomizeDirection(worldBounds);
             this.moveTimer = currentTime;
         }
 
+        // Reset velocity
+        this.velocity.x = 0;
+        this.velocity.y = 0;
+
+        // Calculate velocity based on player distance or random movement
         const distance = Math.hypot(player.x - this.x, player.y - this.y);
         if (distance < 150) {
-            this.runAwayFrom(player, deltaTime, worldBounds);
+            // Run away from player
+            const dx = this.x - player.x;
+            const dy = this.y - player.y;
+            const angle = Math.atan2(dy, dx);
+            const adjustedSpeed = this.speed * deltaTime;
+
+            this.velocity.x = Math.cos(angle) * adjustedSpeed;
+            this.velocity.y = Math.sin(angle) * adjustedSpeed;
             this.isIdle = false;
         } else {
-            if (!this.attemptMultipleMoves(deltaTime, worldBounds, 3)) {
-                this.goIdleFacingAwayFromCorner(worldBounds);
+            // Random movement
+            const adjustedSpeed = this.speed * deltaTime;
+            
+            switch (this.direction) {
+                case 'up':
+                    this.velocity.y = -adjustedSpeed;
+                    break;
+                case 'down':
+                    this.velocity.y = adjustedSpeed;
+                    break;
+                case 'left':
+                    this.velocity.x = -adjustedSpeed;
+                    break;
+                case 'right':
+                    this.velocity.x = adjustedSpeed;
+                    break;
+                case 'idle':
+                    this.isIdle = true;
+                    break;
             }
         }
-    }
 
-    attemptMultipleMoves(deltaTime, worldBounds, attempts) {
-        // Try current direction first
-        if (this.moveRandomly(deltaTime, worldBounds)) {
-            return true;
-        }
+        // Add to movement buffer
+        this.movementBuffer.x += this.velocity.x;
+        this.movementBuffer.y += this.velocity.y;
 
-        // If failed, try random directions for a given number of attempts
-        for (let i = 0; i < attempts; i++) {
-            this.randomizeDirection(worldBounds);
-            if (this.moveRandomly(deltaTime, worldBounds)) {
-                return true;
+        // Apply whole pixel movements
+        const newX = this.x + Math.round(this.movementBuffer.x);
+        const newY = this.y + Math.round(this.movementBuffer.y);
+
+        // Store old position
+        const oldX = this.x;
+        const oldY = this.y;
+
+        // Clamp to world bounds
+        this.x = Math.min(Math.max(newX, 0), worldBounds.width - this.width);
+        this.y = Math.min(Math.max(newY, 0), worldBounds.height - this.height);
+
+        // Remove used movement from buffer
+        this.movementBuffer.x -= Math.round(this.movementBuffer.x);
+        this.movementBuffer.y -= Math.round(this.movementBuffer.y);
+
+        // Update movement state
+        if (this.x === oldX && this.y === oldY) {
+            if (!this.isIdle) {
+                this.attemptMultipleMoves(deltaTime, worldBounds, 3);
             }
+        } else {
+            this.isIdle = false;
+            if (Math.abs(this.x - oldX) > Math.abs(this.y - oldY)) {
+                this.direction = this.x > oldX ? 'right' : 'left';
+            } else {
+                this.direction = this.y > oldY ? 'down' : 'up';
+            }
+            this.lastNonIdleDirection = this.direction;
         }
-        return false;
+
+        // Store position for next frame
+        this.lastX = this.x;
+        this.lastY = this.y;
     }
 
-    randomizeDirection({ width, height }) {
-        const edgeBuffer = 80; 
-        const cornerBuffer = 80; // Off-limit zone: 80x80 pixels around each corner
+    randomizeDirection(worldBounds) {
+        const { width, height } = worldBounds;
+        const edgeBuffer = 50;
+        const cornerBuffer = 60;
+
         const nearLeft = this.x < edgeBuffer;
         const nearRight = this.x > width - this.width - edgeBuffer;
         const nearTop = this.y < edgeBuffer;
         const nearBottom = this.y > height - this.height - edgeBuffer;
 
-        // Determine if we are inside an off-limit corner zone
         const inTopLeftCorner = (this.x < cornerBuffer && this.y < cornerBuffer);
         const inTopRightCorner = (this.x > width - cornerBuffer - this.width && this.y < cornerBuffer);
         const inBottomLeftCorner = (this.x < cornerBuffer && this.y > height - cornerBuffer - this.height);
@@ -59,7 +153,6 @@ export class Suina1 extends BaseCharacter {
 
         let directions;
 
-        // If inside a forbidden corner zone, force directions away from it
         if (inTopLeftCorner) {
             directions = ['right', 'down'];
         } else if (inTopRightCorner) {
@@ -69,33 +162,24 @@ export class Suina1 extends BaseCharacter {
         } else if (inBottomRightCorner) {
             directions = ['left', 'up'];
         } else {
-            // Not in a forbidden zone, proceed with normal logic plus idle
             directions = ['up', 'down', 'left', 'right', 'idle'];
 
-            // Remove directions leading directly into edges if near them
             if (nearLeft) directions = directions.filter(d => d !== 'left');
             if (nearRight) directions = directions.filter(d => d !== 'right');
             if (nearTop) directions = directions.filter(d => d !== 'up');
             if (nearBottom) directions = directions.filter(d => d !== 'down');
 
-            // If all that’s left is idle, reintroduce all directions
-            if (directions.every(d => d === 'idle')) {
+            if (directions.length === 0 || (directions.length === 1 && directions[0] === 'idle')) {
                 directions = ['idle', 'up', 'down', 'left', 'right'];
             }
 
-            // Avoid directions that would lead into a forbidden corner zone
             directions = this.filterDirectionsAvoidingForbiddenZones(directions, { width, height, cornerBuffer });
         }
 
         const chosen = directions[Math.floor(Math.random() * directions.length)];
 
-        // FIX FOR POINT 1 (Idle State vs. Direction):
-        // If idle is chosen, just set isIdle = true and do NOT overwrite direction 
-        // with lastNonIdleDirection. This ensures no logical contradiction.
         if (chosen === 'idle') {
             this.isIdle = true;
-            // Keep the current direction as is; direction now represents facing, not movement.
-            // Do not change direction here to avoid contradictory states.
         } else {
             this.isIdle = false;
             this.direction = chosen;
@@ -105,98 +189,45 @@ export class Suina1 extends BaseCharacter {
 
     filterDirectionsAvoidingForbiddenZones(directions, { width, height, cornerBuffer }) {
         return directions.filter(dir => {
+            if (dir === 'idle') return true;
+            
             let testX = this.x;
             let testY = this.y;
-            const testStep = 10; // A small step to test future position
+            const testStep = 10;
+
             switch (dir) {
                 case 'up': testY -= testStep; break;
                 case 'down': testY += testStep; break;
                 case 'left': testX -= testStep; break;
                 case 'right': testX += testStep; break;
-                case 'idle':
-                    // Idle won't move into a forbidden zone by itself, keep it
-                    return true;
             }
 
-            const inTopLeft = testX < cornerBuffer && testY < cornerBuffer;
-            const inTopRight = testX > width - cornerBuffer - this.width && testY < cornerBuffer;
-            const inBottomLeft = testX < cornerBuffer && testY > height - cornerBuffer - this.height;
-            const inBottomRight = testX > width - cornerBuffer - this.width && testY > height - cornerBuffer - this.height;
+            const wouldBeInCorner = (
+                (testX < cornerBuffer && testY < cornerBuffer) ||
+                (testX > width - cornerBuffer - this.width && testY < cornerBuffer) ||
+                (testX < cornerBuffer && testY > height - cornerBuffer - this.height) ||
+                (testX > width - cornerBuffer - this.width && testY > height - cornerBuffer - this.height)
+            );
 
-            // If moving in that direction puts us in a forbidden zone, exclude it
-            return !(inTopLeft || inTopRight || inBottomLeft || inBottomRight);
+            return !wouldBeInCorner;
         });
     }
 
-    runAwayFrom(professore, deltaTime, { width, height }) {
-        const dx = this.x - professore.x;
-        const dy = this.y - professore.y;
-        const angle = Math.atan2(dy, dx);
-
-        const adjustedSpeed = this.speed * deltaTime;
-        const oldX = this.x, oldY = this.y;
-
-        this.x = Math.min(Math.max(this.x + Math.cos(angle) * adjustedSpeed, 0), width - this.width);
-        this.y = Math.min(Math.max(this.y + Math.sin(angle) * adjustedSpeed, 0), height - this.height);
-
-        this.isIdle = false;
-        this.updateDirection(this.x - oldX, this.y - oldY);
-        this.lastNonIdleDirection = this.direction;
-    }
-
-    moveRandomly(deltaTime, { width, height }) {
-        const adjustedSpeed = this.speed * deltaTime;
-        const oldX = this.x;
-        const oldY = this.y;
-
-        let moved = false;
-        if (this.direction === 'up') {
-            this.y = Math.max(this.y - adjustedSpeed, 0);
-            moved = (this.y !== oldY);
-        } else if (this.direction === 'down') {
-            this.y = Math.min(this.y + adjustedSpeed, height - this.height);
-            moved = (this.y !== oldY);
-        } else if (this.direction === 'left') {
-            this.x = Math.max(this.x - adjustedSpeed, 0);
-            moved = (this.x !== oldX);
-        } else if (this.direction === 'right') {
-            this.x = Math.min(this.x + adjustedSpeed, width - this.width);
-            moved = (this.x !== oldX);
-        } else if (this.direction === 'idle') {
-            moved = false;
-        }
-
-        // If no actual movement occurred, return false to allow further attempts.
-        if (!moved) {
-            return false;
-        } else {
-            this.isIdle = (this.direction === 'idle');
-            if (!this.isIdle) {
-                this.lastNonIdleDirection = this.direction;
+    attemptMultipleMoves(deltaTime, worldBounds, attempts) {
+        for (let i = 0; i < attempts; i++) {
+            this.randomizeDirection(worldBounds);
+            const startX = this.x;
+            const startY = this.y;
+            
+            // Try movement in new direction
+            this.updateBehavior({ x: startX + 1000 * (Math.random() - 0.5), 
+                                y: startY + 1000 * (Math.random() - 0.5) }, 
+                                worldBounds, deltaTime);
+            
+            if (this.x !== startX || this.y !== startY) {
+                return true;
             }
-            return true;
         }
-    }
-
-    updateDirection(dx, dy) {
-        if (Math.abs(dx) > Math.abs(dy)) {
-            this.direction = dx > 0 ? 'right' : 'left';
-        } else {
-            this.direction = dy > 0 ? 'down' : 'up';
-        }
-    }
-
-    goIdleFacingAwayFromCorner({ width, height }) {
-        const nearTop = this.y < height / 2;
-        const nearLeft = this.x < width / 2;
-
-        let horizontalPref = nearLeft ? 'right' : 'left';
-        let verticalPref = nearTop ? 'down' : 'up';
-
-        const chosen = Math.random() < 0.5 ? horizontalPref : verticalPref;
-
-        this.direction = chosen;
-        this.isIdle = true;
-        this.lastNonIdleDirection = chosen;
+        return false;
     }
 }

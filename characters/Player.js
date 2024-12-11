@@ -5,80 +5,148 @@ import { BaseCharacter } from './BaseCharacter.js';
 export class Player extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type);
-        this.lastUpdateTime = performance.now(); // Initialize the last update time
-        this.updateSpeedMultiplier(); // Set the initial speed multiplier
+        this.lastUpdateTime = performance.now();
+        this.frameTime = performance.now();
+        this.movementBuffer = { x: 0, y: 0 };
+        this.velocity = { x: 0, y: 0 };
+        this.lastX = x;
+        this.lastY = y;
+        this.currentInput = null;
+        this.updateSpeedMultiplier();
+        this.spriteState = {
+            current: 'idle',
+            frame: 0,
+            lastUpdate: performance.now()
+        };
     }
 
-    // Determines the speed multiplier based on screen size
+    forceStateUpdate() {
+        const now = performance.now();
+        this.lastUpdateTime = now;
+        this.frameTime = now;
+        this.lastAnimationUpdate = now;
+        this.spriteState.lastUpdate = now;
+        
+        // Update sprite state based on current movement
+        this.updateSpriteState(!this.isIdle);
+    }
+
+    updateSpriteState(isMoving) {
+        const now = performance.now();
+        const spriteType = isMoving ? 'walking' : 'idle';
+        
+        // Only update if state actually changed
+        if (this.spriteState.current !== spriteType) {
+            this.spriteState.current = spriteType;
+            this.spriteState.frame = 0;
+            this.spriteState.lastUpdate = now;
+            this.frame = 0; // Reset animation frame
+        }
+    }
+
     determineSpeedMultiplier() {
         const screenWidth = window.innerWidth;
         if (screenWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT) {
-            return CONFIG.PLAYER.SPEED_MULTIPLIERS.MOBILE; // Faster for small screens
+            return CONFIG.PLAYER.SPEED_MULTIPLIERS.MOBILE;
         } else if (screenWidth <= 1024) {
-            return CONFIG.PLAYER.SPEED_MULTIPLIERS.TABLET; // Medium speed for tablets
+            return CONFIG.PLAYER.SPEED_MULTIPLIERS.TABLET;
         }
-        return CONFIG.PLAYER.SPEED_MULTIPLIERS.DESKTOP; // Slower for desktops
+        return CONFIG.PLAYER.SPEED_MULTIPLIERS.DESKTOP;
     }
 
-    // Updates the speed multiplier and recalculates the speed
     updateSpeedMultiplier() {
-        this.speedMultiplier = this.determineSpeedMultiplier(); // Update multiplier
-        this.speed = CONFIG.PLAYER.SPEED * this.speedMultiplier; // Update speed
-        console.log('Speed multiplier updated:', this.speedMultiplier, 'Speed:', this.speed);
+        this.speedMultiplier = this.determineSpeedMultiplier();
+        this.speed = CONFIG.PLAYER.SPEED * this.speedMultiplier;
     }
 
-    // Updates the player's state each frame
     update(input, worldBounds) {
         const currentTime = performance.now();
-        const deltaTime = (currentTime - this.lastUpdateTime) / 16.67; // Frame duration in ms
+        
+        // Limit deltaTime to prevent extreme values
+        const maxDeltaTime = 32;
+        const rawDeltaTime = (currentTime - this.lastUpdateTime) / 16.67;
+        const deltaTime = Math.min(rawDeltaTime, maxDeltaTime);
+        
         this.lastUpdateTime = currentTime;
+        this.frameTime += deltaTime * 16.67;
 
+        // Store previous state
+        const wasMoving = !this.isIdle;
+        
+        // Update movement and state
         this.updateBehavior(input, worldBounds, deltaTime);
+        
+        // Check if movement state changed
+        const isMoving = !this.isIdle;
+        if (wasMoving !== isMoving) {
+            this.updateSpriteState(isMoving);
+        }
 
-        // Animation handling:
-        if (!this.isIdle) {
-            if (!this.lastAnimationUpdate || currentTime - this.lastAnimationUpdate >= this.animationSpeed) {
+        // Update animation
+        if (isMoving) {
+            if (currentTime - this.spriteState.lastUpdate >= this.animationSpeed) {
                 this.frame = (this.frame + 1) % this.totalFrames;
-                this.lastAnimationUpdate = currentTime;
+                this.spriteState.lastUpdate = currentTime;
             }
-        } else {
-            this.frame = 0;
-            this.lastAnimationUpdate = 0;
         }
     }
 
-    // Handles player movement and behavior based on input
     updateBehavior(input, worldBounds, deltaTime) {
-        this.isIdle = !input.isMoving(); // Check if any keys are pressed
+        // Store current input for state preservation
+        this.currentInput = { ...input.keys };
+        
+        const moving = input.isMoving();
+        this.isIdle = !moving;
 
-        if (!this.isIdle) {
+        if (moving) {
             const adjustedSpeed = this.speed * deltaTime;
-
             const keys = input.keys;
-            const startX = this.x;
-            const startY = this.y;
+            
+            // Reset velocity
+            this.velocity.x = 0;
+            this.velocity.y = 0;
 
+            // Calculate velocity based on input
             if (keys.ArrowRight) {
-                this.x = Math.min(this.x + adjustedSpeed, worldBounds.width - this.width);
+                this.velocity.x = adjustedSpeed;
                 this.direction = 'right';
             }
             if (keys.ArrowLeft) {
-                this.x = Math.max(this.x - adjustedSpeed, 0);
+                this.velocity.x = -adjustedSpeed;
                 this.direction = 'left';
             }
             if (keys.ArrowDown) {
-                this.y = Math.min(this.y + adjustedSpeed, worldBounds.height - this.height);
+                this.velocity.y = adjustedSpeed;
                 this.direction = 'down';
             }
             if (keys.ArrowUp) {
-                this.y = Math.max(this.y - adjustedSpeed, 0);
+                this.velocity.y = -adjustedSpeed;
                 this.direction = 'up';
             }
 
-            // If no movement occurred, set idle
-            if (this.x === startX && this.y === startY) {
-                this.isIdle = true;
-            }
+            // Add to movement buffer
+            this.movementBuffer.x += this.velocity.x;
+            this.movementBuffer.y += this.velocity.y;
+
+            // Apply whole pixel movements
+            const newX = this.x + Math.round(this.movementBuffer.x);
+            const newY = this.y + Math.round(this.movementBuffer.y);
+
+            // Clamp to world bounds
+            this.x = Math.min(Math.max(newX, 0), worldBounds.width - this.width);
+            this.y = Math.min(Math.max(newY, 0), worldBounds.height - this.height);
+
+            // Remove used movement from buffer
+            this.movementBuffer.x -= Math.round(this.movementBuffer.x);
+            this.movementBuffer.y -= Math.round(this.movementBuffer.y);
+
+            // Update last position
+            this.lastX = this.x;
+            this.lastY = this.y;
+        } else {
+            // Reset movement buffer when idle
+            this.movementBuffer.x = 0;
+            this.movementBuffer.y = 0;
         }
     }
 }

@@ -13,7 +13,9 @@ export class LevelManager {
         this.currentLevel = 1;
         this.characters = [];
         this.characterTimers = {};
-        this.player = null; // Track Il Professore separately
+        this.player = null;
+        this.transitionInProgress = false;
+        this.transitionTimeout = null;
     }
 
     loadLevel(levelNumber, player) {
@@ -22,6 +24,14 @@ export class LevelManager {
             console.error(`Level ${levelNumber} configuration not found.`);
             return;
         }
+
+        // Clear any existing transition timeout
+        if (this.transitionTimeout) {
+            clearTimeout(this.transitionTimeout);
+        }
+
+        // Start transition
+        this.transitionInProgress = true;
 
         // Clear all timers and characters before loading the new level
         this.clearTimers();
@@ -32,45 +42,87 @@ export class LevelManager {
         this.currentLevel = levelNumber;
         this.loadCharactersForLevel(levelNumber);
 
-        // Ensure Il Professore is managed separately
+        // Update player reference if needed
         if (this.player !== player) {
             this.player = player;
         }
 
-        // Reset player state
-        this.resetPlayerState();
+        // Capture current player state before reset
+        const playerState = this.player ? {
+            isMoving: !this.player.isIdle,
+            direction: this.player.direction,
+            currentInput: this.player.currentInput
+        } : null;
+
+        // Reset player state while preserving movement
+        this.resetPlayerState(playerState);
 
         console.log(`Loaded level ${levelNumber}:`, levelConfig);
+
+        // End transition after brief delay and restore player state
+        this.transitionTimeout = setTimeout(() => {
+            this.transitionInProgress = false;
+            if (this.player) {
+                // Restore player state and force update
+                if (playerState && playerState.isMoving) {
+                    this.player.isIdle = false;
+                    this.player.direction = playerState.direction;
+                }
+                this.player.forceStateUpdate();
+            }
+        }, 100);
     }
 
-    resetPlayerState() {
+    resetPlayerState(preservedState = null) {
         if (!this.player) return;
 
-        // Reset critical player state variables
-        this.player.lastUpdateTime = performance.now(); // Reset timing
-        this.player.updateSpeedMultiplier(); // Recalculate speed multiplier
+        const now = performance.now();
 
-        // Place the player at the center of the world (adjust as necessary)
+        // Reset timing variables
+        this.player.lastUpdateTime = now;
+        this.player.lastAnimationUpdate = now;
+        this.player.frameTime = now;
+
+        // Update speed settings
+        this.player.updateSpeedMultiplier();
+
+        // Reset movement tracking but preserve direction
+        this.player.velocity = { x: 0, y: 0 };
+        this.player.movementBuffer = { x: 0, y: 0 };
+
+        // Center the player
         this.player.x = CONFIG.WORLD.WIDTH / 2;
         this.player.y = CONFIG.WORLD.HEIGHT / 2;
+        this.player.lastX = this.player.x;
+        this.player.lastY = this.player.y;
 
-        console.log('Player state reset.');
+        // Restore preserved state if available
+        if (preservedState) {
+            this.player.isIdle = !preservedState.isMoving;
+            this.player.direction = preservedState.direction;
+            this.player.currentInput = preservedState.currentInput;
+        }
+
+        // Ensure animation frame is valid
+        this.player.frame = this.player.frame % this.player.totalFrames;
+
+        console.log('Player state reset completed with preserved state:', preservedState);
     }
 
     loadCharactersForLevel(levelNumber) {
         switch (levelNumber) {
             case 1: // StartingLevel
-                this.addRandomCharacter('milly', 10000); // Milly appears randomly every 10 seconds
+                this.addRandomCharacter('milly', 10000);
                 break;
             case 2: // Teatro
                 this.addCharacter('suina1', 300, 200);
-                this.addDelayedCharacter('suina2', 400, 250, 5000); // Suina2 appears after 5 seconds
-                this.addDelayedCharacter('suinaevil', 500, 100, 6000); // SuinaEvil appears after 6 seconds
+                this.addDelayedCharacter('suina2', 400, 250, 5000);
+                this.addDelayedCharacter('suinaevil', 500, 100, 6000);
                 break;
             case 3: // Malafama
                 this.addCharacter('suina1', 350, 300);
-                this.addDelayedCharacter('suina2', 400, 200, 5000); // Suina2 appears after 5 seconds
-                this.addDelayedCharacter('suinaevil', 450, 150, 6000); // SuinaEvil appears after 6 seconds
+                this.addDelayedCharacter('suina2', 400, 200, 5000);
+                this.addDelayedCharacter('suinaevil', 450, 150, 6000);
                 break;
             case 4: // Gusto
                 this.addCharacter('walter', 600, 300);
@@ -98,7 +150,7 @@ export class LevelManager {
         const CharacterClass = characterClasses[type.toLowerCase()];
         if (!CharacterClass || !sprites) {
             console.error(`Invalid character type or missing sprites: ${type}`);
-            return; // Skip invalid characters
+            return;
         }
 
         const character = new CharacterClass(
@@ -125,7 +177,7 @@ export class LevelManager {
 
     addRandomCharacter(type, interval) {
         const spawnRandomly = () => {
-            if (this.currentLevel !== 1) return; // Ensure Milly only spawns in Level 1
+            if (this.currentLevel !== 1) return;
             const x = Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH);
             const y = Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT);
             this.addCharacter(type, x, y);
@@ -135,7 +187,8 @@ export class LevelManager {
     }
 
     update(player) {
-        // Clean up invalid characters before updating
+        if (this.transitionInProgress) return;
+
         this.characters = this.characters.filter(character => character && character.type);
 
         this.characters.forEach((character) => {
@@ -149,6 +202,8 @@ export class LevelManager {
     }
 
     checkLevelTransition(player) {
+        if (this.transitionInProgress) return false;
+
         const currentLevelConfig = CONFIG.LEVELS[this.currentLevel];
         if (!currentLevelConfig || !currentLevelConfig.transitions) {
             return false;
@@ -162,7 +217,7 @@ export class LevelManager {
                 player.y <= transition.y.max
             ) {
                 const nextLevel = transition.nextLevel;
-                this.loadLevel(nextLevel, player); // Pass player to ensure consistent state
+                this.loadLevel(nextLevel, player);
                 return true;
             }
         }
