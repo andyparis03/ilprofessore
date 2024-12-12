@@ -5,7 +5,7 @@ export class Suina1 extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type, 1.5);
         this.moveTimer = 0;
-        this.changeDirectionInterval = 2500; // Increased interval for more stable movement
+        this.changeDirectionInterval = 2500;
         this.lastNonIdleDirection = 'down';
         this.lastUpdateTime = performance.now();
         this.frameTime = performance.now();
@@ -19,9 +19,105 @@ export class Suina1 extends BaseCharacter {
         this.stuckTimer = 0;
         this.directionChangeCount = 0;
         this.lastDirectionChange = performance.now();
+
+        // Collision and interaction states
+        this.isColliding = false;
+        this.disappearTimer = null;
+        this.isDisappearing = false;
+        this.attackSpriteTimer = null;
+        this.buttonPressTimer = null;
+        this.soundPlayed = false;
+        this.currentSprite = sprites.idle;
     }
 
-    updateBehavior(player, worldBounds, deltaTime) {
+    handleCollision(player, input) {
+        if (!this.isColliding && !this.isDisappearing) {
+            this.isColliding = true;
+            const gameInstance = window.gameInstance;
+            
+            // Play collision sound
+            if (!this.soundPlayed && gameInstance.audioManager) {
+                gameInstance.audioManager.playSound('suina_sound');
+                this.soundPlayed = true;
+            }
+
+            // Change to attack sprite
+            if (this.sprites.attack) {
+                this.currentSprite = this.sprites.attack;
+                
+                // Set timer to disappear
+                if (!this.disappearTimer) {
+                    this.disappearTimer = setTimeout(() => {
+                        this.isDisappearing = true;
+                        this.isCaught = true;
+                        // Clear timers
+                        this.cleanup();
+                    }, 2000);
+                }
+            }
+        }
+
+        // Handle button interactions during collision
+        if (this.isColliding && !this.buttonPressTimer) {
+            const gameInstance = window.gameInstance;
+            
+            // F button press
+            if (input.keys.KeyF) {
+                this.buttonPressTimer = setTimeout(() => {
+                    if (gameInstance.audioManager) {
+                        gameInstance.audioManager.playSound('suina_fuck');
+                    }
+                    if (gameInstance.scoreManager) {
+                        gameInstance.scoreManager.increaseScore('love', 10);
+                        gameInstance.scoreManager.increaseScore('energy', 10);
+                    }
+                    this.buttonPressTimer = null;
+                }, 1000);
+            }
+            
+            // B button press
+            else if (input.keys.KeyB) {
+                this.buttonPressTimer = setTimeout(() => {
+                    if (gameInstance.audioManager) {
+                        gameInstance.audioManager.playSound('suina_sound');
+                        setTimeout(() => gameInstance.audioManager.playSound('suina_sound'), 200);
+                    }
+                    if (gameInstance.scoreManager) {
+                        gameInstance.scoreManager.increaseScore('love', 1);
+                    }
+                    this.buttonPressTimer = null;
+                }, 1000);
+            }
+        }
+    }
+
+    cleanup() {
+        if (this.disappearTimer) {
+            clearTimeout(this.disappearTimer);
+            this.disappearTimer = null;
+        }
+        if (this.buttonPressTimer) {
+            clearTimeout(this.buttonPressTimer);
+            this.buttonPressTimer = null;
+        }
+        if (this.attackSpriteTimer) {
+            clearTimeout(this.attackSpriteTimer);
+            this.attackSpriteTimer = null;
+        }
+    }
+
+    updateBehavior(player, worldBounds, deltaTime, input) {
+        if (this.isCaught || this.isDisappearing) return;
+
+        // Check for collision with player
+        if (this.checkCollision(player)) {
+            this.handleCollision(player, input);
+            return;
+        }
+
+        this.isColliding = false;
+        this.soundPlayed = false;
+
         const currentTime = performance.now();
         const maxDeltaTime = 32;
         const effectiveDeltaTime = Math.min(deltaTime, maxDeltaTime);
@@ -29,9 +125,6 @@ export class Suina1 extends BaseCharacter {
         // Check if enough time has passed since last direction change
         const timeSinceLastChange = currentTime - this.lastDirectionChange;
         
-        // Only change direction if:
-        // 1. Normal interval has passed OR
-        // 2. We're stuck and minimum time has passed
         if (currentTime - this.moveTimer > this.changeDirectionInterval || 
             (this.stuckTimer > 500 && timeSinceLastChange > 1000)) {
             
@@ -51,7 +144,6 @@ export class Suina1 extends BaseCharacter {
         } else {
             const moved = this.moveRandomly(effectiveDeltaTime, worldBounds);
             
-            // If not moving, increment stuck timer
             if (!moved) {
                 this.stuckTimer += deltaTime * 16.67;
             } else {
@@ -70,13 +162,12 @@ export class Suina1 extends BaseCharacter {
         const dx = this.x - player.x;
         const dy = this.y - player.y;
         const angle = Math.atan2(dy, dx);
-        const adjustedSpeed = this.speed * deltaTime * 1.2; // Faster when escaping
+        const adjustedSpeed = this.speed * deltaTime * 1.2;
 
         const oldX = this.x;
         const oldY = this.y;
 
-        // Calculate target position with some randomness to avoid straight lines
-        const randomOffset = Math.random() * 0.2 - 0.1; // Small random angle adjustment
+        const randomOffset = Math.random() * 0.2 - 0.1;
         const finalAngle = angle + randomOffset;
 
         this.x = Math.min(Math.max(this.x + Math.cos(finalAngle) * adjustedSpeed, 0), 
@@ -92,7 +183,7 @@ export class Suina1 extends BaseCharacter {
     }
 
     moveRandomly(deltaTime, worldBounds) {
-        const adjustedSpeed = this.speed * deltaTime * 0.8; // Slightly slower for smoother movement
+        const adjustedSpeed = this.speed * deltaTime * 0.8;
         const oldX = this.x;
         const oldY = this.y;
 
@@ -136,11 +227,9 @@ export class Suina1 extends BaseCharacter {
 
         let directions = ['up', 'down', 'left', 'right'];
 
-        // Avoid rapid direction changes
         if (this.directionChangeCount < 3) {
-            // Prefer to maintain current direction if not near edges
             if (!nearLeft && !nearRight && !nearTop && !nearBottom) {
-                if (Math.random() < 0.7) { // 70% chance to keep current direction
+                if (Math.random() < 0.7) {
                     return;
                 }
             }

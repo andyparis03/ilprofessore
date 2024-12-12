@@ -7,6 +7,7 @@ import { Renderer } from './js/engine/Renderer.js';
 import { AssetLoader } from './utils/AssetLoader.js';
 import { AudioManager } from './js/engine/AudioManager.js';
 import { LevelManager } from './levels/LevelManager.js';
+import { ScoreManager } from './js/engine/ScoreManager.js';
 
 const audioManager = new AudioManager();
 
@@ -59,15 +60,19 @@ class Game {
 
         this.input = new InputHandler();
         this.audioManager = audioManager;
+        this.scoreManager = new ScoreManager(this.ctx);
 
         this.player = new Player(
             CONFIG.WORLD.WIDTH / 2,
             CONFIG.WORLD.HEIGHT / 2,
             CONFIG.PLAYER.WIDTH,
             CONFIG.PLAYER.HEIGHT,
-            null,  // We'll set sprites after assets load
+            null,
             'professore'
         );
+
+        // Make game instance globally available for character interactions
+        window.gameInstance = this;
 
         window.addEventListener('resize', () => this.setupCanvas());
     }
@@ -119,7 +124,15 @@ class Game {
             height: CONFIG.WORLD.HEIGHT
         });
 
-        this.levelManager.update(this.player);
+        this.levelManager.update(
+            this.player,
+            {
+                width: CONFIG.WORLD.WIDTH,
+                height: CONFIG.WORLD.HEIGHT
+            },
+            this.input  // Pass input here
+        );
+
         if (this.levelManager.checkLevelTransition(this.player)) {
             console.log(`Transitioned to Level ${this.levelManager.currentLevel}`);
         }
@@ -133,6 +146,9 @@ class Game {
         this.renderer.drawBackground(this.levelManager.getCurrentLevelBackground(), this.camera);
         this.renderer.drawCharacters(this.assets.sprites, this.camera);
         this.renderer.drawPlayer(this.player, this.assets.sprites.professore, this.camera);
+        
+        // Draw score bars last so they're always on top
+        this.scoreManager.draw();
     }
 
     gameLoop() {

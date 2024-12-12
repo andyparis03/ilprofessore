@@ -23,19 +23,16 @@ export class BaseCharacter {
         this.lastUpdateTime = performance.now();
     }
 
-    // For NPCs: 'player' parameter is the Player character object.
-    // For NPCs, 'player' is used to determine behavior. 'worldBounds' is the game area.
-    update(player, worldBounds) {
+    update(player, worldBounds, input) {  // Add input parameter here
         if (this.isCaught) return;
 
         const currentTime = performance.now();
         const deltaTime = (currentTime - this.lastUpdateTime) / 16.67;
         this.lastUpdateTime = currentTime;
 
-        // NPC logic uses 'player' to decide how to move/behave
-        this.updateBehavior(player, worldBounds, deltaTime);
+        // Pass input to updateBehavior
+        this.updateBehavior(player, worldBounds, deltaTime, input);
 
-        // Update animation frames if not idle
         if (!this.isIdle) {
             if (currentTime - this.lastAnimationUpdate >= this.animationSpeed) {
                 this.frame = (this.frame + 1) % this.totalFrames;
@@ -47,9 +44,7 @@ export class BaseCharacter {
         }
     }
 
-    // NPC subclasses implement their own behavior, using the 'player' parameter for logic
-    updateBehavior(player, worldBounds, deltaTime) {
-        // Default (idle)
+    updateBehavior(player, worldBounds, deltaTime, input) {  // Add input parameter here
         this.isIdle = true;
     }
 

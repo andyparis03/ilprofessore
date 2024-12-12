@@ -171,7 +171,7 @@ export class LevelManager {
         this.characterTimers[type] = setInterval(spawnRandomly, interval);
     }
 
-    update(player) {
+    update(player, worldBounds, input) {  // Add input parameter here
         if (this.transitionInProgress) return;
 
         this.characters = this.characters.filter(character => character && character.type);
@@ -181,7 +181,7 @@ export class LevelManager {
                 character.update(player, {
                     width: CONFIG.WORLD.WIDTH,
                     height: CONFIG.WORLD.HEIGHT
-                });
+                }, input);  // Pass input to character update
             }
         });
     }

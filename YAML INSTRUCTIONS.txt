@@ -49,22 +49,22 @@ level2, Teatro:
           - "Add animated effect of sparkles sprite when disappearing"
     specific_actions:
       - targets: ["Suina1", "Suina2"]
-        action: "If press F button during the 2 seconds suina1-attack.png appears"
+        action: "If press F button during the 2 seconds change sprite to suina1-attack.png"
         effects:
           - "Play sound: suinafuck (once)"
           - "Increase Love score by 10 points"
       - targets: ["Suina1", "Suina2"]
-        action: "If press B button during the 2 seconds suina1-attack.png appears"
+        action: "If press B button during the 2 seconds change sprite to suina1-attack.png"
         effects:
           - "Play sound: suinasound (twice)"
           - "Increase Love score by 1 point"
       - targets: ["SuinaEvil"]
-        action: "If press B button during the 2 seconds suina1-attack.png appears"
+        action: "If press B button during the 2 seconds change sprite to suina1-attack.png"
         effects:
           - "Play sound: suinaevil (once)"
           - "Il professore goes to Jail level"
       - targets: ["SuinaEvil"]
-        action: "Press F button during the 2 seconds suina1-attack.png appears"
+        action: "Press F button during the 2 seconds change sprite to suina1-attack.png"
         effects:
           - "Play sound: suinaevil (once)"
           - "Set Love score to 0"
@@ -93,24 +93,24 @@ level3, Malafama:
           - "Add animated effect of sparkles sprite when disappearing"
     specific_actions:
       - targets: ["Suina1", "Suina2"]
-        action: "If press F button during the 2 seconds suina1-attack.png appears"
+        action: "If press F button during the 2 seconds change sprite to suina1-attack.png"
         effects:
           - "Play sound: suinafuck (once)"
           - "Increase Love score by 10 points"
       - targets: ["Suina1", "Suina2"]
-        action: "If press B button during the 2 seconds suina1-attack.png appears"
+        action: "If press B button during the 2 seconds change sprite to suina1-attack.png"
         effects:
           - "Play sound: suinasound (twice)"
           - "Increase Love score by 1 point"
       - targets: ["SuinaEvil"]
-        action: "If press B button during the 2 seconds suina1-attack.png appears"
+        action: "If press B button during the 2 seconds change sprite to suina1-attack.png"
         effects:
           - "Play sound: suinaevil (once)"
           - "Set Love score to 0"
           - "Set Energy score to 0"
           - "Il professore goes to Jail level"
       - targets: ["SuinaEvil"]
-        action: "Press F button during the 2 seconds suina1-attack.png appears"
+        action: "Press F button during the 2 seconds change sprite to suina1-attack.png"
         effects:
           - "Play sound: suinaevil (once)"
           - "Set Love score to 0"
@@ -144,7 +144,7 @@ level4, Gusto:
           - "Change sprite to: skull.png (for 2 seconds)"
           - "Game over"
       - targets: ["Walter"]
-        action: "If press B button during the suina1-attack.png appears"
+        action: "If press B button during the change sprite to suina1-attack.png"
         effects:
           - "Play sound: urlo (once)"
           - "Change sprite to: skull.png (for 2 seconds)"
@@ -177,7 +177,7 @@ level5, Chester:
           - "Change sprite to: skull.png (for 2 seconds)"
           - "Game over"
       - targets: ["Diego"]
-        action: "If press B button during the suina1-attack.png appears"
+        action: "If press B button during the change sprite to suina1-attack.png"
         effects:
           - "Play sound: urlo (once)"
           - "Change sprite to: skull.png (for 2 seconds)"
@@ -193,6 +193,7 @@ scoring_system for Il Professore:
   energy_bars:
     - name: "Energy"
     - name: "Love"
+    - name: "Friendhip"
   rules:
     - event: "Collision with Suina1 or Suina2 + Press B button"
       effect: "Increase Love level in the scoring bar by 10 points"
@@ -205,7 +206,6 @@ scoring_system for Il Professore:
       effect: "Decrease Energy level in the scoring bar to 0"
       effect: "Decrease Love level in the scoring bar to 0"
       effect: "'Il professore' goes to jail level"
-
     - event: "Collision with Diego"
       effect: "Reduce Energy level in the scoring bar by 10 points"
     - event: "Collision with Walter"

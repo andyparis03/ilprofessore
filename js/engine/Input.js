@@ -7,10 +7,12 @@ export class InputHandler {
             ArrowUp: false,
             ArrowDown: false,
             ArrowLeft: false,
-            ArrowRight: false
+            ArrowRight: false,
+            KeyF: false,    
+            KeyB: false     
         };
 
-        this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
+        this.isMobile = window.innerWidth <= 768 ||
             /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
         this.touchState = {};
@@ -18,8 +20,8 @@ export class InputHandler {
     }
 
     setupEventListeners() {
-        window.addEventListener('keydown', (e) => this.setKey(e.key, true));
-        window.addEventListener('keyup', (e) => this.setKey(e.key, false));
+        window.addEventListener('keydown', (e) => this.setKey(e.code, true));
+        window.addEventListener('keyup', (e) => this.setKey(e.code, false));
 
         if (this.isMobile) {
             this.setupTouchControls();

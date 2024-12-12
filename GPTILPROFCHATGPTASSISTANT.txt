@@ -6,7 +6,7 @@
 
 >>>>>>>>> Collision Handling: I want to handle collision between il professore and Suina1: when il professore have a collision with suina1 then Suina1 should change the spirte in suina1-attack.png ONLY FOR 1 SECOND (means revert to idle after one second) and play ONLY ONCE the sound 'suina_sound' (suina-sound.mp3) <<<<<
 
-Coding a videogame in javascript, html5 and css: find below in text the tree structure (TREEilprofessore) and I attached to this chat all the files that compose a videogame called "IL PROFESSORE"  (config.js, index.html, main.js, Player.js, Suina1.js, Suina2.js, SuinaEvil.js, Walter.js, Diego.js, Milly.js, AudioManager.js, Camera.js, Input.js, Renderer.js, style.css, LevelManager.js, AssetLoader.js) is an action adventure with elements of top-down puzzle platformer. "Il Professore" is the protagonist of the game. "Il Professore" Is a Player Character in the style of Mario bros. 
+Coding a videogame in javascript, html5 and css: find below in text the tree structure (TREEilprofessore) and I attached to this chat all the modules that compose a videogame called "IL PROFESSORE" is an action adventure with elements of top-down puzzle platformer. "Il Professore" is the protagonist of the game. "Il Professore" Is a Player Character in the style of Mario bros. 
 Consider that the createCharacter method is designed to allow for progressive activation of characters. As new functionality are implemented for more characters, their types will be added to the activeCharacters.
 
 Please only answer with effective solutions assuming that all the assests are in place in the right directories, I only want you to focus on Suina1 and Il Professore (do not consider the other characters). There is no need to verify that the code is correctly defined as the code I gave to you is at is it. 
@@ -118,6 +118,7 @@ Ilprofessore
 │
 ├───js
 │   └───engine
+│           ScoreManager.js
 │           AudioManager.js
 │           Camera.js
 │           Input.js
