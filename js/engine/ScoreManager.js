@@ -10,7 +10,7 @@ export class ScoreManager {
         this.maxScore = 100;
         this.barWidth = 150;
         this.barHeight = 10;
-        this.padding = 10;
+        this.padding = 30;
         this.colors = {
             energy: '#ff4444',    // Red for Energy
             love: '#ff69b4',      // Pink for Love
@@ -28,21 +28,24 @@ export class ScoreManager {
 
     draw() {
         this.ctx.save();
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        this.ctx.fillRect(0, 0, this.ctx.canvas.width, 40);
-
+        
         Object.entries(this.scores).forEach(([type, score], index) => {
             const x = this.ctx.canvas.width - this.barWidth - this.padding;
             const y = this.padding + (index * (this.barHeight + this.barSpacing));
 
-            // Draw label
+            // Draw label with shadow for better visibility
+            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            this.ctx.shadowBlur = 2;
             this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = '10px Arial';
+            this.ctx.font = 'bold 10px Arial';
             this.ctx.textAlign = 'right';
             this.ctx.fillText(type.toUpperCase(), x - this.textPadding, y + this.barHeight);
+            
+            // Reset shadow for bars
+            this.ctx.shadowBlur = 0;
 
-            // Draw background bar
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            // Draw background bar with slight transparency
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
             this.ctx.fillRect(x, y, this.barWidth, this.barHeight);
 
             // Draw score bar
