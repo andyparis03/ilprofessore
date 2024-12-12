@@ -25,118 +25,97 @@ export class LevelManager {
             return;
         }
 
-        // Clear any existing transition timeout
         if (this.transitionTimeout) {
             clearTimeout(this.transitionTimeout);
         }
 
-        // Start transition
         this.transitionInProgress = true;
 
-        // Clear all timers and characters before loading the new level
+        // Store character states before clearing
+        const storedStates = new Map();
+        this.characters.forEach(char => {
+            if (char && char.type) {
+                storedStates.set(char.type, {
+                    direction: char.direction,
+                    lastNonIdleDirection: char.lastNonIdleDirection,
+                    isIdle: false
+                });
+            }
+        });
+
         this.clearTimers();
         this.characters = [];
         this.characterTimers = {};
 
-        // Set the current level and reload characters
         this.currentLevel = levelNumber;
-        this.loadCharactersForLevel(levelNumber);
+        this.loadCharactersForLevel(levelNumber, storedStates);
 
-        // Update player reference if needed
         if (this.player !== player) {
             this.player = player;
         }
 
-        // Capture current player state before reset
-        const playerState = this.player ? {
-            isMoving: !this.player.isIdle,
-            direction: this.player.direction,
-            currentInput: this.player.currentInput
-        } : null;
+        this.resetPlayerState();
 
-        // Reset player state while preserving movement
-        this.resetPlayerState(playerState);
+        console.log(`Loaded level ${levelNumber}`);
 
-        console.log(`Loaded level ${levelNumber}:`, levelConfig);
-
-        // End transition after brief delay and restore player state
         this.transitionTimeout = setTimeout(() => {
             this.transitionInProgress = false;
-            if (this.player) {
-                // Restore player state and force update
-                if (playerState && playerState.isMoving) {
-                    this.player.isIdle = false;
-                    this.player.direction = playerState.direction;
-                }
-                this.player.forceStateUpdate();
-            }
+            // Force walking state after transition
+            this.characters.forEach(char => {
+                if (char) char.isIdle = false;
+            });
         }, 100);
     }
 
-    resetPlayerState(preservedState = null) {
+    resetPlayerState() {
         if (!this.player) return;
 
+        // Preserve timing consistency
         const now = performance.now();
-
-        // Reset timing variables
         this.player.lastUpdateTime = now;
         this.player.lastAnimationUpdate = now;
         this.player.frameTime = now;
 
-        // Update speed settings
         this.player.updateSpeedMultiplier();
-
-        // Reset movement tracking but preserve direction
+        
+        // Reset movement tracking
         this.player.velocity = { x: 0, y: 0 };
         this.player.movementBuffer = { x: 0, y: 0 };
 
-        // Center the player
         this.player.x = CONFIG.WORLD.WIDTH / 2;
         this.player.y = CONFIG.WORLD.HEIGHT / 2;
-        this.player.lastX = this.player.x;
-        this.player.lastY = this.player.y;
 
-        // Restore preserved state if available
-        if (preservedState) {
-            this.player.isIdle = !preservedState.isMoving;
-            this.player.direction = preservedState.direction;
-            this.player.currentInput = preservedState.currentInput;
-        }
-
-        // Ensure animation frame is valid
         this.player.frame = this.player.frame % this.player.totalFrames;
-
-        console.log('Player state reset completed with preserved state:', preservedState);
     }
 
-    loadCharactersForLevel(levelNumber) {
+    loadCharactersForLevel(levelNumber, storedStates) {
         switch (levelNumber) {
-            case 1: // StartingLevel
+            case 1:
                 this.addRandomCharacter('milly', 10000);
                 break;
-            case 2: // Teatro
-                this.addCharacter('suina1', 300, 200);
+            case 2:
+                this.addCharacter('suina1', 300, 200, storedStates);
                 this.addDelayedCharacter('suina2', 400, 250, 5000);
                 this.addDelayedCharacter('suinaevil', 500, 100, 6000);
                 break;
-            case 3: // Malafama
-                this.addCharacter('suina1', 350, 300);
+            case 3:
+                this.addCharacter('suina1', 350, 300, storedStates);
                 this.addDelayedCharacter('suina2', 400, 200, 5000);
                 this.addDelayedCharacter('suinaevil', 450, 150, 6000);
                 break;
-            case 4: // Gusto
+            case 4:
                 this.addCharacter('walter', 600, 300);
                 break;
-            case 5: // Chester
+            case 5:
                 this.addCharacter('diego', 700, 400);
                 break;
             default:
-                console.warn(`No characters defined for level ${levelNumber}.`);
+                console.warn(`No characters defined for level ${levelNumber}`);
                 break;
         }
     }
 
-    addCharacter(type, x, y) {
+    addCharacter(type, x, y, storedStates = null) {
         const characterClasses = {
             suina1: Suina1,
             suina2: Suina2,
@@ -146,21 +125,27 @@ export class LevelManager {
             milly: Milly
         };
 
-        const sprites = this.assets.sprites[type];
         const CharacterClass = characterClasses[type.toLowerCase()];
+        const sprites = this.assets.sprites[type];
+
         if (!CharacterClass || !sprites) {
             console.error(`Invalid character type or missing sprites: ${type}`);
             return;
         }
 
-        const character = new CharacterClass(
-            x,
-            y,
-            CONFIG.PLAYER.WIDTH,
-            CONFIG.PLAYER.HEIGHT,
-            sprites,
-            type.toLowerCase()
-        );
+        const character = new CharacterClass(x, y, CONFIG.PLAYER.WIDTH, CONFIG.PLAYER.HEIGHT, sprites, type.toLowerCase());
+
+        // Restore previous state if available
+        if (storedStates) {
+            const storedState = storedStates.get(type.toLowerCase());
+            if (storedState) {
+                Object.assign(character, storedState);
+            }
+        }
+
+        // Ensure character starts in walking state
+        character.isIdle = false;
+
         this.characters.push(character);
     }
 

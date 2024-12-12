@@ -4,230 +4,189 @@ import { BaseCharacter } from './BaseCharacter.js';
 export class Suina1 extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type, 1.5);
-        
-        // Initialize exactly like Player.js
+        this.moveTimer = 0;
+        this.changeDirectionInterval = 2500; // Increased interval for more stable movement
+        this.lastNonIdleDirection = 'down';
         this.lastUpdateTime = performance.now();
         this.frameTime = performance.now();
         this.movementBuffer = { x: 0, y: 0 };
         this.velocity = { x: 0, y: 0 };
         this.lastX = x;
         this.lastY = y;
-        this.currentInput = null;
-
-        // Suina1 specific properties
-        this.moveTimer = 0;
-        this.changeDirectionInterval = 1000;
-        this.lastNonIdleDirection = 'down';
-    }
-
-    update(player, worldBounds) {
-        const currentTime = performance.now();
-        
-        // Limit deltaTime just like in Player.js
-        const maxDeltaTime = 32;
-        const rawDeltaTime = (currentTime - this.lastUpdateTime) / 16.67;
-        const deltaTime = Math.min(rawDeltaTime, maxDeltaTime);
-        
-        this.lastUpdateTime = currentTime;
-        this.frameTime += deltaTime * 16.67;
-
-        // Store previous state for animation handling
-        const wasMoving = !this.isIdle;
-        
-        // Update movement and state
-        this.updateBehavior(player, worldBounds, deltaTime);
-
-        // Handle animation timing with accumulated time
-        if (!this.isIdle) {
-            if (this.frameTime - this.lastAnimationUpdate >= this.animationSpeed) {
-                this.frame = (this.frame + 1) % this.totalFrames;
-                this.lastAnimationUpdate = this.frameTime;
-            }
-        } else {
-            this.frame = 0;
-        }
+        this.frame = 0;
+        this.isIdle = false;
+        this.direction = 'down';
+        this.stuckTimer = 0;
+        this.directionChangeCount = 0;
+        this.lastDirectionChange = performance.now();
     }
 
     updateBehavior(player, worldBounds, deltaTime) {
         const currentTime = performance.now();
+        const maxDeltaTime = 32;
+        const effectiveDeltaTime = Math.min(deltaTime, maxDeltaTime);
+
+        // Check if enough time has passed since last direction change
+        const timeSinceLastChange = currentTime - this.lastDirectionChange;
         
-        // Update direction based on timer
-        if (currentTime - this.moveTimer > this.changeDirectionInterval) {
+        // Only change direction if:
+        // 1. Normal interval has passed OR
+        // 2. We're stuck and minimum time has passed
+        if (currentTime - this.moveTimer > this.changeDirectionInterval || 
+            (this.stuckTimer > 500 && timeSinceLastChange > 1000)) {
+            
             this.randomizeDirection(worldBounds);
             this.moveTimer = currentTime;
+            this.lastDirectionChange = currentTime;
+            this.stuckTimer = 0;
+            this.directionChangeCount = 0;
         }
 
-        // Reset velocity
-        this.velocity.x = 0;
-        this.velocity.y = 0;
-
-        // Calculate velocity based on player distance or random movement
         const distance = Math.hypot(player.x - this.x, player.y - this.y);
-        if (distance < 150) {
-            // Run away from player
-            const dx = this.x - player.x;
-            const dy = this.y - player.y;
-            const angle = Math.atan2(dy, dx);
-            const adjustedSpeed = this.speed * deltaTime;
+        const startPos = { x: this.x, y: this.y };
 
-            this.velocity.x = Math.cos(angle) * adjustedSpeed;
-            this.velocity.y = Math.sin(angle) * adjustedSpeed;
+        if (distance < 150) {
+            this.runAwayFrom(player, effectiveDeltaTime, worldBounds);
             this.isIdle = false;
         } else {
-            // Random movement
-            const adjustedSpeed = this.speed * deltaTime;
+            const moved = this.moveRandomly(effectiveDeltaTime, worldBounds);
             
-            switch (this.direction) {
-                case 'up':
-                    this.velocity.y = -adjustedSpeed;
-                    break;
-                case 'down':
-                    this.velocity.y = adjustedSpeed;
-                    break;
-                case 'left':
-                    this.velocity.x = -adjustedSpeed;
-                    break;
-                case 'right':
-                    this.velocity.x = adjustedSpeed;
-                    break;
-                case 'idle':
-                    this.isIdle = true;
-                    break;
+            // If not moving, increment stuck timer
+            if (!moved) {
+                this.stuckTimer += deltaTime * 16.67;
+            } else {
+                this.stuckTimer = 0;
             }
         }
 
-        // Add to movement buffer
-        this.movementBuffer.x += this.velocity.x;
-        this.movementBuffer.y += this.velocity.y;
+        // Update animation
+        if (!this.isIdle && currentTime - this.lastUpdateTime >= this.animationSpeed) {
+            this.frame = (this.frame + 1) % this.totalFrames;
+            this.lastUpdateTime = currentTime;
+        }
+    }
 
-        // Apply whole pixel movements
-        const newX = this.x + Math.round(this.movementBuffer.x);
-        const newY = this.y + Math.round(this.movementBuffer.y);
+    runAwayFrom(player, deltaTime, worldBounds) {
+        const dx = this.x - player.x;
+        const dy = this.y - player.y;
+        const angle = Math.atan2(dy, dx);
+        const adjustedSpeed = this.speed * deltaTime * 1.2; // Faster when escaping
 
-        // Store old position
         const oldX = this.x;
         const oldY = this.y;
 
-        // Clamp to world bounds
-        this.x = Math.min(Math.max(newX, 0), worldBounds.width - this.width);
-        this.y = Math.min(Math.max(newY, 0), worldBounds.height - this.height);
+        // Calculate target position with some randomness to avoid straight lines
+        const randomOffset = Math.random() * 0.2 - 0.1; // Small random angle adjustment
+        const finalAngle = angle + randomOffset;
 
-        // Remove used movement from buffer
-        this.movementBuffer.x -= Math.round(this.movementBuffer.x);
-        this.movementBuffer.y -= Math.round(this.movementBuffer.y);
+        this.x = Math.min(Math.max(this.x + Math.cos(finalAngle) * adjustedSpeed, 0), 
+                         worldBounds.width - this.width);
+        this.y = Math.min(Math.max(this.y + Math.sin(finalAngle) * adjustedSpeed, 0), 
+                         worldBounds.height - this.height);
 
-        // Update movement state
-        if (this.x === oldX && this.y === oldY) {
-            if (!this.isIdle) {
-                this.attemptMultipleMoves(deltaTime, worldBounds, 3);
-            }
-        } else {
+        if (this.x !== oldX || this.y !== oldY) {
+            this.updateDirection(this.x - oldX, this.y - oldY);
             this.isIdle = false;
-            if (Math.abs(this.x - oldX) > Math.abs(this.y - oldY)) {
-                this.direction = this.x > oldX ? 'right' : 'left';
-            } else {
-                this.direction = this.y > oldY ? 'down' : 'up';
-            }
-            this.lastNonIdleDirection = this.direction;
+            this.stuckTimer = 0;
+        }
+    }
+
+    moveRandomly(deltaTime, worldBounds) {
+        const adjustedSpeed = this.speed * deltaTime * 0.8; // Slightly slower for smoother movement
+        const oldX = this.x;
+        const oldY = this.y;
+
+        switch (this.direction) {
+            case 'up':
+                this.y = Math.max(this.y - adjustedSpeed, 0);
+                break;
+            case 'down':
+                this.y = Math.min(this.y + adjustedSpeed, worldBounds.height - this.height);
+                break;
+            case 'left':
+                this.x = Math.max(this.x - adjustedSpeed, 0);
+                break;
+            case 'right':
+                this.x = Math.min(this.x + adjustedSpeed, worldBounds.width - this.width);
+                break;
         }
 
-        // Store position for next frame
-        this.lastX = this.x;
-        this.lastY = this.y;
+        const moved = (Math.abs(this.x - oldX) > 0.01 || Math.abs(this.y - oldY) > 0.01);
+        
+        if (moved) {
+            this.isIdle = false;
+            this.lastNonIdleDirection = this.direction;
+            this.stuckTimer = 0;
+        } else {
+            this.stuckTimer += deltaTime * 16.67;
+        }
+
+        return moved;
     }
 
     randomizeDirection(worldBounds) {
         const { width, height } = worldBounds;
         const edgeBuffer = 50;
-        const cornerBuffer = 60;
-
+        const cornerBuffer = 100;
+        
         const nearLeft = this.x < edgeBuffer;
         const nearRight = this.x > width - this.width - edgeBuffer;
         const nearTop = this.y < edgeBuffer;
         const nearBottom = this.y > height - this.height - edgeBuffer;
 
-        const inTopLeftCorner = (this.x < cornerBuffer && this.y < cornerBuffer);
-        const inTopRightCorner = (this.x > width - cornerBuffer - this.width && this.y < cornerBuffer);
-        const inBottomLeftCorner = (this.x < cornerBuffer && this.y > height - cornerBuffer - this.height);
-        const inBottomRightCorner = (this.x > width - cornerBuffer - this.width && this.y > height - cornerBuffer - this.height);
+        let directions = ['up', 'down', 'left', 'right'];
 
-        let directions;
+        // Avoid rapid direction changes
+        if (this.directionChangeCount < 3) {
+            // Prefer to maintain current direction if not near edges
+            if (!nearLeft && !nearRight && !nearTop && !nearBottom) {
+                if (Math.random() < 0.7) { // 70% chance to keep current direction
+                    return;
+                }
+            }
+        }
 
-        if (inTopLeftCorner) {
+        // Filter out directions based on position
+        if (nearLeft) directions = directions.filter(d => d !== 'left');
+        if (nearRight) directions = directions.filter(d => d !== 'right');
+        if (nearTop) directions = directions.filter(d => d !== 'up');
+        if (nearBottom) directions = directions.filter(d => d !== 'down');
+
+        // Special handling for corners to ensure escape
+        if (this.x < cornerBuffer && this.y < cornerBuffer) {
             directions = ['right', 'down'];
-        } else if (inTopRightCorner) {
+        } else if (this.x > width - cornerBuffer && this.y < cornerBuffer) {
             directions = ['left', 'down'];
-        } else if (inBottomLeftCorner) {
+        } else if (this.x < cornerBuffer && this.y > height - cornerBuffer) {
             directions = ['right', 'up'];
-        } else if (inBottomRightCorner) {
+        } else if (this.x > width - cornerBuffer && this.y > height - cornerBuffer) {
             directions = ['left', 'up'];
-        } else {
-            directions = ['up', 'down', 'left', 'right', 'idle'];
-
-            if (nearLeft) directions = directions.filter(d => d !== 'left');
-            if (nearRight) directions = directions.filter(d => d !== 'right');
-            if (nearTop) directions = directions.filter(d => d !== 'up');
-            if (nearBottom) directions = directions.filter(d => d !== 'down');
-
-            if (directions.length === 0 || (directions.length === 1 && directions[0] === 'idle')) {
-                directions = ['idle', 'up', 'down', 'left', 'right'];
-            }
-
-            directions = this.filterDirectionsAvoidingForbiddenZones(directions, { width, height, cornerBuffer });
         }
 
-        const chosen = directions[Math.floor(Math.random() * directions.length)];
-
-        if (chosen === 'idle') {
-            this.isIdle = true;
-        } else {
-            this.isIdle = false;
-            this.direction = chosen;
-            this.lastNonIdleDirection = chosen;
+        // Ensure we have valid directions
+        if (directions.length === 0) {
+            directions = ['up', 'down', 'left', 'right'];
         }
+
+        // Avoid choosing the opposite direction of current movement
+        const opposites = { up: 'down', down: 'up', left: 'right', right: 'left' };
+        if (this.direction && this.directionChangeCount < 2) {
+            directions = directions.filter(d => d !== opposites[this.direction]);
+        }
+
+        const newDirection = directions[Math.floor(Math.random() * directions.length)];
+        this.direction = newDirection;
+        this.lastNonIdleDirection = newDirection;
+        this.isIdle = false;
+        this.directionChangeCount++;
     }
 
-    filterDirectionsAvoidingForbiddenZones(directions, { width, height, cornerBuffer }) {
-        return directions.filter(dir => {
-            if (dir === 'idle') return true;
-            
-            let testX = this.x;
-            let testY = this.y;
-            const testStep = 10;
-
-            switch (dir) {
-                case 'up': testY -= testStep; break;
-                case 'down': testY += testStep; break;
-                case 'left': testX -= testStep; break;
-                case 'right': testX += testStep; break;
-            }
-
-            const wouldBeInCorner = (
-                (testX < cornerBuffer && testY < cornerBuffer) ||
-                (testX > width - cornerBuffer - this.width && testY < cornerBuffer) ||
-                (testX < cornerBuffer && testY > height - cornerBuffer - this.height) ||
-                (testX > width - cornerBuffer - this.width && testY > height - cornerBuffer - this.height)
-            );
-
-            return !wouldBeInCorner;
-        });
-    }
-
-    attemptMultipleMoves(deltaTime, worldBounds, attempts) {
-        for (let i = 0; i < attempts; i++) {
-            this.randomizeDirection(worldBounds);
-            const startX = this.x;
-            const startY = this.y;
-            
-            // Try movement in new direction
-            this.updateBehavior({ x: startX + 1000 * (Math.random() - 0.5), 
-                                y: startY + 1000 * (Math.random() - 0.5) }, 
-                                worldBounds, deltaTime);
-            
-            if (this.x !== startX || this.y !== startY) {
-                return true;
-            }
+    updateDirection(dx, dy) {
+        if (Math.abs(dx) > Math.abs(dy)) {
+            this.direction = dx > 0 ? 'right' : 'left';
+        } else {
+            this.direction = dy > 0 ? 'down' : 'up';
         }
-        return false;
+        this.lastNonIdleDirection = this.direction;
     }
 }
