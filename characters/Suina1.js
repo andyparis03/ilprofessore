@@ -103,7 +103,7 @@ export class Suina1 extends BaseCharacter {
         if (this.buttonInteractionAvailable && currentTime - this.collisionStartTime <= 2000) {
             if (input.keys.KeyB) {
                 if (gameInstance.audioManager) {
-                    gameInstance.audioManager.playSound('suina_fuck');
+                    gameInstance.audioManager.playSound('professore_smack');
                 }
                 if (gameInstance.scoreManager) {
                     gameInstance.scoreManager.increaseScore('love', 2);
