@@ -1,5 +1,6 @@
 // Suina1.js
 import { BaseCharacter } from './BaseCharacter.js';
+import { CONFIG } from '../config.js';
 
 export class Suina1 extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
@@ -27,6 +28,39 @@ export class Suina1 extends BaseCharacter {
         this.hasChangedSprite = false;
         this.buttonInteractionAvailable = false;
         this.soundPlayed = false;
+        this.isVisible = true;
+        this.respawnTimeout = null;
+    }
+
+    respawn() {
+        // Generate random coordinates within the world bounds
+        const padding = 50; // To avoid spawning too close to edges
+        this.x = Math.random() * (CONFIG.WORLD.WIDTH - this.width - padding * 2) + padding;
+        this.y = Math.random() * (CONFIG.WORLD.HEIGHT - this.height - padding * 2) + padding;
+        
+        // Reset all states
+        this.isColliding = false;
+        this.collisionStartTime = null;
+        this.isDisappearing = false;
+        this.hasChangedSprite = false;
+        this.buttonInteractionAvailable = false;
+        this.soundPlayed = false;
+        this.isVisible = true;
+        this.isCaught = false;
+        this.currentSprite = null;
+        this.activeSprite = null;
+
+        // Reset movement parameters
+        this.moveTimer = performance.now();
+        this.lastDirectionChange = performance.now();
+        this.stuckTimer = 0;
+        this.directionChangeCount = 0;
+        this.isIdle = false;
+        
+        // Set a random initial direction
+        const directions = ['up', 'down', 'left', 'right'];
+        this.direction = directions[Math.floor(Math.random() * directions.length)];
+        this.lastNonIdleDirection = this.direction;
     }
 
     handleCollision(player, input) {
@@ -34,7 +68,7 @@ export class Suina1 extends BaseCharacter {
         const gameInstance = window.gameInstance;
 
         // Initial collision detection
-        if (!this.isColliding && !this.isDisappearing) {
+        if (!this.isColliding && !this.isDisappearing && this.isVisible) {
             this.isColliding = true;
             this.collisionStartTime = currentTime;
             this.hasChangedSprite = true;
@@ -48,13 +82,19 @@ export class Suina1 extends BaseCharacter {
 
             // Change to attack sprite
             if (this.sprites.attack) {
-                this.currentSprite = this.sprites.attack;
+                this.currentSprite = 'attack';
+                this.activeSprite = this.sprites.attack;
 
-                // Set timer for disappearance
+                // Set timer for disappearance after 2 seconds
                 setTimeout(() => {
+                    this.isVisible = false;
                     this.isDisappearing = true;
-                    this.isCaught = true;
                     this.buttonInteractionAvailable = false;
+
+                    // Set timer for respawn after 2 more seconds
+                    this.respawnTimeout = setTimeout(() => {
+                        this.respawn();
+                    }, 2000);
                 }, 2000);
             }
         }
@@ -62,7 +102,6 @@ export class Suina1 extends BaseCharacter {
         // Handle button interactions during the 2-second window
         if (this.buttonInteractionAvailable && currentTime - this.collisionStartTime <= 2000) {
             if (input.keys.KeyB) {
-                // Handle B button press
                 if (gameInstance.audioManager) {
                     gameInstance.audioManager.playSound('suina_fuck');
                 }
@@ -72,7 +111,6 @@ export class Suina1 extends BaseCharacter {
                 this.buttonInteractionAvailable = false;
             }
             else if (input.keys.KeyF) {
-                // Handle F button press
                 if (gameInstance.audioManager) {
                     gameInstance.audioManager.playSound('suina_fuck');
                 }
@@ -85,6 +123,9 @@ export class Suina1 extends BaseCharacter {
     }
 
     cleanup() {
+        if (this.respawnTimeout) {
+            clearTimeout(this.respawnTimeout);
+        }
         this.isColliding = false;
         this.collisionStartTime = null;
         this.hasChangedSprite = false;
@@ -93,7 +134,7 @@ export class Suina1 extends BaseCharacter {
     }
 
     updateBehavior(player, worldBounds, deltaTime, input) {
-        if (this.isCaught || this.isDisappearing) return;
+        if (!this.isVisible) return;
 
         // Check for collision with player
         if (this.checkCollision(player)) {
@@ -110,7 +151,7 @@ export class Suina1 extends BaseCharacter {
         const maxDeltaTime = 32;
         const effectiveDeltaTime = Math.min(deltaTime, maxDeltaTime);
 
-        // Regular movement behavior
+        // Regular movement behavior when not colliding
         if (!this.isColliding) {
             const timeSinceLastChange = currentTime - this.lastDirectionChange;
             
@@ -144,6 +185,7 @@ export class Suina1 extends BaseCharacter {
             this.lastUpdateTime = currentTime;
         }
     }
+
 
     runAwayFrom(player, deltaTime, worldBounds) {
         const dx = this.x - player.x;

@@ -57,11 +57,11 @@ export class Renderer {
         }
     }
 
-    drawCharacters(sprites, camera) {
+       drawCharacters(sprites, camera) {
         this.levelManager.characters.forEach((character) => {
             if (!character || !character.type || !sprites[character.type]) {
                 console.error(`Sprites for character type ${character ? character.type : 'undefined'} are undefined.`);
-                return; // Skip invalid characters
+                return;
             }
 
             const drawX = character.x - camera.x;
@@ -69,11 +69,15 @@ export class Renderer {
 
             const characterSprites = sprites[character.type.toLowerCase()];
 
+            // Handle special attack sprite state for Suina1
+            if (character.type === 'suina1' && character.currentSprite === 'attack' && character.activeSprite) {
+                this.ctx.drawImage(character.activeSprite, drawX, drawY, character.width, character.height);
+                return;
+            }
+
             if (character.isIdle) {
                 if (characterSprites.idle) {
                     this.ctx.drawImage(characterSprites.idle, drawX, drawY, character.width, character.height);
-                } else {
-                    console.error(`Idle sprite for character type ${character.type} is undefined.`);
                 }
             } else {
                 const directionIndex = this.directions[character.direction] !== undefined
@@ -90,18 +94,8 @@ export class Renderer {
                         drawX, drawY,
                         character.width, character.height
                     );
-                } else {
-                    console.error(`Walking sprite for character type ${character.type} is undefined.`);
                 }
             }
         });
-    }
-
-    render(player, sprites, camera) {
-        this.clear();
-        const background = this.levelManager.getCurrentLevelBackground();
-        this.drawBackground(background, camera);
-        this.drawCharacters(sprites, camera);
-        this.drawPlayer(player, sprites.professore, camera);
     }
 }
