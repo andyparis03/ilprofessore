@@ -5,18 +5,26 @@ export class ScoreAnimation {
     }
 
     addAnimation(score) {
-        // Get canvas dimensions for centering
-        const canvasWidth = window.gameInstance.canvas.width;
-        const canvasHeight = window.gameInstance.canvas.height;
+        // Get canvas dimensions directly from the game canvas
+        const canvas = document.getElementById('gameCanvas');
+        const centerX = Math.round(canvas.width / 2);
+        const centerY = Math.round(canvas.height / 2);
+        
+        console.log('Canvas dimensions:', {
+            width: canvas.width,
+            height: canvas.height,
+            centerX: centerX,
+            centerY: centerY
+        });
 
         this.animations.push({
             score: `+${score}`,
-            x: canvasWidth / 2,  // Center X
-            y: canvasHeight / 2, // Center Y
+            x: centerX,         // Center X
+            y: centerY,         // Center Y
             startTime: performance.now(),
-            duration: 2000, // 2 seconds
-            startFontSize: 72,   // Bigger starting size
-            endFontSize: 24,     // Bigger ending size
+            duration: 2000,     // 2 seconds
+            startFontSize: 72,  // Starting size
+            endFontSize: 24,    // Ending size
             opacity: 1
         });
     }
@@ -33,27 +41,35 @@ export class ScoreAnimation {
             const easeOutCubic = 1 - Math.pow(1 - progress, 3);
 
             // Calculate current font size
-            const fontSize = anim.startFontSize + (anim.endFontSize - anim.startFontSize) * easeOutCubic;
+            const fontSize = Math.round(anim.startFontSize + (anim.endFontSize - anim.startFontSize) * easeOutCubic);
             
             // Calculate opacity (fade out in the last 30% of animation)
             anim.opacity = progress > 0.7 ? 1 - ((progress - 0.7) / 0.3) : 1;
 
-            // Draw score
+            // Draw score with debug info
             ctx.save();
-            ctx.font = `bold ${Math.round(fontSize)}px Arial`;
-            ctx.fillStyle = `rgba(255, 192, 203, ${anim.opacity})`; // Pink color for love points
-            ctx.strokeStyle = `rgba(0, 0, 0, ${anim.opacity * 0.5})`; // Black outline
-            ctx.lineWidth = 3;
+            
+            // Set text properties
+            ctx.font = `bold ${fontSize}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
+
+            // Draw debug point at center (temporary)
+            ctx.fillStyle = 'red';
+            ctx.fillRect(anim.x - 2, anim.y - 2, 4, 4);
             
             // Move upward as it fades
             const yOffset = 50 * easeOutCubic;
-            
-            // Add text outline for better visibility
+
+            // Draw text outline
+            ctx.strokeStyle = `rgba(0, 0, 0, ${anim.opacity * 0.5})`;
+            ctx.lineWidth = 3;
             ctx.strokeText(anim.score, anim.x, anim.y - yOffset);
+
+            // Draw text fill
+            ctx.fillStyle = `rgba(255, 192, 203, ${anim.opacity})`;
             ctx.fillText(anim.score, anim.x, anim.y - yOffset);
-            
+
             ctx.restore();
 
             // Remove finished animations
