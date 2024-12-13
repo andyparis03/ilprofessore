@@ -16,6 +16,48 @@ export class LevelManager {
         this.player = null;
         this.transitionInProgress = false;
         this.transitionTimeout = null;
+        this.setupBackButton();
+    }
+
+    setupBackButton() {
+        const backButton = document.getElementById('back-button');
+        if (!backButton) return;
+
+        // Handle back button click
+        backButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (this.currentLevel !== 1) {
+                this.transitionToLevel1();
+            }
+        });
+
+        // Initial visibility
+        this.updateBackButtonVisibility();
+    }
+
+    updateBackButtonVisibility() {
+        const backButton = document.getElementById('back-button');
+        if (backButton) {
+            backButton.style.display = this.currentLevel === 1 ? 'none' : 'block';
+        }
+    }
+
+    transitionToLevel1() {
+        // Clear any existing timers
+        this.clearTimers();
+        
+        // Reset player position to center of level 1
+        if (this.player) {
+            this.player.x = CONFIG.WORLD.WIDTH / 2;
+            this.player.y = CONFIG.WORLD.HEIGHT / 2;
+        }
+
+        // Load level 1
+        this.loadLevel(1, this.player);
+        
+        // Update back button visibility
+        this.updateBackButtonVisibility();
     }
 
     loadLevel(levelNumber, player) {
@@ -49,6 +91,7 @@ export class LevelManager {
 
         this.currentLevel = levelNumber;
         this.loadCharactersForLevel(levelNumber, storedStates);
+        this.updateBackButtonVisibility();
 
         if (this.player !== player) {
             this.player = player;
@@ -171,7 +214,7 @@ export class LevelManager {
         this.characterTimers[type] = setInterval(spawnRandomly, interval);
     }
 
-    update(player, worldBounds, input) {  // Add input parameter here
+    update(player, worldBounds, input) {
         if (this.transitionInProgress) return;
 
         this.characters = this.characters.filter(character => character && character.type);
@@ -181,7 +224,7 @@ export class LevelManager {
                 character.update(player, {
                     width: CONFIG.WORLD.WIDTH,
                     height: CONFIG.WORLD.HEIGHT
-                }, input);  // Pass input to character update
+                }, input);
             }
         });
     }

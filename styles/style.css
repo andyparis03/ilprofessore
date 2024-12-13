@@ -31,6 +31,38 @@ canvas {
   }
 }
 
+
+/* Back button styling */
+#back-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  padding: 10px 20px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  display: none; /* Initially hidden */
+}
+
+#back-button:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+@media (max-width: 768px) {
+  #back-button {
+    top: 10px;
+    left: 10px;
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}
+
+
 #controls-container {
   position: fixed;
   bottom: 20px;
