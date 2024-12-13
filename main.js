@@ -10,19 +10,33 @@ import { LevelManager } from './levels/LevelManager.js';
 import { ScoreManager } from './js/engine/ScoreManager.js';
 
 const audioManager = new AudioManager();
+let gameInitialized = false;
 
-window.addEventListener('click', async () => {
-    try {
-        if (!audioManager.initialized) {
-            await audioManager.init();
+// Listen for initial game start
+const startGameListener = async (event) => {
+    if (!gameInitialized) {
+        try {
+            if (!audioManager.initialized) {
+                await audioManager.init();
+            }
+            console.log('Starting the game...');
+            game.init();
+            gameInitialized = true;
+            
+            // Remove the event listeners once game is started
+            window.removeEventListener('click', startGameListener);
+            window.removeEventListener('touchstart', startGameListener);
+        } catch (error) {
+            console.error('Error initializing the game:', error);
         }
-        console.log('Starting the game...');
-        game.init();
-    } catch (error) {
-        console.error('Error initializing the game:', error);
     }
-});
+};
 
+// Add listeners for initial game start only
+window.addEventListener('click', startGameListener);
+window.addEventListener('touchstart', startGameListener);
+
+// Prevent unwanted touch behaviors
 window.addEventListener('touchmove', (event) => {
     event.preventDefault();
 }, { passive: false });
@@ -71,9 +85,7 @@ class Game {
             'professore'
         );
 
-        // Make game instance globally available for character interactions
         window.gameInstance = this;
-
         window.addEventListener('resize', () => this.setupCanvas());
     }
 

@@ -106,7 +106,7 @@ export class Suina1 extends BaseCharacter {
                     gameInstance.audioManager.playSound('suina_fuck');
                 }
                 if (gameInstance.scoreManager) {
-                    gameInstance.scoreManager.increaseScore('love', 10);
+                    gameInstance.scoreManager.increaseScore('love', 2);
                 }
                 this.buttonInteractionAvailable = false;
             }
@@ -115,7 +115,7 @@ export class Suina1 extends BaseCharacter {
                     gameInstance.audioManager.playSound('suina_fuck');
                 }
                 if (gameInstance.scoreManager) {
-                    gameInstance.scoreManager.increaseScore('love', 20);
+                    gameInstance.scoreManager.increaseScore('love', 4);
                 }
                 this.buttonInteractionAvailable = false;
             }
