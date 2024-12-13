@@ -8,11 +8,11 @@ export class InputHandler {
             ArrowDown: false,
             ArrowLeft: false,
             ArrowRight: false,
-            KeyF: false,    
-            KeyB: false     
+            KeyF: false,
+            KeyB: false
         };
 
-        this.isMobile = window.innerWidth <= 768 ||
+        this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
             /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
         this.touchState = {};
@@ -20,6 +20,7 @@ export class InputHandler {
     }
 
     setupEventListeners() {
+        // Keyboard events
         window.addEventListener('keydown', (e) => this.setKey(e.code, true));
         window.addEventListener('keyup', (e) => this.setKey(e.code, false));
 
@@ -29,30 +30,65 @@ export class InputHandler {
     }
 
     setupTouchControls() {
+        // Direction buttons
         const directions = ['up', 'down', 'left', 'right'];
         directions.forEach((dir) => {
             const element = document.getElementById(dir);
             if (element) {
-                element.addEventListener('touchstart', (e) => this.handleTouch(e, dir, true));
-                element.addEventListener('touchend', (e) => this.handleTouch(e, dir, false));
-                element.addEventListener('touchcancel', (e) => this.handleTouch(e, dir, false));
-            } else {
-                console.warn(`Touch control button with ID '${dir}' not found.`);
+                element.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.handleDirectionTouch(e, dir, true);
+                });
+                element.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.handleDirectionTouch(e, dir, false);
+                });
+                element.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    this.handleDirectionTouch(e, dir, false);
+                });
+            }
+        });
+
+        // Action buttons
+        const actionButtons = {
+            'bacio': 'KeyB',
+            'fuck': 'KeyF'
+        };
+
+        Object.entries(actionButtons).forEach(([buttonId, keyCode]) => {
+            const element = document.getElementById(buttonId);
+            if (element) {
+                element.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.handleActionTouch(keyCode, true);
+                    element.classList.add('active');
+                });
+                element.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.handleActionTouch(keyCode, false);
+                    element.classList.remove('active');
+                });
+                element.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    this.handleActionTouch(keyCode, false);
+                    element.classList.remove('active');
+                });
             }
         });
     }
 
-    handleTouch(event, direction, isPressed) {
-        event.preventDefault();
+    handleDirectionTouch(event, direction, isPressed) {
         const key = `Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`;
-        if (this.touchState[key] !== isPressed) {
-            this.touchState[key] = isPressed;
-            this.setKey(key, isPressed);
-            const element = document.getElementById(direction);
-            if (element) {
-                element.classList.toggle('active', isPressed);
-            }
+        this.setKey(key, isPressed);
+        const element = document.getElementById(direction);
+        if (element) {
+            element.classList.toggle('active', isPressed);
         }
+    }
+
+    handleActionTouch(keyCode, isPressed) {
+        this.setKey(keyCode, isPressed);
     }
 
     setKey(key, value) {
@@ -62,6 +98,7 @@ export class InputHandler {
     }
 
     isMoving() {
-        return Object.values(this.keys).some(Boolean);
+        return this.keys.ArrowUp || this.keys.ArrowDown || 
+               this.keys.ArrowLeft || this.keys.ArrowRight;
     }
 }

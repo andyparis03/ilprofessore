@@ -22,20 +22,25 @@ export class Suina1 extends BaseCharacter {
 
         // Collision and interaction states
         this.isColliding = false;
-        this.disappearTimer = null;
+        this.collisionStartTime = null;
         this.isDisappearing = false;
-        this.attackSpriteTimer = null;
-        this.buttonPressTimer = null;
+        this.hasChangedSprite = false;
+        this.buttonInteractionAvailable = false;
         this.soundPlayed = false;
-        this.currentSprite = sprites.idle;
     }
 
     handleCollision(player, input) {
+        const currentTime = performance.now();
+        const gameInstance = window.gameInstance;
+
+        // Initial collision detection
         if (!this.isColliding && !this.isDisappearing) {
             this.isColliding = true;
-            const gameInstance = window.gameInstance;
-            
-            // Play collision sound
+            this.collisionStartTime = currentTime;
+            this.hasChangedSprite = true;
+            this.buttonInteractionAvailable = true;
+
+            // Play initial collision sound
             if (!this.soundPlayed && gameInstance.audioManager) {
                 gameInstance.audioManager.playSound('suina_sound');
                 this.soundPlayed = true;
@@ -44,66 +49,47 @@ export class Suina1 extends BaseCharacter {
             // Change to attack sprite
             if (this.sprites.attack) {
                 this.currentSprite = this.sprites.attack;
-                
-                // Set timer to disappear
-                if (!this.disappearTimer) {
-                    this.disappearTimer = setTimeout(() => {
-                        this.isDisappearing = true;
-                        this.isCaught = true;
-                        // Clear timers
-                        this.cleanup();
-                    }, 2000);
-                }
+
+                // Set timer for disappearance
+                setTimeout(() => {
+                    this.isDisappearing = true;
+                    this.isCaught = true;
+                    this.buttonInteractionAvailable = false;
+                }, 2000);
             }
         }
 
-        // Handle button interactions during collision
-        if (this.isColliding && !this.buttonPressTimer) {
-            const gameInstance = window.gameInstance;
-            
-            // F button press
-            if (input.keys.KeyF) {
-                this.buttonPressTimer = setTimeout(() => {
-                    if (gameInstance.audioManager) {
-                        gameInstance.audioManager.playSound('suina_fuck');
-                    }
-                    if (gameInstance.scoreManager) {
-                        gameInstance.scoreManager.increaseScore('love', 10);
-                        gameInstance.scoreManager.increaseScore('energy', 10);
-                    }
-                    this.buttonPressTimer = null;
-                }, 1000);
+        // Handle button interactions during the 2-second window
+        if (this.buttonInteractionAvailable && currentTime - this.collisionStartTime <= 2000) {
+            if (input.keys.KeyB) {
+                // Handle B button press
+                if (gameInstance.audioManager) {
+                    gameInstance.audioManager.playSound('suina_fuck');
+                }
+                if (gameInstance.scoreManager) {
+                    gameInstance.scoreManager.increaseScore('love', 10);
+                }
+                this.buttonInteractionAvailable = false;
             }
-            
-            // B button press
-            else if (input.keys.KeyB) {
-                this.buttonPressTimer = setTimeout(() => {
-                    if (gameInstance.audioManager) {
-                        gameInstance.audioManager.playSound('suina_sound');
-                        setTimeout(() => gameInstance.audioManager.playSound('suina_sound'), 200);
-                    }
-                    if (gameInstance.scoreManager) {
-                        gameInstance.scoreManager.increaseScore('love', 1);
-                    }
-                    this.buttonPressTimer = null;
-                }, 1000);
+            else if (input.keys.KeyF) {
+                // Handle F button press
+                if (gameInstance.audioManager) {
+                    gameInstance.audioManager.playSound('suina_fuck');
+                }
+                if (gameInstance.scoreManager) {
+                    gameInstance.scoreManager.increaseScore('love', 20);
+                }
+                this.buttonInteractionAvailable = false;
             }
         }
     }
 
     cleanup() {
-        if (this.disappearTimer) {
-            clearTimeout(this.disappearTimer);
-            this.disappearTimer = null;
-        }
-        if (this.buttonPressTimer) {
-            clearTimeout(this.buttonPressTimer);
-            this.buttonPressTimer = null;
-        }
-        if (this.attackSpriteTimer) {
-            clearTimeout(this.attackSpriteTimer);
-            this.attackSpriteTimer = null;
-        }
+        this.isColliding = false;
+        this.collisionStartTime = null;
+        this.hasChangedSprite = false;
+        this.buttonInteractionAvailable = false;
+        this.soundPlayed = false;
     }
 
     updateBehavior(player, worldBounds, deltaTime, input) {
@@ -115,43 +101,44 @@ export class Suina1 extends BaseCharacter {
             return;
         }
 
-        this.isColliding = false;
-        this.soundPlayed = false;
+        // Reset collision states if not colliding
+        if (!this.checkCollision(player) && this.isColliding) {
+            this.cleanup();
+        }
 
         const currentTime = performance.now();
         const maxDeltaTime = 32;
         const effectiveDeltaTime = Math.min(deltaTime, maxDeltaTime);
 
-        // Check if enough time has passed since last direction change
-        const timeSinceLastChange = currentTime - this.lastDirectionChange;
-        
-        if (currentTime - this.moveTimer > this.changeDirectionInterval || 
-            (this.stuckTimer > 500 && timeSinceLastChange > 1000)) {
+        // Regular movement behavior
+        if (!this.isColliding) {
+            const timeSinceLastChange = currentTime - this.lastDirectionChange;
             
-            this.randomizeDirection(worldBounds);
-            this.moveTimer = currentTime;
-            this.lastDirectionChange = currentTime;
-            this.stuckTimer = 0;
-            this.directionChangeCount = 0;
-        }
-
-        const distance = Math.hypot(player.x - this.x, player.y - this.y);
-        const startPos = { x: this.x, y: this.y };
-
-        if (distance < 150) {
-            this.runAwayFrom(player, effectiveDeltaTime, worldBounds);
-            this.isIdle = false;
-        } else {
-            const moved = this.moveRandomly(effectiveDeltaTime, worldBounds);
-            
-            if (!moved) {
-                this.stuckTimer += deltaTime * 16.67;
-            } else {
+            if (currentTime - this.moveTimer > this.changeDirectionInterval || 
+                (this.stuckTimer > 500 && timeSinceLastChange > 1000)) {
+                this.randomizeDirection(worldBounds);
+                this.moveTimer = currentTime;
+                this.lastDirectionChange = currentTime;
                 this.stuckTimer = 0;
+                this.directionChangeCount = 0;
+            }
+
+            const distance = Math.hypot(player.x - this.x, player.y - this.y);
+
+            if (distance < 150) {
+                this.runAwayFrom(player, effectiveDeltaTime, worldBounds);
+                this.isIdle = false;
+            } else {
+                const moved = this.moveRandomly(effectiveDeltaTime, worldBounds);
+                if (!moved) {
+                    this.stuckTimer += deltaTime * 16.67;
+                } else {
+                    this.stuckTimer = 0;
+                }
             }
         }
 
-        // Update animation
+        // Update animation frame
         if (!this.isIdle && currentTime - this.lastUpdateTime >= this.animationSpeed) {
             this.frame = (this.frame + 1) % this.totalFrames;
             this.lastUpdateTime = currentTime;
@@ -241,7 +228,7 @@ export class Suina1 extends BaseCharacter {
         if (nearTop) directions = directions.filter(d => d !== 'up');
         if (nearBottom) directions = directions.filter(d => d !== 'down');
 
-        // Special handling for corners to ensure escape
+        // Special handling for corners
         if (this.x < cornerBuffer && this.y < cornerBuffer) {
             directions = ['right', 'down'];
         } else if (this.x > width - cornerBuffer && this.y < cornerBuffer) {
