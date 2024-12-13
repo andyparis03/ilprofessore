@@ -32,10 +32,7 @@ export class ScoreManager {
             
             // If it's a love score increase, trigger animation
             if (type === 'love' && amount > 0) {
-                // Position the animation near the love score bar
-                const x = this.ctx.canvas.width - this.barWidth / 2 - this.padding;
-                const y = this.padding + this.barHeight + this.barSpacing;
-                this.scoreAnimation.addAnimation(amount, x, y);
+                this.scoreAnimation.addAnimation(amount);
             }
         }
     }
@@ -43,6 +40,7 @@ export class ScoreManager {
     draw() {
         this.ctx.save();
 
+        // Draw score bars
         Object.entries(this.scores).forEach(([type, score], index) => {
             const x = this.ctx.canvas.width - this.barWidth - this.padding;
             const y = this.padding + (index * (this.barHeight + this.barSpacing));
