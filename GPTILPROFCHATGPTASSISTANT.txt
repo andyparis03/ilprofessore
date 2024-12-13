@@ -150,6 +150,7 @@ import { Renderer } from './js/engine/Renderer.js';
 import { AssetLoader } from './utils/AssetLoader.js';
 import { AudioManager } from './js/engine/AudioManager.js';
 import { LevelManager } from './levels/LevelManager.js';
+import { ScoreManager } from './js/engine/ScoreManager.js';
 
 const audioManager = new AudioManager();
 
@@ -202,15 +203,19 @@ class Game {
 
         this.input = new InputHandler();
         this.audioManager = audioManager;
+        this.scoreManager = new ScoreManager(this.ctx);
 
         this.player = new Player(
             CONFIG.WORLD.WIDTH / 2,
             CONFIG.WORLD.HEIGHT / 2,
             CONFIG.PLAYER.WIDTH,
             CONFIG.PLAYER.HEIGHT,
-            null,  // We'll set sprites after assets load
+            null,
             'professore'
         );
+
+        // Make game instance globally available for character interactions
+        window.gameInstance = this;
 
         window.addEventListener('resize', () => this.setupCanvas());
     }
@@ -262,7 +267,15 @@ class Game {
             height: CONFIG.WORLD.HEIGHT
         });
 
-        this.levelManager.update(this.player);
+        this.levelManager.update(
+            this.player,
+            {
+                width: CONFIG.WORLD.WIDTH,
+                height: CONFIG.WORLD.HEIGHT
+            },
+            this.input  // Pass input here
+        );
+
         if (this.levelManager.checkLevelTransition(this.player)) {
             console.log(`Transitioned to Level ${this.levelManager.currentLevel}`);
         }
@@ -276,6 +289,9 @@ class Game {
         this.renderer.drawBackground(this.levelManager.getCurrentLevelBackground(), this.camera);
         this.renderer.drawCharacters(this.assets.sprites, this.camera);
         this.renderer.drawPlayer(this.player, this.assets.sprites.professore, this.camera);
+        
+        // Draw score bars last so they're always on top
+        this.scoreManager.draw();
     }
 
     gameLoop() {
@@ -287,7 +303,6 @@ class Game {
 
 const game = new Game();
 game.init().catch(console.error);
-
 
 
 
@@ -880,10 +895,12 @@ export class InputHandler {
             ArrowUp: false,
             ArrowDown: false,
             ArrowLeft: false,
-            ArrowRight: false
+            ArrowRight: false,
+            KeyF: false,    
+            KeyB: false     
         };
 
-        this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
+        this.isMobile = window.innerWidth <= 768 ||
             /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
         this.touchState = {};
@@ -891,8 +908,8 @@ export class InputHandler {
     }
 
     setupEventListeners() {
-        window.addEventListener('keydown', (e) => this.setKey(e.key, true));
-        window.addEventListener('keyup', (e) => this.setKey(e.key, false));
+        window.addEventListener('keydown', (e) => this.setKey(e.code, true));
+        window.addEventListener('keyup', (e) => this.setKey(e.code, false));
 
         if (this.isMobile) {
             this.setupTouchControls();
@@ -1055,6 +1072,78 @@ export class Renderer {
         this.drawPlayer(player, sprites.professore, camera);
     }
 }
+
+
+
+
+
+
+
+
+
+ScoreManager.js:
+// ScoreManager.js
+export class ScoreManager {
+    constructor(ctx) {
+        this.ctx = ctx;
+        this.scores = {
+            energy: 0,
+            love: 0,
+            friendship: 0
+        };
+        this.maxScore = 100;
+        this.barWidth = 150;
+        this.barHeight = 10;
+        this.padding = 30;
+        this.colors = {
+            energy: '#ff4444',    // Red for Energy
+            love: '#ff69b4',      // Pink for Love
+            friendship: '#4CAF50'  // Green for Friendship
+        };
+        this.barSpacing = 5;
+        this.textPadding = 5;
+    }
+
+    increaseScore(type, amount) {
+        if (this.scores.hasOwnProperty(type)) {
+            this.scores[type] = Math.min(this.maxScore, this.scores[type] + amount);
+        }
+    }
+
+    draw() {
+        this.ctx.save();
+        
+        Object.entries(this.scores).forEach(([type, score], index) => {
+            const x = this.ctx.canvas.width - this.barWidth - this.padding;
+            const y = this.padding + (index * (this.barHeight + this.barSpacing));
+
+            // Draw label with shadow for better visibility
+            this.ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            this.ctx.shadowBlur = 2;
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = 'bold 10px Arial';
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText(type.toUpperCase(), x - this.textPadding, y + this.barHeight);
+            
+            // Reset shadow for bars
+            this.ctx.shadowBlur = 0;
+
+            // Draw background bar with slight transparency
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.fillRect(x, y, this.barWidth, this.barHeight);
+
+            // Draw score bar
+            this.ctx.fillStyle = this.colors[type];
+            const fillWidth = (score / this.maxScore) * this.barWidth;
+            this.ctx.fillRect(x, y, fillWidth, this.barHeight);
+        });
+
+        this.ctx.restore();
+    }
+}
+
+
+
 
 
 
@@ -1328,19 +1417,16 @@ export class BaseCharacter {
         this.lastUpdateTime = performance.now();
     }
 
-    // For NPCs: 'player' parameter is the Player character object.
-    // For NPCs, 'player' is used to determine behavior. 'worldBounds' is the game area.
-    update(player, worldBounds) {
+    update(player, worldBounds, input) {  // Add input parameter here
         if (this.isCaught) return;
 
         const currentTime = performance.now();
         const deltaTime = (currentTime - this.lastUpdateTime) / 16.67;
         this.lastUpdateTime = currentTime;
 
-        // NPC logic uses 'player' to decide how to move/behave
-        this.updateBehavior(player, worldBounds, deltaTime);
+        // Pass input to updateBehavior
+        this.updateBehavior(player, worldBounds, deltaTime, input);
 
-        // Update animation frames if not idle
         if (!this.isIdle) {
             if (currentTime - this.lastAnimationUpdate >= this.animationSpeed) {
                 this.frame = (this.frame + 1) % this.totalFrames;
@@ -1352,9 +1438,7 @@ export class BaseCharacter {
         }
     }
 
-    // NPC subclasses implement their own behavior, using the 'player' parameter for logic
-    updateBehavior(player, worldBounds, deltaTime) {
-        // Default (idle)
+    updateBehavior(player, worldBounds, deltaTime, input) {  // Add input parameter here
         this.isIdle = true;
     }
 
@@ -1367,6 +1451,7 @@ export class BaseCharacter {
         );
     }
 }
+
 
 
 
@@ -1539,13 +1624,14 @@ export class Player extends BaseCharacter {
 
 
 // Suina1.js
+// Suina1.js
 import { BaseCharacter } from './BaseCharacter.js';
 
 export class Suina1 extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type, 1.5);
         this.moveTimer = 0;
-        this.changeDirectionInterval = 2500; // Increased interval for more stable movement
+        this.changeDirectionInterval = 2500;
         this.lastNonIdleDirection = 'down';
         this.lastUpdateTime = performance.now();
         this.frameTime = performance.now();
@@ -1559,9 +1645,105 @@ export class Suina1 extends BaseCharacter {
         this.stuckTimer = 0;
         this.directionChangeCount = 0;
         this.lastDirectionChange = performance.now();
+
+        // Collision and interaction states
+        this.isColliding = false;
+        this.disappearTimer = null;
+        this.isDisappearing = false;
+        this.attackSpriteTimer = null;
+        this.buttonPressTimer = null;
+        this.soundPlayed = false;
+        this.currentSprite = sprites.idle;
     }
 
-    updateBehavior(player, worldBounds, deltaTime) {
+    handleCollision(player, input) {
+        if (!this.isColliding && !this.isDisappearing) {
+            this.isColliding = true;
+            const gameInstance = window.gameInstance;
+            
+            // Play collision sound
+            if (!this.soundPlayed && gameInstance.audioManager) {
+                gameInstance.audioManager.playSound('suina_sound');
+                this.soundPlayed = true;
+            }
+
+            // Change to attack sprite
+            if (this.sprites.attack) {
+                this.currentSprite = this.sprites.attack;
+                
+                // Set timer to disappear
+                if (!this.disappearTimer) {
+                    this.disappearTimer = setTimeout(() => {
+                        this.isDisappearing = true;
+                        this.isCaught = true;
+                        // Clear timers
+                        this.cleanup();
+                    }, 2000);
+                }
+            }
+        }
+
+        // Handle button interactions during collision
+        if (this.isColliding && !this.buttonPressTimer) {
+            const gameInstance = window.gameInstance;
+            
+            // F button press
+            if (input.keys.KeyF) {
+                this.buttonPressTimer = setTimeout(() => {
+                    if (gameInstance.audioManager) {
+                        gameInstance.audioManager.playSound('suina_fuck');
+                    }
+                    if (gameInstance.scoreManager) {
+                        gameInstance.scoreManager.increaseScore('love', 10);
+                        gameInstance.scoreManager.increaseScore('energy', 10);
+                    }
+                    this.buttonPressTimer = null;
+                }, 1000);
+            }
+            
+            // B button press
+            else if (input.keys.KeyB) {
+                this.buttonPressTimer = setTimeout(() => {
+                    if (gameInstance.audioManager) {
+                        gameInstance.audioManager.playSound('suina_sound');
+                        setTimeout(() => gameInstance.audioManager.playSound('suina_sound'), 200);
+                    }
+                    if (gameInstance.scoreManager) {
+                        gameInstance.scoreManager.increaseScore('love', 1);
+                    }
+                    this.buttonPressTimer = null;
+                }, 1000);
+            }
+        }
+    }
+
+    cleanup() {
+        if (this.disappearTimer) {
+            clearTimeout(this.disappearTimer);
+            this.disappearTimer = null;
+        }
+        if (this.buttonPressTimer) {
+            clearTimeout(this.buttonPressTimer);
+            this.buttonPressTimer = null;
+        }
+        if (this.attackSpriteTimer) {
+            clearTimeout(this.attackSpriteTimer);
+            this.attackSpriteTimer = null;
+        }
+    }
+
+    updateBehavior(player, worldBounds, deltaTime, input) {
+        if (this.isCaught || this.isDisappearing) return;
+
+        // Check for collision with player
+        if (this.checkCollision(player)) {
+            this.handleCollision(player, input);
+            return;
+        }
+
+        this.isColliding = false;
+        this.soundPlayed = false;
+
         const currentTime = performance.now();
         const maxDeltaTime = 32;
         const effectiveDeltaTime = Math.min(deltaTime, maxDeltaTime);
@@ -1569,9 +1751,6 @@ export class Suina1 extends BaseCharacter {
         // Check if enough time has passed since last direction change
         const timeSinceLastChange = currentTime - this.lastDirectionChange;
         
-        // Only change direction if:
-        // 1. Normal interval has passed OR
-        // 2. We're stuck and minimum time has passed
         if (currentTime - this.moveTimer > this.changeDirectionInterval || 
             (this.stuckTimer > 500 && timeSinceLastChange > 1000)) {
             
@@ -1591,7 +1770,6 @@ export class Suina1 extends BaseCharacter {
         } else {
             const moved = this.moveRandomly(effectiveDeltaTime, worldBounds);
             
-            // If not moving, increment stuck timer
             if (!moved) {
                 this.stuckTimer += deltaTime * 16.67;
             } else {
@@ -1610,13 +1788,12 @@ export class Suina1 extends BaseCharacter {
         const dx = this.x - player.x;
         const dy = this.y - player.y;
         const angle = Math.atan2(dy, dx);
-        const adjustedSpeed = this.speed * deltaTime * 1.2; // Faster when escaping
+        const adjustedSpeed = this.speed * deltaTime * 1.2;
 
         const oldX = this.x;
         const oldY = this.y;
 
-        // Calculate target position with some randomness to avoid straight lines
-        const randomOffset = Math.random() * 0.2 - 0.1; // Small random angle adjustment
+        const randomOffset = Math.random() * 0.2 - 0.1;
         const finalAngle = angle + randomOffset;
 
         this.x = Math.min(Math.max(this.x + Math.cos(finalAngle) * adjustedSpeed, 0), 
@@ -1632,7 +1809,7 @@ export class Suina1 extends BaseCharacter {
     }
 
     moveRandomly(deltaTime, worldBounds) {
-        const adjustedSpeed = this.speed * deltaTime * 0.8; // Slightly slower for smoother movement
+        const adjustedSpeed = this.speed * deltaTime * 0.8;
         const oldX = this.x;
         const oldY = this.y;
 
@@ -1676,11 +1853,9 @@ export class Suina1 extends BaseCharacter {
 
         let directions = ['up', 'down', 'left', 'right'];
 
-        // Avoid rapid direction changes
         if (this.directionChangeCount < 3) {
-            // Prefer to maintain current direction if not near edges
             if (!nearLeft && !nearRight && !nearTop && !nearBottom) {
-                if (Math.random() < 0.7) { // 70% chance to keep current direction
+                if (Math.random() < 0.7) {
                     return;
                 }
             }
@@ -1730,6 +1905,7 @@ export class Suina1 extends BaseCharacter {
         this.lastNonIdleDirection = this.direction;
     }
 }
+
 
 
 

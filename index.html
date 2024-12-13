@@ -1,9 +1,8 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Il Professore Game</title>
   <link rel="stylesheet" href="./styles/style.css">
 </head>
@@ -11,12 +10,16 @@
   <canvas id="gameCanvas" width="800" height="600"></canvas>
   <div id="controls-container">
     <div id="controls">
-      <button id="bacio">B</button>
-      <button id="left">←</button>
-      <button id="up">↑</button>
-      <button id="down">↓</button>
-      <button id="right">→</button>
-      <button id="fuck">F</button>
+      <div class="action-buttons">
+        <button id="bacio" class="action-btn left">B</button>
+        <button id="fuck" class="action-btn right">F</button>
+      </div>
+      <div class="direction-buttons">
+        <button id="left">←</button>
+        <button id="up">↑</button>
+        <button id="down">↓</button>
+        <button id="right">→</button>
+      </div>
     </div>
   </div>
   <script src="./main.js" type="module"></script>

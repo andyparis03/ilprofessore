@@ -33,57 +33,87 @@ canvas {
 
 #controls-container {
   position: fixed;
-  bottom: 0;
+  bottom: 20px;
   width: 100%;
   display: flex;
   justify-content: center;
   z-index: 10;
+  pointer-events: none;
 }
 
 #controls {
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 2px;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  pointer-events: auto;
+}
+
+.action-buttons {
+  position: absolute;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 5px; /* 5px padding from screen edges */
+  bottom: 80px; /* Position above direction buttons */
+}
+
+.direction-buttons {
+  display: flex;
   justify-content: center;
+  gap: 5px;
+  padding: 0 20px;
 }
 
 #controls button {
-  width: 60px;
-  height: 60px;
+  width: 70px;
+  height: 70px;
   font-size: 24px;
   border: none;
   border-radius: 50%;
-  background-color: #333;
+  background-color: rgba(51, 51, 51, 0.8);
   color: white;
-  opacity: 0.8;
   transition: all 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#controls .action-btn {
+  width: 60px;
+  height: 60px;
+  font-weight: bold;
+  background-color: rgba(76, 175, 80, 0.8);  /* Green tint for action buttons */
 }
 
 #controls button:active,
-#controls button:hover {
-  opacity: 1;
-}
-
 #controls button.active {
-  background-color: #555;
-  transform: scale(0.95);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  transform: scale(0.9);
+  background-color: rgba(76, 76, 76, 0.9);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-@media (max-width: 768px) {
-  #controls button {
-    width: 50px;
-    height: 50px;
-    font-size: 20px;
-  }
-  #controls-container {
-    flex-direction: column;
-  }
+#controls .action-btn:active,
+#controls .action-btn.active {
+  background-color: rgba(56, 142, 60, 0.9);  /* Darker green when pressed */
 }
 
 @media (min-width: 769px) {
-    #controls-container {
-        display: none;
-    }
+  #controls-container {
+    display: none;
+  }
+}
+
+/* Prevent text selection on mobile */
+#controls button {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Ensure buttons don't cause scrolling on iOS */
+#controls-container {
+  touch-action: none;
 }
