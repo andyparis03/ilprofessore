@@ -143,27 +143,55 @@ export class Suina1 extends BaseCharacter {
     }
 
     cleanup() {
+        // Clear any pending timeouts
         if (this.respawnTimeout) {
             clearTimeout(this.respawnTimeout);
+            this.respawnTimeout = null;
         }
-        this.isColliding = false;
-        this.collisionStartTime = null;
-        this.buttonInteractionAvailable = false;
-        this.soundPlayed = false;
+        
+        // Only perform cleanup if we're not in the middle of disappearing
+        if (!this.isDisappearing) {
+            this.isColliding = false;
+            this.collisionStartTime = null;
+            this.buttonInteractionAvailable = false;
+            this.soundPlayed = false;
+            this.currentSprite = null;
+            this.activeSprite = null;
+            
+            // Reset interaction states
+            this.hasInteracted = false;
+            
+            // Ensure sprite reset only happens when appropriate
+            if (this.sprites && this.sprites.walking) {
+                this.currentSprite = 'walking';
+                this.activeSprite = this.sprites.walking;
+            }
+        }
     }
 
     updateBehavior(player, worldBounds, deltaTime, input) {
         if (!this.isVisible) return;
 
-        // Check for collision with player
-        if (this.checkCollision(player)) {
-            this.handleCollision(player, input);
-            return; // Stop all movement when colliding
-        }
+        const isCollidingNow = this.checkCollision(player);
 
-        // Reset collision states if not colliding
-        if (!this.checkCollision(player) && this.isColliding) {
-            this.cleanup();
+        // Handle collision state changes
+        if (isCollidingNow && !this.isColliding) {
+            // New collision
+            this.handleCollision(player, input);
+            return; // Stop all movement when starting collision
+        } else if (isCollidingNow && this.isColliding) {
+            // Ongoing collision
+            this.handleCollision(player, input);
+            return; // Maintain collision state
+        } else if (!isCollidingNow && this.isColliding) {
+            // Just stopped colliding
+            const timeSinceCollisionStart = this.collisionStartTime ? 
+                performance.now() - this.collisionStartTime : 0;
+            
+            // Only cleanup if we're not in the disappearing animation window
+            if (timeSinceCollisionStart > 2000 || !this.collisionStartTime) {
+                this.cleanup();
+            }
         }
 
         // Only process movement if not in collision state

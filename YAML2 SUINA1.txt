@@ -11,7 +11,7 @@ Collision Handling: I want to handle collision between il professore and Suina1 
         effects:
           - "Play sound: suinasound (once)"
           - "Change sprite to: suina1-attack.png"
-          - "2 seconds after sprite change the character Suina1 disappear from the canavas"
+          - "wait for the B or F action and then disappear from the canavas"
 
     specific_actions:
       - targets: ["Suina1"]
