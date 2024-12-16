@@ -1,5 +1,6 @@
 // LevelManager.js
 import { CONFIG } from '../config.js';
+import { CharacterRegistry } from '../utils/CharacterRegistry.js';
 import { Suina1 } from '../characters/Suina1.js';
 import { Suina2 } from '../characters/Suina2.js';
 import { SuinaEvil } from '../characters/SuinaEvil.js';
@@ -10,20 +11,106 @@ import { Milly } from '../characters/Milly.js';
 export class LevelManager {
     constructor(assets) {
         this.assets = assets;
+        this.registry = new CharacterRegistry();
         this.currentLevel = 1;
         this.characters = [];
         this.characterTimers = {};
         this.player = null;
-        this.transitionInProgress = false;
-        this.transitionTimeout = null;
+        this.transitionState = {
+            inProgress: false,
+            timeout: null,
+            startTime: null,
+            duration: 500,
+            previousLevel: null,
+            targetLevel: null
+        };
+
+        this.registerCharacters();
         this.setupBackButton();
+    }
+
+    registerCharacters() {
+        // Register Suina1
+        this.registry.registerCharacter('suina1', Suina1, {
+            // Basic properties
+            x: 0,
+            y: 0,
+            direction: 'down',
+            lastNonIdleDirection: 'down',
+            isIdle: false,
+            frame: 0,
+            isPaused: false,
+
+            // Animation states
+            currentSprite: null,
+            activeSprite: null,
+
+            // Collision states
+            isColliding: false,
+            collisionStartTime: null,
+            isDisappearing: false,
+            buttonInteractionAvailable: false,
+            hasInteracted: false,
+            soundPlayed: false,
+            isVisible: true,
+
+            // Movement states
+            moveTimer: (char) => char.moveTimer || performance.now(),
+            velocity: { x: 0, y: 0 },
+            movementBuffer: { x: 0, y: 0 },
+            stuckTimer: 0,
+            directionChangeCount: 0,
+            lastDirectionChange: (char) => char.lastDirectionChange || performance.now()
+        });
+
+        // Register Suina2
+        this.registry.registerCharacter('suina2', Suina2, {
+            // Basic properties
+            direction: 'down',
+            isIdle: true,
+            frame: 0,
+            isPaused: false,
+            lastBehaviorUpdate: (char) => char.lastBehaviorUpdate || performance.now()
+        });
+
+        // Register other characters with their specific states
+        this.registry.registerCharacter('suinaevil', SuinaEvil, {
+            direction: 'down',
+            isIdle: true,
+            frame: 0,
+            isPaused: false,
+            lastBehaviorUpdate: (char) => char.lastBehaviorUpdate || performance.now()
+        });
+
+        this.registry.registerCharacter('walter', Walter, {
+            direction: 'down',
+            isIdle: true,
+            frame: 0,
+            isPaused: false,
+            lastBehaviorUpdate: (char) => char.lastBehaviorUpdate || performance.now()
+        });
+
+        this.registry.registerCharacter('diego', Diego, {
+            direction: 'down',
+            isIdle: true,
+            frame: 0,
+            isPaused: false,
+            lastBehaviorUpdate: (char) => char.lastBehaviorUpdate || performance.now()
+        });
+
+        this.registry.registerCharacter('milly', Milly, {
+            direction: 'down',
+            isIdle: true,
+            frame: 0,
+            isPaused: false,
+            lastBehaviorUpdate: (char) => char.lastBehaviorUpdate || performance.now()
+        });
     }
 
     setupBackButton() {
         const backButton = document.getElementById('back-button');
         if (!backButton) return;
 
-        // Handle back button click
         backButton.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -32,7 +119,6 @@ export class LevelManager {
             }
         });
 
-        // Initial visibility
         this.updateBackButtonVisibility();
     }
 
@@ -43,92 +129,165 @@ export class LevelManager {
         }
     }
 
-    transitionToLevel1() {
-        // Clear any existing timers
+    async transitionToLevel1() {
+        if (this.transitionState.inProgress) return;
+        
         this.clearTimers();
         
-        // Reset player position to center of level 1
         if (this.player) {
             this.player.x = CONFIG.WORLD.WIDTH / 2;
             this.player.y = CONFIG.WORLD.HEIGHT / 2;
         }
 
-        // Load level 1
-        this.loadLevel(1, this.player);
-        
-        // Update back button visibility
+        await this.loadLevel(1, this.player);
         this.updateBackButtonVisibility();
     }
 
-    loadLevel(levelNumber, player) {
+    async loadLevel(levelNumber, player) {
         const levelConfig = CONFIG.LEVELS[levelNumber];
         if (!levelConfig) {
             console.error(`Level ${levelNumber} configuration not found.`);
             return;
         }
 
-        if (this.transitionTimeout) {
-            clearTimeout(this.transitionTimeout);
+        if (this.transitionState.inProgress) {
+            console.warn('Level transition already in progress');
+            return;
         }
 
-        this.transitionInProgress = true;
+        try {
+            await this.startTransition(levelNumber);
+            const storedStates = this.preserveCharacterStates();
+            await this.clearCurrentLevel();
+            await this.setupNewLevel(levelNumber, player, storedStates);
+            await this.completeTransition();
+            console.log(`Loaded level ${levelNumber}`);
+        } catch (error) {
+            console.error('Error during level transition:', error);
+            this.handleTransitionError();
+        }
+    }
 
-        // Store character states before clearing
+    async startTransition(newLevelNumber) {
+        this.transitionState = {
+            inProgress: true,
+            startTime: performance.now(),
+            previousLevel: this.currentLevel,
+            targetLevel: newLevelNumber,
+            duration: 500,
+            timeout: null
+        };
+
+        if (this.transitionState.timeout) {
+            clearTimeout(this.transitionState.timeout);
+        }
+
+        // Pause all characters during transition
+        this.characters.forEach(char => {
+            if (char && typeof char.pauseUpdates === 'function') {
+                char.pauseUpdates();
+            }
+        });
+    }
+
+    preserveCharacterStates() {
         const storedStates = new Map();
         this.characters.forEach(char => {
             if (char && char.type) {
-                storedStates.set(char.type, {
-                    direction: char.direction,
-                    lastNonIdleDirection: char.lastNonIdleDirection,
-                    isIdle: false
-                });
+                const state = this.registry.preserveState(char);
+                if (state) {
+                    storedStates.set(char.type, state);
+                }
+            }
+        });
+        return storedStates;
+    }
+
+    async clearCurrentLevel() {
+        this.clearTimers();
+        
+        // Cleanup all characters
+        this.characters.forEach(char => {
+            if (char && typeof char.cleanup === 'function') {
+                char.cleanup();
             }
         });
 
-        this.clearTimers();
         this.characters = [];
         this.characterTimers = {};
+    }
 
+    async setupNewLevel(levelNumber, player, storedStates) {
         this.currentLevel = levelNumber;
-        this.loadCharactersForLevel(levelNumber, storedStates);
-        this.updateBackButtonVisibility();
-
+        
         if (this.player !== player) {
             this.player = player;
         }
 
+        await this.loadCharactersForLevel(levelNumber, storedStates);
+        this.updateBackButtonVisibility();
         this.resetPlayerState();
-
-        console.log(`Loaded level ${levelNumber}`);
-
-        this.transitionTimeout = setTimeout(() => {
-            this.transitionInProgress = false;
-            // Force walking state after transition
-            this.characters.forEach(char => {
-                if (char) char.isIdle = false;
-            });
-        }, 100);
     }
 
     resetPlayerState() {
         if (!this.player) return;
 
-        // Preserve timing consistency
         const now = performance.now();
         this.player.lastUpdateTime = now;
         this.player.lastAnimationUpdate = now;
         this.player.frameTime = now;
-
         this.player.updateSpeedMultiplier();
         
-        // Reset movement tracking
         this.player.velocity = { x: 0, y: 0 };
         this.player.movementBuffer = { x: 0, y: 0 };
-
         this.player.x = CONFIG.WORLD.WIDTH / 2;
         this.player.y = CONFIG.WORLD.HEIGHT / 2;
-
         this.player.frame = this.player.frame % this.player.totalFrames;
+    }
+
+    async completeTransition() {
+        return new Promise((resolve) => {
+            const remainingTime = Math.max(0, 
+                this.transitionState.duration - (performance.now() - this.transitionState.startTime));
+
+            this.transitionState.timeout = setTimeout(() => {
+                // Resume all characters
+                this.characters.forEach(char => {
+                    if (char && typeof char.resumeUpdates === 'function') {
+                        char.resumeUpdates();
+                    }
+                });
+
+                this.transitionState = {
+                    inProgress: false,
+                    timeout: null,
+                    startTime: null,
+                    previousLevel: null,
+                    targetLevel: null,
+                    duration: 500
+                };
+
+                resolve();
+            }, remainingTime);
+        });
+    }
+
+    handleTransitionError() {
+        this.transitionState = {
+            inProgress: false,
+            timeout: null,
+            startTime: null,
+            previousLevel: null,
+            targetLevel: null,
+            duration: 500
+        };
+
+        // Resume all characters
+        this.characters.forEach(char => {
+            if (char && typeof char.resumeUpdates === 'function') {
+                char.resumeUpdates();
+            }
+        });
     }
 
     loadCharactersForLevel(levelNumber, storedStates) {
@@ -159,16 +318,7 @@ export class LevelManager {
     }
 
     addCharacter(type, x, y, storedStates = null) {
-        const characterClasses = {
-            suina1: Suina1,
-            suina2: Suina2,
-            suinaevil: SuinaEvil,
-            walter: Walter,
-            diego: Diego,
-            milly: Milly
-        };
-
-        const CharacterClass = characterClasses[type.toLowerCase()];
+        const CharacterClass = this.registry.getCharacterClass(type);
         const sprites = this.assets.sprites[type];
 
         if (!CharacterClass || !sprites) {
@@ -178,7 +328,6 @@ export class LevelManager {
 
         const character = new CharacterClass(x, y, CONFIG.PLAYER.WIDTH, CONFIG.PLAYER.HEIGHT, sprites, type.toLowerCase());
 
-        // Restore previous state if available
         if (storedStates) {
             const storedState = storedStates.get(type.toLowerCase());
             if (storedState) {
@@ -186,10 +335,12 @@ export class LevelManager {
             }
         }
 
-        // Ensure character starts in walking state
+        // Ensure character starts in correct state
         character.isIdle = false;
+        character.isPaused = this.transitionState.inProgress;
 
         this.characters.push(character);
+        return character;
     }
 
     addDelayedCharacter(type, x, y, delay) {
@@ -215,12 +366,12 @@ export class LevelManager {
     }
 
     update(player, worldBounds, input) {
-        if (this.transitionInProgress) return;
+        if (this.transitionState.inProgress) return;
 
         this.characters = this.characters.filter(character => character && character.type);
 
         this.characters.forEach((character) => {
-            if (!character.isCaught) {
+            if (!character.isCaught && !character.isPaused) {
                 character.update(player, {
                     width: CONFIG.WORLD.WIDTH,
                     height: CONFIG.WORLD.HEIGHT
@@ -230,7 +381,7 @@ export class LevelManager {
     }
 
     checkLevelTransition(player) {
-        if (this.transitionInProgress) return false;
+        if (this.transitionState.inProgress) return false;
 
         const currentLevelConfig = CONFIG.LEVELS[this.currentLevel];
         if (!currentLevelConfig || !currentLevelConfig.transitions) {
@@ -244,8 +395,7 @@ export class LevelManager {
                 player.y >= transition.y.min &&
                 player.y <= transition.y.max
             ) {
-                const nextLevel = transition.nextLevel;
-                this.loadLevel(nextLevel, player);
+                this.loadLevel(transition.nextLevel, player);
                 return true;
             }
         }

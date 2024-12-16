@@ -1,14 +1,20 @@
-export class SuinaEvil {
-    constructor(x, y, width, height, sprites) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        this.sprites = sprites || {}; // Placeholder sprites
-        this.isIdle = true; // Placeholder state
+// SuinaEvil.js
+import { BaseCharacter } from './BaseCharacter.js';
+
+export class SuinaEvil extends BaseCharacter {
+    constructor(x, y, width, height, sprites, type) {
+        super(x, y, width, height, sprites, type);
+        this.lastBehaviorUpdate = performance.now();
     }
 
-    update(player, worldBounds) {
-        // No behavior yet
+    updateBehavior(player, worldBounds, deltaTime, input) {
+        if (this.isPaused) return;
+        
+        const currentTime = performance.now();
+        this.lastBehaviorUpdate = currentTime;
+        
+        // Currently remains idle - future behavior can be added here
+        this.isIdle = true;
+        this.direction = 'down';
     }
 }

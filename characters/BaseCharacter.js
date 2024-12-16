@@ -19,18 +19,30 @@ export class BaseCharacter {
         this.animationSpeed = 100;
         this.lastAnimationUpdate = 0;
         this.isCaught = false;
-
         this.lastUpdateTime = performance.now();
+        
+        // Add pause state
+        this.isPaused = false;
     }
 
-    update(player, worldBounds, input) {  // Add input parameter here
-        if (this.isCaught) return;
+    pauseUpdates() {
+        this.isPaused = true;
+    }
+
+    resumeUpdates() {
+        this.isPaused = false;
+        // Reset animation timing to prevent jumps
+        this.lastUpdateTime = performance.now();
+        this.lastAnimationUpdate = performance.now();
+    }
+
+    update(player, worldBounds, input) {
+        if (this.isPaused || this.isCaught) return;
 
         const currentTime = performance.now();
         const deltaTime = (currentTime - this.lastUpdateTime) / 16.67;
         this.lastUpdateTime = currentTime;
 
-        // Pass input to updateBehavior
         this.updateBehavior(player, worldBounds, deltaTime, input);
 
         if (!this.isIdle) {
@@ -40,11 +52,12 @@ export class BaseCharacter {
             }
         } else {
             this.frame = 0;
-            this.lastAnimationUpdate = 0;
+            this.lastAnimationUpdate = currentTime;
         }
     }
 
-    updateBehavior(player, worldBounds, deltaTime, input) {  // Add input parameter here
+    updateBehavior(player, worldBounds, deltaTime, input) {
+        if (this.isPaused) return;
         this.isIdle = true;
     }
 
@@ -55,5 +68,10 @@ export class BaseCharacter {
             this.y < other.y + other.height &&
             this.y + this.height > other.y
         );
+    }
+
+    cleanup() {
+        // Base cleanup method for all characters
+        this.isPaused = false;
     }
 }
