@@ -5,7 +5,9 @@ import { CONFIG } from '../config.js';
 export class Suina1 extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type, 1.5);
-        this.moveTimer = 0;
+        
+        // Movement states
+        this.moveTimer = performance.now();
         this.changeDirectionInterval = 2500;
         this.lastNonIdleDirection = 'down';
         this.lastUpdateTime = performance.now();
@@ -14,27 +16,105 @@ export class Suina1 extends BaseCharacter {
         this.velocity = { x: 0, y: 0 };
         this.lastX = x;
         this.lastY = y;
-        this.frame = 0;
-        this.isIdle = false;
-        this.direction = 'down';
         this.stuckTimer = 0;
         this.directionChangeCount = 0;
         this.lastDirectionChange = performance.now();
 
+        // Animation states
+        this.frame = 0;
+        this.isIdle = false;
+        this.direction = 'down';
+        
         // Collision and interaction states
         this.isColliding = false;
         this.collisionStartTime = null;
         this.isDisappearing = false;
-        this.hasChangedSprite = false;
         this.buttonInteractionAvailable = false;
         this.soundPlayed = false;
         this.isVisible = true;
         this.respawnTimeout = null;
+        this.currentSprite = null;
+        this.activeSprite = null;
+    }
+
+    handleCollision(player, input) {
+        const currentTime = performance.now();
+        const gameInstance = window.gameInstance;
+
+        // Initial collision detection
+        if (!this.isColliding && !this.isDisappearing && this.isVisible) {
+            // Stop movement and set collision state
+            this.isColliding = true;
+            this.collisionStartTime = currentTime;
+            this.buttonInteractionAvailable = true;
+
+            // Play initial collision sound only once
+            if (!this.soundPlayed && gameInstance.audioManager) {
+                gameInstance.audioManager.playSound('suina_sound');
+                this.soundPlayed = true;
+            }
+
+            // Change to attack sprite
+            if (this.sprites.attack) {
+                this.currentSprite = 'attack';
+                this.activeSprite = this.sprites.attack;
+            }
+
+            // Set disappearance timer if no interaction
+            setTimeout(() => {
+                if (this.isVisible && !this.hasInteracted) {
+                    this.isVisible = false;
+                    this.isDisappearing = true;
+                    this.buttonInteractionAvailable = false;
+
+                    // Schedule respawn
+                    this.respawnTimeout = setTimeout(() => {
+                        this.respawn();
+                    }, 2000);
+                }
+            }, 2000);
+        }
+
+        // Handle button interactions
+        if (this.buttonInteractionAvailable) {
+            if (input.keys.KeyB) {
+                if (gameInstance.audioManager) {
+                    gameInstance.audioManager.playSound('professore_smack');
+                }
+                if (gameInstance.scoreManager) {
+                    gameInstance.scoreManager.increaseScore('love', 2);
+                }
+                this.startDisappearance();
+            }
+            else if (input.keys.KeyF) {
+                if (gameInstance.audioManager) {
+                    gameInstance.audioManager.playSound('suina_fuck');
+                }
+                if (gameInstance.scoreManager) {
+                    gameInstance.scoreManager.increaseScore('love', 5);
+                }
+                this.startDisappearance();
+            }
+        }
+    }
+
+    startDisappearance() {
+        this.buttonInteractionAvailable = false;
+        this.isVisible = false;
+        this.isDisappearing = true;
+        this.hasInteracted = true;
+
+        if (this.respawnTimeout) {
+            clearTimeout(this.respawnTimeout);
+        }
+
+        this.respawnTimeout = setTimeout(() => {
+            this.respawn();
+        }, 2000);
     }
 
     respawn() {
-        // Generate random coordinates within the world bounds
-        const padding = 50; // To avoid spawning too close to edges
+        const padding = 50;
         this.x = Math.random() * (CONFIG.WORLD.WIDTH - this.width - padding * 2) + padding;
         this.y = Math.random() * (CONFIG.WORLD.HEIGHT - this.height - padding * 2) + padding;
         
@@ -42,11 +122,10 @@ export class Suina1 extends BaseCharacter {
         this.isColliding = false;
         this.collisionStartTime = null;
         this.isDisappearing = false;
-        this.hasChangedSprite = false;
         this.buttonInteractionAvailable = false;
         this.soundPlayed = false;
         this.isVisible = true;
-        this.isCaught = false;
+        this.hasInteracted = false;
         this.currentSprite = null;
         this.activeSprite = null;
 
@@ -57,69 +136,10 @@ export class Suina1 extends BaseCharacter {
         this.directionChangeCount = 0;
         this.isIdle = false;
         
-        // Set a random initial direction
+        // Set random initial direction
         const directions = ['up', 'down', 'left', 'right'];
         this.direction = directions[Math.floor(Math.random() * directions.length)];
         this.lastNonIdleDirection = this.direction;
-    }
-
-    handleCollision(player, input) {
-        const currentTime = performance.now();
-        const gameInstance = window.gameInstance;
-
-        // Initial collision detection
-        if (!this.isColliding && !this.isDisappearing && this.isVisible) {
-            this.isColliding = true;
-            this.collisionStartTime = currentTime;
-            this.hasChangedSprite = true;
-            this.buttonInteractionAvailable = true;
-
-            // Play initial collision sound
-            if (!this.soundPlayed && gameInstance.audioManager) {
-                gameInstance.audioManager.playSound('suina_sound');
-                this.soundPlayed = true;
-            }
-
-            // Change to attack sprite
-            if (this.sprites.attack) {
-                this.currentSprite = 'attack';
-                this.activeSprite = this.sprites.attack;
-
-                // Set timer for disappearance after 2 seconds
-                setTimeout(() => {
-                    this.isVisible = false;
-                    this.isDisappearing = true;
-                    this.buttonInteractionAvailable = false;
-
-                    // Set timer for respawn after 2 more seconds
-                    this.respawnTimeout = setTimeout(() => {
-                        this.respawn();
-                    }, 2000);
-                }, 2000);
-            }
-        }
-
-        // Handle button interactions during the 2-second window
-        if (this.buttonInteractionAvailable && currentTime - this.collisionStartTime <= 2000) {
-            if (input.keys.KeyB) {
-                if (gameInstance.audioManager) {
-                    gameInstance.audioManager.playSound('professore_smack');
-                }
-                if (gameInstance.scoreManager) {
-                    gameInstance.scoreManager.increaseScore('love', 2);
-                }
-                this.buttonInteractionAvailable = false;
-            }
-            else if (input.keys.KeyF) {
-                if (gameInstance.audioManager) {
-                    gameInstance.audioManager.playSound('suina_fuck');
-                }
-                if (gameInstance.scoreManager) {
-                    gameInstance.scoreManager.increaseScore('love', 4);
-                }
-                this.buttonInteractionAvailable = false;
-            }
-        }
     }
 
     cleanup() {
@@ -128,7 +148,6 @@ export class Suina1 extends BaseCharacter {
         }
         this.isColliding = false;
         this.collisionStartTime = null;
-        this.hasChangedSprite = false;
         this.buttonInteractionAvailable = false;
         this.soundPlayed = false;
     }
@@ -139,7 +158,7 @@ export class Suina1 extends BaseCharacter {
         // Check for collision with player
         if (this.checkCollision(player)) {
             this.handleCollision(player, input);
-            return;
+            return; // Stop all movement when colliding
         }
 
         // Reset collision states if not colliding
@@ -147,12 +166,12 @@ export class Suina1 extends BaseCharacter {
             this.cleanup();
         }
 
-        const currentTime = performance.now();
-        const maxDeltaTime = 32;
-        const effectiveDeltaTime = Math.min(deltaTime, maxDeltaTime);
-
-        // Regular movement behavior when not colliding
+        // Only process movement if not in collision state
         if (!this.isColliding) {
+            const currentTime = performance.now();
+            const maxDeltaTime = 32;
+            const effectiveDeltaTime = Math.min(deltaTime, maxDeltaTime);
+
             const timeSinceLastChange = currentTime - this.lastDirectionChange;
             
             if (currentTime - this.moveTimer > this.changeDirectionInterval || 
@@ -177,16 +196,16 @@ export class Suina1 extends BaseCharacter {
                     this.stuckTimer = 0;
                 }
             }
-        }
 
-        // Update animation frame
-        if (!this.isIdle && currentTime - this.lastUpdateTime >= this.animationSpeed) {
-            this.frame = (this.frame + 1) % this.totalFrames;
-            this.lastUpdateTime = currentTime;
+            // Update animation frame only when moving and not colliding
+            if (!this.isIdle && currentTime - this.lastUpdateTime >= this.animationSpeed) {
+                this.frame = (this.frame + 1) % this.totalFrames;
+                this.lastUpdateTime = currentTime;
+            }
         }
     }
 
-
+    // Rest of the movement methods remain unchanged...
     runAwayFrom(player, deltaTime, worldBounds) {
         const dx = this.x - player.x;
         const dy = this.y - player.y;

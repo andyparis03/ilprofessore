@@ -4,7 +4,6 @@
 
 
 
->>>>>>>>> Collision Handling: I want to handle collision between il professore and Suina1: when il professore have a collision with suina1 then Suina1 should change the spirte in suina1-attack.png ONLY FOR 1 SECOND (means revert to idle after one second) and play ONLY ONCE the sound 'suina_sound' (suina-sound.mp3) <<<<<
 
 Coding a videogame in javascript, html5 and css: find below in text the tree structure (TREEilprofessore) and I attached to this chat all the modules that compose a videogame called "IL PROFESSORE" is an action adventure with elements of top-down puzzle platformer. "Il Professore" is the protagonist of the game. "Il Professore" Is a Player Character in the style of Mario bros. 
 Consider that the createCharacter method is designed to allow for progressive activation of characters. As new functionality are implemented for more characters, their types will be added to the activeCharacters.
@@ -36,103 +35,107 @@ Don't do anything, just analyze all the files, understand the game and its struc
 
 TREEilprofessore:
 Ilprofessore
-│ 
-│   config.js
-│   index.html
-│   main.js
-│
-├───assets
-│   ├───maps
-│   │       level1.json
-│   │
-│   ├───sounds
-│   │       drink.mp3
-│   │       urlo.mp3
-│   │       prof-fuck.mp3
-│   │       prof-punch.mp3
-│   │       prof-smack.mp3
-│   │       prof-step.mp3
-│   │       prof-theme.mp3
-│   │       suina-fuck.mp3
-│   │       suina-sound.mp3
-│   │       suina-evil.mp3
-│   │       suina-walk.mp3
-│   │       walter-sound.mp3
-│   │       walter-welcome.mp3
-│   │       diego-sound.mp3
-│   │       milly-sound.mp3
-│   │
-│   └───sprites
-│       │   skull.png               
-│       │   background.png
-│       │   background2.png
-│       │   background3.png
-│       │   background4.png
-│       │   background5.png
-│       │   fallback-background.png
-│       │   fallback-idle.png
-│       │   fallback-spritesheet.png
-│       │
-│       ├───professore        
-│       │       professore-idle.png
-│       │       professore-spritesheet.png
-│       │
-│       ├───milly             
-│       │       milly-idle.png
-│       │       milly-spritesheet.png
-│       │       milly-interact.png
-│       │
-│       ├───suina1            
-│       │       suina1-idle.png
-│       │       suina1-spritesheet.png
-│       │       suina1-attack.png
-│       │
-│       ├───suina2            
-│       │       suina2-idle.png
-│       │       suina2-spritesheet.png
-│       │       suina2-attack.png
-│       │
-│       ├───suinaEvil          
-│       │       suinaEvil-idle.png
-│       │       suinaEvil-spritesheet.png
-│       │       suinaEvil-attack.png
-│       │
-│       ├───walter            
-│       │       walter-idle.png
-│       │       walter-spritesheet.png
-│       │       walter-attack.png
-│       │
-│       └───diego              
-│               diego-idle.png
-│               diego-spritesheet.png
-│               diego-attack.png
-├───characters
-│   │   Player.js
-│   │   Suina1.js
-│   │   Suina2.js
-│   │   SuinaEvil.js
-│   │   Walter.js
-│   │   Diego.js
-│   │   Milly.js
-│   │   BaseCharacter.js
-│
-├───js
-│   └───engine
-│           ScoreManager.js
-│           AudioManager.js
-│           Camera.js
-│           Input.js
-│           Renderer.js
-│
-├───levels
-│       LevelManager.js
-│
-│
-├───styles
-│       style.css
-│
-└───utils
+|   config.js
+|   index.html
+|   main.js
+|
++---assets
+|   +---maps
+|   |       level1.json
+|   |
+|   +---sounds
+|   |       diego-sound.mp3
+|   |       drink.mp3
+|   |       milly-sound.mp3
+|   |       prof-fuck.mp3
+|   |       prof-punch.mp3
+|   |       prof-smack.mp3
+|   |       prof-step.mp3
+|   |       prof-theme.mp3
+|   |       suina-evil.mp3
+|   |       suina-fuck.mp3
+|   |       suina-sound.mp3
+|   |       suina-walk.mp3
+|   |       urlo.mp3
+|   |       walter-sound.mp3
+|   |       walter-welcome.mp3
+|   |
+|   \---sprites
+|       |   background.png
+|       |   background2.png
+|       |   background3.png
+|       |   background4.png
+|       |   background5.png
+|       |   fallback-background.png
+|       |   fallback-idle.png
+|       |   fallback-spritesheet.png
+|       |   professore-idle.png
+|       |   professore-spritesheet.png
+|       |   skull.png
+|       |   skull1.png
+|       |
+|       +---diego
+|       |       diego-attack.png
+|       |       diego-idle.png
+|       |       diego-spritesheet.png
+|       |
+|       +---milly
+|       |       milly-idle.png
+|       |       milly-interact.png
+|       |       milly-spritesheet.png
+|       |
+|       +---professore
+|       |       professore-idle.png
+|       |       professore-spritesheet.png
+|       |
+|       +---suina1
+|       |       suina1-attack.png
+|       |       suina1-idle.png
+|       |       suina1-spritesheet.png
+|       |
+|       +---suina2
+|       |       suina2-attack.png
+|       |       suina2-idle.png
+|       |       suina2-spritesheet.png
+|       |
+|       +---suinaEvil
+|       |       suinaevil-attack.png
+|       |       suinaevil-idle.png
+|       |       suinaevil-spritesheet.png
+|       |
+|       \---walter
+|               walter-attack.png
+|               walter-idle.png
+|               walter-spritesheet.png
+|
++---characters
+|       BaseCharacter.js
+|       Diego.js
+|       Milly.js
+|       Player.js
+|       Suina1.js
+|       Suina2.js
+|       SuinaEvil.js
+|       Walter.js
+|
++---js
+|   \---engine
+|           AudioManager.js
+|           Camera.js
+|           Input.js
+|           Renderer.js
+|           ScoreAnimation.js
+|           ScoreManager.js
+|
++---levels
+|       LevelManager.js
+|
++---styles
+|       style.css
+|
+\---utils
         AssetLoader.js
+
 
 
 
@@ -153,19 +156,33 @@ import { LevelManager } from './levels/LevelManager.js';
 import { ScoreManager } from './js/engine/ScoreManager.js';
 
 const audioManager = new AudioManager();
+let gameInitialized = false;
 
-window.addEventListener('click', async () => {
-    try {
-        if (!audioManager.initialized) {
-            await audioManager.init();
+// Listen for initial game start
+const startGameListener = async (event) => {
+    if (!gameInitialized) {
+        try {
+            if (!audioManager.initialized) {
+                await audioManager.init();
+            }
+            console.log('Starting the game...');
+            game.init();
+            gameInitialized = true;
+            
+            // Remove the event listeners once game is started
+            window.removeEventListener('click', startGameListener);
+            window.removeEventListener('touchstart', startGameListener);
+        } catch (error) {
+            console.error('Error initializing the game:', error);
         }
-        console.log('Starting the game...');
-        game.init();
-    } catch (error) {
-        console.error('Error initializing the game:', error);
     }
-});
+};
 
+// Add listeners for initial game start only
+window.addEventListener('click', startGameListener);
+window.addEventListener('touchstart', startGameListener);
+
+// Prevent unwanted touch behaviors
 window.addEventListener('touchmove', (event) => {
     event.preventDefault();
 }, { passive: false });
@@ -214,9 +231,7 @@ class Game {
             'professore'
         );
 
-        // Make game instance globally available for character interactions
         window.gameInstance = this;
-
         window.addEventListener('resize', () => this.setupCanvas());
     }
 
@@ -314,25 +329,31 @@ game.init().catch(console.error);
 
 
 
+
 index.html:
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Il Professore Game</title>
   <link rel="stylesheet" href="./styles/style.css">
 </head>
 <body>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
+	<button id="back-button" type="button">Back</button>
   <div id="controls-container">
     <div id="controls">
-      <button id="bacio">B</button>
-      <button id="left">←</button>
-      <button id="up">↑</button>
-      <button id="down">↓</button>
-      <button id="right">→</button>
-      <button id="fuck">F</button>
+      <div class="action-buttons">
+        <button type="button" id="bacio" class="action-btn left">B</button>
+        <button type="button" id="fuck" class="action-btn right">F</button>
+      </div>
+      <div class="direction-buttons">
+        <button type="button" id="left">←</button>
+        <button type="button" id="up">↑</button>
+        <button type="button" id="down">↓</button>
+        <button type="button" id="right">→</button>
+      </div>
     </div>
   </div>
   <script src="./main.js" type="module"></script>
@@ -392,6 +413,9 @@ export const CONFIG = {
         5: { name: 'Chester', backgroundKey: 'background5' }
     }
 };
+
+
+
 
 
 
@@ -567,6 +591,8 @@ export class AssetLoader {
 
 
 
+
+
 style.css:
 /* style.css */
 * {
@@ -601,62 +627,126 @@ canvas {
   }
 }
 
+
+/* Back button styling */
+#back-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  padding: 10px 20px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  display: none; /* Initially hidden */
+}
+
+#back-button:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+@media (max-width: 768px) {
+  #back-button {
+    top: 10px;
+    left: 10px;
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}
+
+
 #controls-container {
   position: fixed;
-  bottom: 0;
+  bottom: 20px;
   width: 100%;
   display: flex;
   justify-content: center;
   z-index: 10;
+  pointer-events: none;
 }
 
 #controls {
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 2px;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  pointer-events: auto;
+}
+
+.action-buttons {
+  position: absolute;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 5px; /* 5px padding from screen edges */
+  bottom: 80px; /* Position above direction buttons */
+}
+
+.direction-buttons {
+  display: flex;
   justify-content: center;
+  gap: 5px;
+  padding: 0 20px;
 }
 
 #controls button {
-  width: 60px;
-  height: 60px;
+  width: 70px;
+  height: 70px;
   font-size: 24px;
   border: none;
   border-radius: 50%;
-  background-color: #333;
+  background-color: rgba(51, 51, 51, 0.8);
   color: white;
-  opacity: 0.8;
   transition: all 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#controls .action-btn {
+  width: 60px;
+  height: 60px;
+  font-weight: bold;
+  background-color: rgba(76, 175, 80, 0.8);  /* Green tint for action buttons */
 }
 
 #controls button:active,
-#controls button:hover {
-  opacity: 1;
-}
-
 #controls button.active {
-  background-color: #555;
-  transform: scale(0.95);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  transform: scale(0.9);
+  background-color: rgba(76, 76, 76, 0.9);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-@media (max-width: 768px) {
-  #controls button {
-    width: 50px;
-    height: 50px;
-    font-size: 20px;
-  }
-  #controls-container {
-    flex-direction: column;
-  }
+#controls .action-btn:active,
+#controls .action-btn.active {
+  background-color: rgba(56, 142, 60, 0.9);  /* Darker green when pressed */
 }
 
 @media (min-width: 769px) {
-    #controls-container {
-        display: none;
-    }
+  #controls-container {
+    display: none;
+  }
 }
+
+/* Prevent text selection on mobile */
+#controls button {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Ensure buttons don't cause scrolling on iOS */
+#controls-container {
+  touch-action: none;
+}
+
+
 
 
 
@@ -896,11 +986,11 @@ export class InputHandler {
             ArrowDown: false,
             ArrowLeft: false,
             ArrowRight: false,
-            KeyF: false,    
-            KeyB: false     
+            KeyF: false,
+            KeyB: false
         };
 
-        this.isMobile = window.innerWidth <= 768 ||
+        this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
             /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
         this.touchState = {};
@@ -908,6 +998,7 @@ export class InputHandler {
     }
 
     setupEventListeners() {
+        // Keyboard events
         window.addEventListener('keydown', (e) => this.setKey(e.code, true));
         window.addEventListener('keyup', (e) => this.setKey(e.code, false));
 
@@ -917,30 +1008,65 @@ export class InputHandler {
     }
 
     setupTouchControls() {
+        // Direction buttons
         const directions = ['up', 'down', 'left', 'right'];
         directions.forEach((dir) => {
             const element = document.getElementById(dir);
             if (element) {
-                element.addEventListener('touchstart', (e) => this.handleTouch(e, dir, true));
-                element.addEventListener('touchend', (e) => this.handleTouch(e, dir, false));
-                element.addEventListener('touchcancel', (e) => this.handleTouch(e, dir, false));
-            } else {
-                console.warn(`Touch control button with ID '${dir}' not found.`);
+                element.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.handleDirectionTouch(e, dir, true);
+                });
+                element.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.handleDirectionTouch(e, dir, false);
+                });
+                element.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    this.handleDirectionTouch(e, dir, false);
+                });
+            }
+        });
+
+        // Action buttons
+        const actionButtons = {
+            'bacio': 'KeyB',
+            'fuck': 'KeyF'
+        };
+
+        Object.entries(actionButtons).forEach(([buttonId, keyCode]) => {
+            const element = document.getElementById(buttonId);
+            if (element) {
+                element.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.handleActionTouch(keyCode, true);
+                    element.classList.add('active');
+                });
+                element.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.handleActionTouch(keyCode, false);
+                    element.classList.remove('active');
+                });
+                element.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    this.handleActionTouch(keyCode, false);
+                    element.classList.remove('active');
+                });
             }
         });
     }
 
-    handleTouch(event, direction, isPressed) {
-        event.preventDefault();
+    handleDirectionTouch(event, direction, isPressed) {
         const key = `Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`;
-        if (this.touchState[key] !== isPressed) {
-            this.touchState[key] = isPressed;
-            this.setKey(key, isPressed);
-            const element = document.getElementById(direction);
-            if (element) {
-                element.classList.toggle('active', isPressed);
-            }
+        this.setKey(key, isPressed);
+        const element = document.getElementById(direction);
+        if (element) {
+            element.classList.toggle('active', isPressed);
         }
+    }
+
+    handleActionTouch(keyCode, isPressed) {
+        this.setKey(keyCode, isPressed);
     }
 
     setKey(key, value) {
@@ -950,7 +1076,8 @@ export class InputHandler {
     }
 
     isMoving() {
-        return Object.values(this.keys).some(Boolean);
+        return this.keys.ArrowUp || this.keys.ArrowDown || 
+               this.keys.ArrowLeft || this.keys.ArrowRight;
     }
 }
 
@@ -962,9 +1089,7 @@ export class InputHandler {
 
 
 
-
 Renderer.js:
-// Renderer.js
 // Renderer.js
 import { CONFIG } from '../../config.js';
 
@@ -1024,11 +1149,11 @@ export class Renderer {
         }
     }
 
-    drawCharacters(sprites, camera) {
+       drawCharacters(sprites, camera) {
         this.levelManager.characters.forEach((character) => {
             if (!character || !character.type || !sprites[character.type]) {
                 console.error(`Sprites for character type ${character ? character.type : 'undefined'} are undefined.`);
-                return; // Skip invalid characters
+                return;
             }
 
             const drawX = character.x - camera.x;
@@ -1036,11 +1161,15 @@ export class Renderer {
 
             const characterSprites = sprites[character.type.toLowerCase()];
 
+            // Handle special attack sprite state for Suina1
+            if (character.type === 'suina1' && character.currentSprite === 'attack' && character.activeSprite) {
+                this.ctx.drawImage(character.activeSprite, drawX, drawY, character.width, character.height);
+                return;
+            }
+
             if (character.isIdle) {
                 if (characterSprites.idle) {
                     this.ctx.drawImage(characterSprites.idle, drawX, drawY, character.width, character.height);
-                } else {
-                    console.error(`Idle sprite for character type ${character.type} is undefined.`);
                 }
             } else {
                 const directionIndex = this.directions[character.direction] !== undefined
@@ -1057,19 +1186,9 @@ export class Renderer {
                         drawX, drawY,
                         character.width, character.height
                     );
-                } else {
-                    console.error(`Walking sprite for character type ${character.type} is undefined.`);
                 }
             }
         });
-    }
-
-    render(player, sprites, camera) {
-        this.clear();
-        const background = this.levelManager.getCurrentLevelBackground();
-        this.drawBackground(background, camera);
-        this.drawCharacters(sprites, camera);
-        this.drawPlayer(player, sprites.professore, camera);
     }
 }
 
@@ -1083,6 +1202,8 @@ export class Renderer {
 
 ScoreManager.js:
 // ScoreManager.js
+import { ScoreAnimation } from './ScoreAnimation.js';
+
 export class ScoreManager {
     constructor(ctx) {
         this.ctx = ctx;
@@ -1094,7 +1215,7 @@ export class ScoreManager {
         this.maxScore = 100;
         this.barWidth = 150;
         this.barHeight = 10;
-        this.padding = 30;
+        this.padding = 10;
         this.colors = {
             energy: '#ff4444',    // Red for Energy
             love: '#ff69b4',      // Pink for Love
@@ -1102,17 +1223,27 @@ export class ScoreManager {
         };
         this.barSpacing = 5;
         this.textPadding = 5;
+        
+        // Initialize score animation system
+        this.scoreAnimation = new ScoreAnimation();
     }
 
     increaseScore(type, amount) {
         if (this.scores.hasOwnProperty(type)) {
-            this.scores[type] = Math.min(this.maxScore, this.scores[type] + amount);
+            const oldScore = this.scores[type];
+            this.scores[type] = Math.min(this.maxScore, oldScore + amount);
+            
+            // If it's a love score increase, trigger animation
+            if (type === 'love' && amount > 0) {
+                this.scoreAnimation.addAnimation(amount);
+            }
         }
     }
 
     draw() {
         this.ctx.save();
-        
+
+        // Draw score bars
         Object.entries(this.scores).forEach(([type, score], index) => {
             const x = this.ctx.canvas.width - this.barWidth - this.padding;
             const y = this.padding + (index * (this.barHeight + this.barSpacing));
@@ -1138,7 +1269,100 @@ export class ScoreManager {
             this.ctx.fillRect(x, y, fillWidth, this.barHeight);
         });
 
+        // Draw any active score animations
+        this.scoreAnimation.update(this.ctx);
+
         this.ctx.restore();
+    }
+}
+
+
+
+
+
+
+
+
+ScoreAnimation.js:
+// ScoreAnimation.js
+export class ScoreAnimation {
+    constructor() {
+        this.animations = [];
+    }
+
+    addAnimation(score) {
+        // Get canvas dimensions directly from the game canvas
+        const canvas = document.getElementById('gameCanvas');
+        const centerX = Math.round(canvas.width / 2);
+        const centerY = Math.round(canvas.height / 2);
+        
+        console.log('Canvas dimensions:', {
+            width: canvas.width,
+            height: canvas.height,
+            centerX: centerX,
+            centerY: centerY
+        });
+
+        this.animations.push({
+            score: `+${score}`,
+            x: centerX,         // Center X
+            y: centerY,         // Center Y
+            startTime: performance.now(),
+            duration: 2000,     // 2 seconds
+            startFontSize: 72,  // Starting size
+            endFontSize: 24,    // Ending size
+            opacity: 1
+        });
+    }
+
+    update(ctx) {
+        const currentTime = performance.now();
+        
+        for (let i = this.animations.length - 1; i >= 0; i--) {
+            const anim = this.animations[i];
+            const elapsed = currentTime - anim.startTime;
+            const progress = Math.min(elapsed / anim.duration, 1);
+
+            // Smooth easing function
+            const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+
+            // Calculate current font size
+            const fontSize = Math.round(anim.startFontSize + (anim.endFontSize - anim.startFontSize) * easeOutCubic);
+            
+            // Calculate opacity (fade out in the last 30% of animation)
+            anim.opacity = progress > 0.7 ? 1 - ((progress - 0.7) / 0.3) : 1;
+
+            // Draw score with debug info
+            ctx.save();
+            
+            // Set text properties
+            ctx.font = `bold ${fontSize}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Draw debug point at center (temporary)
+            ctx.fillStyle = 'red';
+            ctx.fillRect(anim.x - 2, anim.y - 2, 4, 4);
+            
+            // Move upward as it fades
+            const yOffset = 50 * easeOutCubic;
+
+            // Draw text outline
+            ctx.strokeStyle = `rgba(0, 0, 0, ${anim.opacity * 0.5})`;
+            ctx.lineWidth = 3;
+            ctx.strokeText(anim.score, anim.x, anim.y - yOffset);
+
+            // Draw text fill
+            ctx.fillStyle = `rgba(255, 192, 203, ${anim.opacity})`;
+            ctx.fillText(anim.score, anim.x, anim.y - yOffset);
+
+            ctx.restore();
+
+            // Remove finished animations
+            if (progress >= 1) {
+                this.animations.splice(i, 1);
+            }
+        }
     }
 }
 
@@ -1172,6 +1396,48 @@ export class LevelManager {
         this.player = null;
         this.transitionInProgress = false;
         this.transitionTimeout = null;
+        this.setupBackButton();
+    }
+
+    setupBackButton() {
+        const backButton = document.getElementById('back-button');
+        if (!backButton) return;
+
+        // Handle back button click
+        backButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (this.currentLevel !== 1) {
+                this.transitionToLevel1();
+            }
+        });
+
+        // Initial visibility
+        this.updateBackButtonVisibility();
+    }
+
+    updateBackButtonVisibility() {
+        const backButton = document.getElementById('back-button');
+        if (backButton) {
+            backButton.style.display = this.currentLevel === 1 ? 'none' : 'block';
+        }
+    }
+
+    transitionToLevel1() {
+        // Clear any existing timers
+        this.clearTimers();
+        
+        // Reset player position to center of level 1
+        if (this.player) {
+            this.player.x = CONFIG.WORLD.WIDTH / 2;
+            this.player.y = CONFIG.WORLD.HEIGHT / 2;
+        }
+
+        // Load level 1
+        this.loadLevel(1, this.player);
+        
+        // Update back button visibility
+        this.updateBackButtonVisibility();
     }
 
     loadLevel(levelNumber, player) {
@@ -1205,6 +1471,7 @@ export class LevelManager {
 
         this.currentLevel = levelNumber;
         this.loadCharactersForLevel(levelNumber, storedStates);
+        this.updateBackButtonVisibility();
 
         if (this.player !== player) {
             this.player = player;
@@ -1327,7 +1594,7 @@ export class LevelManager {
         this.characterTimers[type] = setInterval(spawnRandomly, interval);
     }
 
-    update(player) {
+    update(player, worldBounds, input) {
         if (this.transitionInProgress) return;
 
         this.characters = this.characters.filter(character => character && character.type);
@@ -1337,7 +1604,7 @@ export class LevelManager {
                 character.update(player, {
                     width: CONFIG.WORLD.WIDTH,
                     height: CONFIG.WORLD.HEIGHT
-                });
+                }, input);
             }
         });
     }
@@ -1451,6 +1718,7 @@ export class BaseCharacter {
         );
     }
 }
+
 
 
 
@@ -1626,6 +1894,7 @@ export class Player extends BaseCharacter {
 // Suina1.js
 // Suina1.js
 import { BaseCharacter } from './BaseCharacter.js';
+import { CONFIG } from '../config.js';
 
 export class Suina1 extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
@@ -1648,20 +1917,58 @@ export class Suina1 extends BaseCharacter {
 
         // Collision and interaction states
         this.isColliding = false;
-        this.disappearTimer = null;
+        this.collisionStartTime = null;
         this.isDisappearing = false;
-        this.attackSpriteTimer = null;
-        this.buttonPressTimer = null;
+        this.hasChangedSprite = false;
+        this.buttonInteractionAvailable = false;
         this.soundPlayed = false;
-        this.currentSprite = sprites.idle;
+        this.isVisible = true;
+        this.respawnTimeout = null;
+    }
+
+    respawn() {
+        // Generate random coordinates within the world bounds
+        const padding = 50; // To avoid spawning too close to edges
+        this.x = Math.random() * (CONFIG.WORLD.WIDTH - this.width - padding * 2) + padding;
+        this.y = Math.random() * (CONFIG.WORLD.HEIGHT - this.height - padding * 2) + padding;
+        
+        // Reset all states
+        this.isColliding = false;
+        this.collisionStartTime = null;
+        this.isDisappearing = false;
+        this.hasChangedSprite = false;
+        this.buttonInteractionAvailable = false;
+        this.soundPlayed = false;
+        this.isVisible = true;
+        this.isCaught = false;
+        this.currentSprite = null;
+        this.activeSprite = null;
+
+        // Reset movement parameters
+        this.moveTimer = performance.now();
+        this.lastDirectionChange = performance.now();
+        this.stuckTimer = 0;
+        this.directionChangeCount = 0;
+        this.isIdle = false;
+        
+        // Set a random initial direction
+        const directions = ['up', 'down', 'left', 'right'];
+        this.direction = directions[Math.floor(Math.random() * directions.length)];
+        this.lastNonIdleDirection = this.direction;
     }
 
     handleCollision(player, input) {
-        if (!this.isColliding && !this.isDisappearing) {
+        const currentTime = performance.now();
+        const gameInstance = window.gameInstance;
+
+        // Initial collision detection
+        if (!this.isColliding && !this.isDisappearing && this.isVisible) {
             this.isColliding = true;
-            const gameInstance = window.gameInstance;
-            
-            // Play collision sound
+            this.collisionStartTime = currentTime;
+            this.hasChangedSprite = true;
+            this.buttonInteractionAvailable = true;
+
+            // Play initial collision sound
             if (!this.soundPlayed && gameInstance.audioManager) {
                 gameInstance.audioManager.playSound('suina_sound');
                 this.soundPlayed = true;
@@ -1669,71 +1976,59 @@ export class Suina1 extends BaseCharacter {
 
             // Change to attack sprite
             if (this.sprites.attack) {
-                this.currentSprite = this.sprites.attack;
-                
-                // Set timer to disappear
-                if (!this.disappearTimer) {
-                    this.disappearTimer = setTimeout(() => {
-                        this.isDisappearing = true;
-                        this.isCaught = true;
-                        // Clear timers
-                        this.cleanup();
+                this.currentSprite = 'attack';
+                this.activeSprite = this.sprites.attack;
+
+                // Set timer for disappearance after 2 seconds
+                setTimeout(() => {
+                    this.isVisible = false;
+                    this.isDisappearing = true;
+                    this.buttonInteractionAvailable = false;
+
+                    // Set timer for respawn after 2 more seconds
+                    this.respawnTimeout = setTimeout(() => {
+                        this.respawn();
                     }, 2000);
-                }
+                }, 2000);
             }
         }
 
-        // Handle button interactions during collision
-        if (this.isColliding && !this.buttonPressTimer) {
-            const gameInstance = window.gameInstance;
-            
-            // F button press
-            if (input.keys.KeyF) {
-                this.buttonPressTimer = setTimeout(() => {
-                    if (gameInstance.audioManager) {
-                        gameInstance.audioManager.playSound('suina_fuck');
-                    }
-                    if (gameInstance.scoreManager) {
-                        gameInstance.scoreManager.increaseScore('love', 10);
-                        gameInstance.scoreManager.increaseScore('energy', 10);
-                    }
-                    this.buttonPressTimer = null;
-                }, 1000);
+        // Handle button interactions during the 2-second window
+        if (this.buttonInteractionAvailable && currentTime - this.collisionStartTime <= 1000) {
+            if (input.keys.KeyB) {
+                if (gameInstance.audioManager) {
+                    gameInstance.audioManager.playSound('professore_smack');
+                }
+                if (gameInstance.scoreManager) {
+                    gameInstance.scoreManager.increaseScore('love', 2);
+                }
+                this.buttonInteractionAvailable = false;
             }
-            
-            // B button press
-            else if (input.keys.KeyB) {
-                this.buttonPressTimer = setTimeout(() => {
-                    if (gameInstance.audioManager) {
-                        gameInstance.audioManager.playSound('suina_sound');
-                        setTimeout(() => gameInstance.audioManager.playSound('suina_sound'), 200);
-                    }
-                    if (gameInstance.scoreManager) {
-                        gameInstance.scoreManager.increaseScore('love', 1);
-                    }
-                    this.buttonPressTimer = null;
-                }, 1000);
+            else if (input.keys.KeyF) {
+                if (gameInstance.audioManager) {
+                    gameInstance.audioManager.playSound('suina_fuck');
+                }
+                if (gameInstance.scoreManager) {
+                    gameInstance.scoreManager.increaseScore('love', 5);
+                }
+                this.buttonInteractionAvailable = false;
             }
         }
     }
 
     cleanup() {
-        if (this.disappearTimer) {
-            clearTimeout(this.disappearTimer);
-            this.disappearTimer = null;
+        if (this.respawnTimeout) {
+            clearTimeout(this.respawnTimeout);
         }
-        if (this.buttonPressTimer) {
-            clearTimeout(this.buttonPressTimer);
-            this.buttonPressTimer = null;
-        }
-        if (this.attackSpriteTimer) {
-            clearTimeout(this.attackSpriteTimer);
-            this.attackSpriteTimer = null;
-        }
+        this.isColliding = false;
+        this.collisionStartTime = null;
+        this.hasChangedSprite = false;
+        this.buttonInteractionAvailable = false;
+        this.soundPlayed = false;
     }
 
     updateBehavior(player, worldBounds, deltaTime, input) {
-        if (this.isCaught || this.isDisappearing) return;
+        if (!this.isVisible) return;
 
         // Check for collision with player
         if (this.checkCollision(player)) {
@@ -1741,48 +2036,50 @@ export class Suina1 extends BaseCharacter {
             return;
         }
 
-        this.isColliding = false;
-        this.soundPlayed = false;
+        // Reset collision states if not colliding
+        if (!this.checkCollision(player) && this.isColliding) {
+            this.cleanup();
+        }
 
         const currentTime = performance.now();
         const maxDeltaTime = 32;
         const effectiveDeltaTime = Math.min(deltaTime, maxDeltaTime);
 
-        // Check if enough time has passed since last direction change
-        const timeSinceLastChange = currentTime - this.lastDirectionChange;
-        
-        if (currentTime - this.moveTimer > this.changeDirectionInterval || 
-            (this.stuckTimer > 500 && timeSinceLastChange > 1000)) {
+        // Regular movement behavior when not colliding
+        if (!this.isColliding) {
+            const timeSinceLastChange = currentTime - this.lastDirectionChange;
             
-            this.randomizeDirection(worldBounds);
-            this.moveTimer = currentTime;
-            this.lastDirectionChange = currentTime;
-            this.stuckTimer = 0;
-            this.directionChangeCount = 0;
-        }
-
-        const distance = Math.hypot(player.x - this.x, player.y - this.y);
-        const startPos = { x: this.x, y: this.y };
-
-        if (distance < 150) {
-            this.runAwayFrom(player, effectiveDeltaTime, worldBounds);
-            this.isIdle = false;
-        } else {
-            const moved = this.moveRandomly(effectiveDeltaTime, worldBounds);
-            
-            if (!moved) {
-                this.stuckTimer += deltaTime * 16.67;
-            } else {
+            if (currentTime - this.moveTimer > this.changeDirectionInterval || 
+                (this.stuckTimer > 500 && timeSinceLastChange > 1000)) {
+                this.randomizeDirection(worldBounds);
+                this.moveTimer = currentTime;
+                this.lastDirectionChange = currentTime;
                 this.stuckTimer = 0;
+                this.directionChangeCount = 0;
+            }
+
+            const distance = Math.hypot(player.x - this.x, player.y - this.y);
+
+            if (distance < 150) {
+                this.runAwayFrom(player, effectiveDeltaTime, worldBounds);
+                this.isIdle = false;
+            } else {
+                const moved = this.moveRandomly(effectiveDeltaTime, worldBounds);
+                if (!moved) {
+                    this.stuckTimer += deltaTime * 16.67;
+                } else {
+                    this.stuckTimer = 0;
+                }
             }
         }
 
-        // Update animation
+        // Update animation frame
         if (!this.isIdle && currentTime - this.lastUpdateTime >= this.animationSpeed) {
             this.frame = (this.frame + 1) % this.totalFrames;
             this.lastUpdateTime = currentTime;
         }
     }
+
 
     runAwayFrom(player, deltaTime, worldBounds) {
         const dx = this.x - player.x;
@@ -1867,7 +2164,7 @@ export class Suina1 extends BaseCharacter {
         if (nearTop) directions = directions.filter(d => d !== 'up');
         if (nearBottom) directions = directions.filter(d => d !== 'down');
 
-        // Special handling for corners to ensure escape
+        // Special handling for corners
         if (this.x < cornerBuffer && this.y < cornerBuffer) {
             directions = ['right', 'down'];
         } else if (this.x > width - cornerBuffer && this.y < cornerBuffer) {
@@ -1905,7 +2202,6 @@ export class Suina1 extends BaseCharacter {
         this.lastNonIdleDirection = this.direction;
     }
 }
-
 
 
 
