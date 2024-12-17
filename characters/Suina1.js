@@ -3,15 +3,11 @@ import { BaseCharacter } from './BaseCharacter.js';
 import { CONFIG } from '../config.js';
 
 export class Suina1 extends BaseCharacter {
-constructor(x, y, width, height, sprites, type) {
+    constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type, 1.5);
         
-        console.log('Suina1 Constructor - Start');
-        
-        // Initialize timestamps
         const now = performance.now();
         
-        // Movement states with proper initialization
         this.moveTimer = now;
         this.changeDirectionInterval = 2500;
         this.lastNonIdleDirection = 'down';
@@ -25,65 +21,155 @@ constructor(x, y, width, height, sprites, type) {
         this.directionChangeCount = 0;
         this.lastDirectionChange = now;
 
-        // Animation states
         this.frame = 0;
         this.isIdle = false;
         this.direction = 'down';
         
-        // Collision and interaction states
         this.isColliding = false;
         this.isDisappearing = false;
-        this.buttonInteractionAvailable = false;
         this.soundPlayed = false;
         this.isVisible = true;
         this.hasInteracted = false;
+        this.disappearanceTimer = null;
+        this.canInteract = false;
 
-        // Explicitly ensure not paused
         this.isPaused = false;
 
-        // Set initial sprite state
         if (this.sprites && this.sprites.walking) {
             this.currentSprite = 'walking';
             this.activeSprite = this.sprites.walking;
         }
-
-        console.log('Suina1 Constructor - Complete:', {
-            position: { x: this.x, y: this.y },
-            isPaused: this.isPaused,
-            isIdle: this.isIdle,
-            currentSprite: this.currentSprite ? 'set' : 'not set'
-        });
     }
 
-startDisappearance() {
+    updateBehavior(player, worldBounds, deltaTime, input) {
+        if (this.isPaused || !this.isVisible) {
+            return;
+        }
+
+        const isCollidingNow = this.checkCollision(player);
+
+        // First collision detection
+        if (isCollidingNow && !this.isColliding && !this.isDisappearing && !this.disappearanceTimer) {
+            // Change sprite and play sound
+            if (this.sprites.attack) {
+                this.currentSprite = 'attack';
+                this.activeSprite = this.sprites.attack;
+                this.frame = 0;
+            }
+
+            const gameInstance = window.gameInstance;
+            if (!this.soundPlayed && gameInstance?.audioManager) {
+                gameInstance.audioManager.playSound('suina_sound');
+                this.soundPlayed = true;
+            }
+
+            this.canInteract = true;
+
+            // Set disappearance timer for 2 seconds
+            this.disappearanceTimer = setTimeout(() => {
+                this.startDisappearance();
+            }, 2000);
+
+            this.isColliding = true;
+            this.velocity = { x: 0, y: 0 };
+            this.movementBuffer = { x: 0, y: 0 };
+            this.isIdle = true;
+        }
+
+        // Handle button interactions within the 2-second window
+        if (this.canInteract && !this.isDisappearing) {
+            const gameInstance = window.gameInstance;
+            
+            if (input.keys.KeyB) {
+                if (gameInstance?.audioManager) {
+                    gameInstance.audioManager.playSound('professore_smack');
+                    if (gameInstance.scoreManager) {
+                        gameInstance.scoreManager.increaseScore('love', 2);
+                    }
+                }
+                this.canInteract = false;
+                if (this.disappearanceTimer) {
+                    clearTimeout(this.disappearanceTimer);
+                }
+                this.startDisappearance();
+            }
+            else if (input.keys.KeyF) {
+                if (gameInstance?.audioManager) {
+                    gameInstance.audioManager.playSound('suina_fuck');
+                    if (gameInstance.scoreManager) {
+                        gameInstance.scoreManager.increaseScore('love', 5);
+                    }
+                }
+                this.canInteract = false;
+                if (this.disappearanceTimer) {
+                    clearTimeout(this.disappearanceTimer);
+                }
+                this.startDisappearance();
+            }
+        }
+
+        // Handle movement if not in collision or disappearing state
+        if (!this.isColliding && !this.isDisappearing) {
+            const distance = Math.hypot(player.x - this.x, player.y - this.y);
+            if (distance < 150) {
+                this.runAwayFrom(player, deltaTime, worldBounds);
+                this.isIdle = false;
+            } else {
+                this.moveRandomly(deltaTime, worldBounds);
+            }
+        }
+    }
+
+    startDisappearance() {
         this.isDisappearing = true;
         this.isVisible = false;
+        this.canInteract = false;
+        
+        // Clear any existing timer
+        if (this.disappearanceTimer) {
+            clearTimeout(this.disappearanceTimer);
+            this.disappearanceTimer = null;
+        }
 
         // Schedule respawn
+        const respawnDelay = 1000 + Math.random() * 1000;
         setTimeout(() => {
             this.respawn();
-        }, 2000);
+        }, respawnDelay);
     }
 
     respawn() {
-        // Generate random coordinates within bounds with padding
-        const padding = 50;
-        this.x = Math.random() * (CONFIG.WORLD.WIDTH - this.width - padding * 2) + padding;
-        this.y = Math.random() * (CONFIG.WORLD.HEIGHT - this.height - padding * 2) + padding;
+        const padding = 100;
+        
+        // Calculate valid spawn area
+        const minX = padding;
+        const maxX = CONFIG.WORLD.WIDTH - this.width - padding;
+        const minY = padding;
+        const maxY = CONFIG.WORLD.HEIGHT - this.height - padding;
+        
+        // Generate random position within valid bounds
+        this.x = Math.floor(minX + Math.random() * (maxX - minX));
+        this.y = Math.floor(minY + Math.random() * (maxY - minY));
         
         // Reset all states
         this.isColliding = false;
         this.isDisappearing = false;
-        this.buttonInteractionAvailable = false;
         this.soundPlayed = false;
         this.isVisible = true;
         this.hasInteracted = false;
-        this.currentSprite = null;
-        this.activeSprite = null;
+        this.currentSprite = 'walking';
+        this.activeSprite = this.sprites.walking;
+        this.canInteract = false;
+        
+        if (this.disappearanceTimer) {
+            clearTimeout(this.disappearanceTimer);
+            this.disappearanceTimer = null;
+        }
 
         // Reset movement parameters
-        this.moveTimer = performance.now();
-        this.lastDirectionChange = performance.now();
+        const now = performance.now();
+        this.moveTimer = now;
+        this.lastDirectionChange = now;
         this.stuckTimer = 0;
         this.directionChangeCount = 0;
         this.isIdle = false;
@@ -96,87 +182,44 @@ startDisappearance() {
         this.lastNonIdleDirection = this.direction;
     }
 
-    updateBehavior(player, worldBounds, deltaTime, input) {
-        console.log('UpdateBehavior Called:', {
-            isPaused: this.isPaused,
-            isVisible: this.isVisible,
-            isColliding: this.isColliding,
-            isDisappearing: this.isDisappearing,
-            currentPosition: { x: this.x, y: this.y }
-        });
-
-        if (this.isPaused || !this.isVisible) {
-            console.log('Early return due to:', { isPaused: this.isPaused, isVisible: this.isVisible });
-            return;
+    cleanup() {
+        if (this.disappearanceTimer) {
+            clearTimeout(this.disappearanceTimer);
+            this.disappearanceTimer = null;
         }
+        this.canInteract = false;
+        super.cleanup();
+    }
 
-        // Check for collision with player
-        if (this.checkCollision(player)) {
-            console.log('Collision detected with player');
-            this.handleCollision(player, input);
-            return;
-        }
+  
 
-        // Only reset states if we've moved away from collision and aren't disappearing
-        if (!this.checkCollision(player) && !this.isDisappearing) {
-            if (this.isColliding) {
-                console.log('Cleaning up after collision');
-                this.cleanup();
-            }
-        }
 
-        // If in collision or disappearing state, stop all movement
-        if (this.isColliding || this.isDisappearing) {
-            console.log('Stopping movement due to:', { isColliding: this.isColliding, isDisappearing: this.isDisappearing });
-            this.velocity = { x: 0, y: 0 };
-            this.movementBuffer = { x: 0, y: 0 };
-            return;
-        }
-
-        // Process movement logic
-        const currentTime = performance.now();
-        const maxDeltaTime = 32;
-        const effectiveDeltaTime = Math.min(deltaTime, maxDeltaTime);
-
-        const timeSinceLastChange = currentTime - this.lastDirectionChange;
-        
-        console.log('Movement timing:', {
-            currentTime,
-            timeSinceLastChange,
-            moveTimer: this.moveTimer,
-            changeInterval: this.changeDirectionInterval
-        });
-
-        if (currentTime - this.moveTimer > this.changeDirectionInterval || 
-            (this.stuckTimer > 500 && timeSinceLastChange > 1000)) {
-            console.log('Changing direction');
-            this.randomizeDirection(worldBounds);
-            this.moveTimer = currentTime;
-            this.lastDirectionChange = currentTime;
-            this.stuckTimer = 0;
-            this.directionChangeCount = 0;
-        }
-
-        const distance = Math.hypot(player.x - this.x, player.y - this.y);
-        console.log('Distance to player:', distance);
-
-        if (distance < 150) {
-            console.log('Running away from player');
-            this.runAwayFrom(player, effectiveDeltaTime, worldBounds);
-            this.isIdle = false;
-        } else {
-            console.log('Moving randomly');
-            const moved = this.moveRandomly(effectiveDeltaTime, worldBounds);
-            if (!moved) {
-                this.stuckTimer += deltaTime * 16.67;
-                console.log('Stuck timer increased:', this.stuckTimer);
-            } else {
-                this.stuckTimer = 0;
-            }
+    resetCollisionState() {
+        if (!this.isDisappearing) {
+            this.isColliding = false;
+            this.soundPlayed = false;
+            this.currentSprite = 'walking';
+            this.activeSprite = this.sprites.walking;
         }
     }
 
-runAwayFrom(player, deltaTime, worldBounds) {
+    handleMovement(player, worldBounds, deltaTime) {
+        // Your existing movement code here...
+        const currentTime = performance.now();
+        const maxDeltaTime = 32;
+        const effectiveDeltaTime = Math.min(deltaTime, maxDeltaTime);
+        const distance = Math.hypot(player.x - this.x, player.y - this.y);
+
+        if (distance < 150) {
+            this.runAwayFrom(player, effectiveDeltaTime, worldBounds);
+        } else {
+            this.moveRandomly(effectiveDeltaTime, worldBounds);
+        }
+    }
+
+
+
+    runAwayFrom(player, deltaTime, worldBounds) {
         const dx = this.x - player.x;
         const dy = this.y - player.y;
         const angle = Math.atan2(dy, dx);
@@ -200,26 +243,25 @@ runAwayFrom(player, deltaTime, worldBounds) {
         }
     }
 
-
-handleCollision(player, input) {
+    handleCollision(player, input) {
         const gameInstance = window.gameInstance;
 
         // Initial collision detection
         if (!this.isColliding && !this.isDisappearing && this.isVisible) {
-            // 1. Stop all movement and set initial states
+            // Stop all movement and set initial states
             this.isColliding = true;
             this.velocity = { x: 0, y: 0 };
             this.movementBuffer = { x: 0, y: 0 };
             this.isIdle = true;
             this.buttonInteractionAvailable = true;
 
-            // 2. Play sound once
+            // Play sound once
             if (!this.soundPlayed && gameInstance.audioManager) {
                 gameInstance.audioManager.playSound('suina_sound');
                 this.soundPlayed = true;
             }
 
-            // 3. Change to attack sprite
+            // Change to attack sprite
             if (this.sprites.attack) {
                 this.currentSprite = 'attack';
                 this.activeSprite = this.sprites.attack;
@@ -227,10 +269,9 @@ handleCollision(player, input) {
             }
         }
 
-        // 4. Handle button interactions (B or F)
+        // Handle button interactions
         if (this.buttonInteractionAvailable) {
             if (input.keys.KeyB || input.keys.KeyF) {
-                // 5. Play appropriate sound and update score
                 if (input.keys.KeyB && gameInstance.audioManager) {
                     gameInstance.audioManager.playSound('professore_smack');
                     if (gameInstance.scoreManager) {
@@ -243,14 +284,12 @@ handleCollision(player, input) {
                     }
                 }
 
-                // 6. Change sprite again to attack
                 if (this.sprites.attack) {
                     this.currentSprite = 'attack';
                     this.activeSprite = this.sprites.attack;
                     this.frame = 0;
                 }
 
-                // 7. Trigger disappearance
                 this.hasInteracted = true;
                 this.buttonInteractionAvailable = false;
                 this.startDisappearance();
@@ -258,19 +297,10 @@ handleCollision(player, input) {
         }
     }
 
-
     moveRandomly(deltaTime, worldBounds) {
         const adjustedSpeed = this.speed * deltaTime * 0.8;
         const oldX = this.x;
         const oldY = this.y;
-
-        console.log('MoveRandomly:', {
-            direction: this.direction,
-            adjustedSpeed,
-            currentPos: { x: this.x, y: this.y },
-            speed: this.speed,
-            deltaTime
-        });
 
         switch (this.direction) {
             case 'up':
@@ -288,11 +318,6 @@ handleCollision(player, input) {
         }
 
         const moved = (Math.abs(this.x - oldX) > 0.01 || Math.abs(this.y - oldY) > 0.01);
-        console.log('Movement result:', {
-            moved,
-            newPos: { x: this.x, y: this.y },
-            delta: { x: this.x - oldX, y: this.y - oldY }
-        });
 
         if (moved) {
             this.isIdle = false;
@@ -342,12 +367,10 @@ handleCollision(player, input) {
             directions = ['left', 'up'];
         }
 
-        // Ensure we have valid directions
         if (directions.length === 0) {
             directions = ['up', 'down', 'left', 'right'];
         }
 
-        // Avoid choosing the opposite direction of current movement
         const opposites = { up: 'down', down: 'up', left: 'right', right: 'left' };
         if (this.direction && this.directionChangeCount < 2) {
             directions = directions.filter(d => d !== opposites[this.direction]);
@@ -386,7 +409,7 @@ handleCollision(player, input) {
         super.pauseUpdates();
     }
 
-     resumeUpdates() {
+    resumeUpdates() {
         super.resumeUpdates();
         this.moveTimer = performance.now();
         this.lastDirectionChange = performance.now();
