@@ -35,6 +35,7 @@ export class InputHandler {
         directions.forEach((dir) => {
             const element = document.getElementById(dir);
             if (element) {
+                // Touch events
                 element.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     this.handleDirectionTouch(e, dir, true);
@@ -44,6 +45,20 @@ export class InputHandler {
                     this.handleDirectionTouch(e, dir, false);
                 });
                 element.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    this.handleDirectionTouch(e, dir, false);
+                });
+
+                // Mouse events
+                element.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    this.handleDirectionTouch(e, dir, true);
+                });
+                element.addEventListener('mouseup', (e) => {
+                    e.preventDefault();
+                    this.handleDirectionTouch(e, dir, false);
+                });
+                element.addEventListener('mouseleave', (e) => {
                     e.preventDefault();
                     this.handleDirectionTouch(e, dir, false);
                 });
@@ -59,6 +74,7 @@ export class InputHandler {
         Object.entries(actionButtons).forEach(([buttonId, keyCode]) => {
             const element = document.getElementById(buttonId);
             if (element) {
+                // Touch events
                 element.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     this.handleActionTouch(keyCode, true);
@@ -70,6 +86,23 @@ export class InputHandler {
                     element.classList.remove('active');
                 });
                 element.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    this.handleActionTouch(keyCode, false);
+                    element.classList.remove('active');
+                });
+
+                // Mouse events
+                element.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    this.handleActionTouch(keyCode, true);
+                    element.classList.add('active');
+                });
+                element.addEventListener('mouseup', (e) => {
+                    e.preventDefault();
+                    this.handleActionTouch(keyCode, false);
+                    element.classList.remove('active');
+                });
+                element.addEventListener('mouseleave', (e) => {
                     e.preventDefault();
                     this.handleActionTouch(keyCode, false);
                     element.classList.remove('active');

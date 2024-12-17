@@ -55,6 +55,47 @@ constructor(x, y, width, height, sprites, type) {
         });
     }
 
+startDisappearance() {
+        this.isDisappearing = true;
+        this.isVisible = false;
+
+        // Schedule respawn
+        setTimeout(() => {
+            this.respawn();
+        }, 2000);
+    }
+
+    respawn() {
+        // Generate random coordinates within bounds with padding
+        const padding = 50;
+        this.x = Math.random() * (CONFIG.WORLD.WIDTH - this.width - padding * 2) + padding;
+        this.y = Math.random() * (CONFIG.WORLD.HEIGHT - this.height - padding * 2) + padding;
+        
+        // Reset all states
+        this.isColliding = false;
+        this.isDisappearing = false;
+        this.buttonInteractionAvailable = false;
+        this.soundPlayed = false;
+        this.isVisible = true;
+        this.hasInteracted = false;
+        this.currentSprite = null;
+        this.activeSprite = null;
+
+        // Reset movement parameters
+        this.moveTimer = performance.now();
+        this.lastDirectionChange = performance.now();
+        this.stuckTimer = 0;
+        this.directionChangeCount = 0;
+        this.isIdle = false;
+        this.velocity = { x: 0, y: 0 };
+        this.movementBuffer = { x: 0, y: 0 };
+        
+        // Set random initial direction
+        const directions = ['up', 'down', 'left', 'right'];
+        this.direction = directions[Math.floor(Math.random() * directions.length)];
+        this.lastNonIdleDirection = this.direction;
+    }
+
     updateBehavior(player, worldBounds, deltaTime, input) {
         console.log('UpdateBehavior Called:', {
             isPaused: this.isPaused,

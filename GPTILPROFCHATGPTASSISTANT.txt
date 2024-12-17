@@ -35,106 +35,111 @@ Don't do anything, just analyze all the files, understand the game and its struc
 
 TREEilprofessore:
 Ilprofessore
-|   config.js
-|   index.html
-|   main.js
-|
-+---assets
-|   +---maps
-|   |       level1.json
-|   |
-|   +---sounds
-|   |       diego-sound.mp3
-|   |       drink.mp3
-|   |       milly-sound.mp3
-|   |       prof-fuck.mp3
-|   |       prof-punch.mp3
-|   |       prof-smack.mp3
-|   |       prof-step.mp3
-|   |       prof-theme.mp3
-|   |       suina-evil.mp3
-|   |       suina-fuck.mp3
-|   |       suina-sound.mp3
-|   |       suina-walk.mp3
-|   |       urlo.mp3
-|   |       walter-sound.mp3
-|   |       walter-welcome.mp3
-|   |
-|   \---sprites
-|       |   background.png
-|       |   background2.png
-|       |   background3.png
-|       |   background4.png
-|       |   background5.png
-|       |   fallback-background.png
-|       |   fallback-idle.png
-|       |   fallback-spritesheet.png
-|       |   professore-idle.png
-|       |   professore-spritesheet.png
-|       |   skull.png
-|       |   skull1.png
-|       |
-|       +---diego
-|       |       diego-attack.png
-|       |       diego-idle.png
-|       |       diego-spritesheet.png
-|       |
-|       +---milly
-|       |       milly-idle.png
-|       |       milly-interact.png
-|       |       milly-spritesheet.png
-|       |
-|       +---professore
-|       |       professore-idle.png
-|       |       professore-spritesheet.png
-|       |
-|       +---suina1
-|       |       suina1-attack.png
-|       |       suina1-idle.png
-|       |       suina1-spritesheet.png
-|       |
-|       +---suina2
-|       |       suina2-attack.png
-|       |       suina2-idle.png
-|       |       suina2-spritesheet.png
-|       |
-|       +---suinaEvil
-|       |       suinaevil-attack.png
-|       |       suinaevil-idle.png
-|       |       suinaevil-spritesheet.png
-|       |
-|       \---walter
-|               walter-attack.png
-|               walter-idle.png
-|               walter-spritesheet.png
-|
-+---characters
-|       BaseCharacter.js
-|       Diego.js
-|       Milly.js
-|       Player.js
-|       Suina1.js
-|       Suina2.js
-|       SuinaEvil.js
-|       Walter.js
-|
-+---js
-|   \---engine
-|           AudioManager.js
-|           Camera.js
-|           Input.js
-|           Renderer.js
-|           ScoreAnimation.js
-|           ScoreManager.js
-|
-+---levels
-|       LevelManager.js
-|
-+---styles
-|       style.css
-|
-\---utils
+│   config.js
+│   index.html
+│   main.js
+│
+├───assets
+│   ├───maps
+│   │       level1.json
+│   │
+│   ├───sounds
+│   │       diego-sound.mp3
+│   │       drink.mp3
+│   │       milly-sound.mp3
+│   │       prof-fuck.mp3
+│   │       prof-punch.mp3
+│   │       prof-smack.mp3
+│   │       prof-step.mp3
+│   │       prof-theme.mp3
+│   │       suina-evil.mp3
+│   │       suina-fuck.mp3
+│   │       suina-sound.mp3
+│   │       suina-walk.mp3
+│   │       urlo.mp3
+│   │       walter-sound.mp3
+│   │       walter-welcome.mp3
+│   │
+│   └───sprites
+│       │   background.png
+│       │   background2.png
+│       │   background3.png
+│       │   background4.png
+│       │   background5.png
+│       │   fallback-background.png
+│       │   fallback-idle.png
+│       │   fallback-spritesheet.png
+│       │   jail.png
+│       │   professore-idle.png
+│       │   professore-spritesheet.png
+│       │   skull.png
+│       │   skull1.png
+│       │
+│       ├───diego
+│       │       diego-attack.png
+│       │       diego-idle.png
+│       │       diego-spritesheet.png
+│       │
+│       ├───milly
+│       │       milly-idle.png
+│       │       milly-interact.png
+│       │       milly-spritesheet.png
+│       │
+│       ├───professore
+│       │       professore-idle.png
+│       │       professore-spritesheet.png
+│       │
+│       ├───suina1
+│       │       suina1-attack.png
+│       │       suina1-idle.png
+│       │       suina1-spritesheet.png
+│       │       suina1RED-spritesheet.png
+│       │
+│       ├───suina2
+│       │       suina2-attack.png
+│       │       suina2-idle.png
+│       │       suina2-spritesheet.png
+│       │       suina2BLUE-spritesheet.png
+│       │
+│       ├───suinaEvil
+│       │       suinaevil-attack.png
+│       │       suinaevil-idle.png
+│       │       suinaevil-spritesheet.png
+│       │
+│       └───walter
+│               walter-attack.png
+│               walter-idle.png
+│               walter-spritesheet.png
+│
+├───characters
+│       BaseCharacter.js
+│       Diego.js
+│       Milly.js
+│       Player.js
+│       Suina1.js
+│       Suina2.js
+│       SuinaEvil.js
+│       Walter.js
+│
+├───js
+│   └───engine
+│           AudioManager.js
+│           Camera.js
+│           GameStateManager.js
+│           Input.js
+│           Renderer.js
+│           ScoreAnimation.js
+│           ScoreManager.js
+│
+├───levels
+│       LevelManager.js
+│
+├───styles
+│       style.css
+│
+└───utils
         AssetLoader.js
+        CharacterRegistry.js
 
 
 
@@ -154,6 +159,7 @@ import { AssetLoader } from './utils/AssetLoader.js';
 import { AudioManager } from './js/engine/AudioManager.js';
 import { LevelManager } from './levels/LevelManager.js';
 import { ScoreManager } from './js/engine/ScoreManager.js';
+import { GameStateManager } from './js/engine/GameStateManager.js';
 
 const audioManager = new AudioManager();
 let gameInitialized = false;
@@ -221,6 +227,7 @@ class Game {
         this.input = new InputHandler();
         this.audioManager = audioManager;
         this.scoreManager = new ScoreManager(this.ctx);
+        this.gameState = new GameStateManager(this);  // Initialize GameState first
 
         this.player = new Player(
             CONFIG.WORLD.WIDTH / 2,
@@ -256,15 +263,15 @@ class Game {
         this.camera.height = this.canvas.height;
     }
 
-    async init() {
+     async init() {
         try {
             const assets = await AssetLoader.loadAssets();
             console.log('Loaded assets:', assets);
             this.assets = assets;
             this.player.sprites = assets.sprites.professore;
 
-            this.levelManager = new LevelManager(assets);
-            this.renderer = new Renderer(this.ctx, this.levelManager);
+            this.levelManager = new LevelManager(assets, this.gameState);  // Pass gameState here
+            this.renderer = new Renderer(this.ctx, this.levelManager, this.gameState);  // Pass gameState to renderer too
 
             await this.audioManager.init();
 
@@ -276,7 +283,9 @@ class Game {
         }
     }
 
-    update() {
+update() {
+        console.log('Game Update cycle start');
+        
         this.player.update(this.input, {
             width: CONFIG.WORLD.WIDTH,
             height: CONFIG.WORLD.HEIGHT
@@ -288,8 +297,10 @@ class Game {
                 width: CONFIG.WORLD.WIDTH,
                 height: CONFIG.WORLD.HEIGHT
             },
-            this.input  // Pass input here
+            this.input
         );
+
+        console.log('Game Update cycle complete');
 
         if (this.levelManager.checkLevelTransition(this.player)) {
             console.log(`Transitioned to Level ${this.levelManager.currentLevel}`);
@@ -298,6 +309,8 @@ class Game {
         this.camera.follow(this.player, CONFIG.WORLD.WIDTH, CONFIG.WORLD.HEIGHT);
         this.audioManager.handleFootsteps(this.player, !this.player.isIdle);
     }
+
+
 
     draw() {
         this.renderer.clear();
@@ -318,6 +331,8 @@ class Game {
 
 const game = new Game();
 game.init().catch(console.error);
+
+
 
 
 
@@ -413,6 +428,7 @@ export const CONFIG = {
         5: { name: 'Chester', backgroundKey: 'background5' }
     }
 };
+
 
 
 
@@ -588,12 +604,65 @@ export class AssetLoader {
 
 
 
+CharacterRegistry.js:
+// CharacterRegistry.js
+export class CharacterRegistry {
+    constructor() {
+        this.characterClasses = new Map();
+        this.characterStates = new Map();
+    }
+
+    registerCharacter(type, characterClass, stateDefinition) {
+        this.characterClasses.set(type.toLowerCase(), {
+            class: characterClass,
+            defaultState: stateDefinition
+        });
+    }
+
+    getCharacterClass(type) {
+        return this.characterClasses.get(type.toLowerCase())?.class;
+    }
+
+    getDefaultState(type) {
+        return this.characterClasses.get(type.toLowerCase())?.defaultState;
+    }
+
+    preserveState(character) {
+        if (!character || !character.type) return null;
+
+        const defaultState = this.getDefaultState(character.type);
+        if (!defaultState) return null;
+
+        // Create state object based on character's default state definition
+        const state = {};
+        for (const [key, definition] of Object.entries(defaultState)) {
+            if (typeof definition === 'function') {
+                state[key] = definition(character);
+            } else {
+                state[key] = character[key] ?? definition;
+            }
+        }
+
+        return state;
+    }
+}
 
 
 
 
 
-style.css:
+
+
+
+
+
+
+
+
+
+
+
+
 /* style.css */
 * {
   margin: 0;
@@ -744,6 +813,461 @@ canvas {
 /* Ensure buttons don't cause scrolling on iOS */
 #controls-container {
   touch-action: none;
+}
+
+
+
+
+
+
+
+
+
+
+// LevelManager.js
+import { CONFIG } from '../config.js';
+import { CharacterRegistry } from '../utils/CharacterRegistry.js';
+import { Suina1 } from '../characters/Suina1.js';
+import { Suina2 } from '../characters/Suina2.js';
+import { SuinaEvil } from '../characters/SuinaEvil.js';
+import { Walter } from '../characters/Walter.js';
+import { Diego } from '../characters/Diego.js';
+import { Milly } from '../characters/Milly.js';
+
+export class LevelManager {
+    constructor(assets, gameState = null) {
+        this.assets = assets;
+        this.gameState = gameState;
+        this.registry = new CharacterRegistry();
+        this.currentLevel = 1;
+        this.characters = [];
+        this.characterTimers = {};
+        this.player = null;
+        this.transitionState = {
+            inProgress: false,
+            timeout: null,
+            startTime: null,
+            duration: 500,
+            previousLevel: null,
+            targetLevel: null
+        };
+
+        this.registerCharacters();
+        this.setupBackButton();
+    }
+
+    // Helper method to check if game is in a stopped state
+    isGameStopped() {
+        return this.transitionState.inProgress || (this.gameState?.isGameOver ?? false);
+    }
+
+    registerCharacters() {
+        this.registry.registerCharacter('suina1', Suina1);
+        this.registry.registerCharacter('suina2', Suina2);
+        this.registry.registerCharacter('suinaevil', SuinaEvil);
+        this.registry.registerCharacter('walter', Walter);
+        this.registry.registerCharacter('diego', Diego);
+        this.registry.registerCharacter('milly', Milly);
+    }
+
+    setupBackButton() {
+        const backButton = document.getElementById('back-button');
+        if (!backButton) return;
+
+        backButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (this.currentLevel !== 1) {
+                this.transitionToLevel1();
+            }
+        });
+
+        this.updateBackButtonVisibility();
+    }
+
+    updateBackButtonVisibility() {
+        const backButton = document.getElementById('back-button');
+        if (backButton) {
+            backButton.style.display = this.currentLevel === 1 ? 'none' : 'block';
+        }
+    }
+
+    async transitionToLevel1() {
+        if (this.isGameStopped()) return;
+        
+        this.clearTimers();
+        
+        if (this.player) {
+            this.player.x = CONFIG.WORLD.WIDTH / 2;
+            this.player.y = CONFIG.WORLD.HEIGHT / 2;
+        }
+
+        await this.loadLevel(1, this.player);
+        this.updateBackButtonVisibility();
+    }
+
+    async loadLevel(levelNumber, player) {
+        const levelConfig = CONFIG.LEVELS[levelNumber];
+        if (!levelConfig) {
+            console.error(`Level ${levelNumber} configuration not found.`);
+            return;
+        }
+
+        if (this.isGameStopped()) {
+            console.warn('Level transition blocked - transition in progress or game over');
+            return;
+        }
+
+        try {
+            await this.startTransition(levelNumber);
+            const storedStates = this.preserveCharacterStates();
+            await this.clearCurrentLevel();
+            await this.setupNewLevel(levelNumber, player, storedStates);
+            await this.completeTransition();
+            console.log(`Loaded level ${levelNumber}`);
+        } catch (error) {
+            console.error('Error during level transition:', error);
+            this.handleTransitionError();
+        }
+    }
+
+    async startTransition(newLevelNumber) {
+        this.transitionState = {
+            inProgress: true,
+            startTime: performance.now(),
+            previousLevel: this.currentLevel,
+            targetLevel: newLevelNumber,
+            duration: 500,
+            timeout: null
+        };
+
+        if (this.transitionState.timeout) {
+            clearTimeout(this.transitionState.timeout);
+        }
+
+        this.characters.forEach(char => {
+            if (char && typeof char.pauseUpdates === 'function') {
+                char.pauseUpdates();
+            }
+        });
+    }
+
+    preserveCharacterStates() {
+        const storedStates = new Map();
+        this.characters.forEach(char => {
+            if (char && char.type) {
+                const state = this.registry.preserveState(char);
+                if (state) {
+                    storedStates.set(char.type, state);
+                }
+            }
+        });
+        return storedStates;
+    }
+
+    async clearCurrentLevel() {
+        this.clearTimers();
+        
+
+
+        this.characters.forEach(char => {
+            if (char && typeof char.cleanup === 'function') {
+                char.cleanup();
+            }
+        });
+
+        this.characters = [];
+        this.characterTimers = {};
+    }
+
+async setupNewLevel(levelNumber, player, storedStates) {
+    this.currentLevel = levelNumber;
+    
+    if (this.player !== player) {
+        this.player = player;
+    }
+
+    await this.loadCharactersForLevel(levelNumber, storedStates);
+    this.updateBackButtonVisibility();
+    this.resetPlayerState();
+
+    // Make sure characters aren't paused after level setup
+    this.characters.forEach(char => {
+        if (char && char.resumeUpdates) {
+            char.resumeUpdates();
+        }
+    });
+
+    console.log('Level setup complete, characters:', this.characters.map(char => ({
+        type: char.type,
+        isPaused: char.isPaused,
+        isIdle: char.isIdle
+    })));
+}
+
+
+    resetPlayerState() {
+        if (!this.player) return;
+
+        const now = performance.now();
+        this.player.lastUpdateTime = now;
+        this.player.lastAnimationUpdate = now;
+        this.player.frameTime = now;
+        this.player.updateSpeedMultiplier();
+        
+        this.player.velocity = { x: 0, y: 0 };
+        this.player.movementBuffer = { x: 0, y: 0 };
+
+        if (!this.isGameStopped()) {
+            this.player.x = CONFIG.WORLD.WIDTH / 2;
+            this.player.y = CONFIG.WORLD.HEIGHT / 2;
+        }
+
+        this.player.frame = this.player.frame % this.player.totalFrames;
+    }
+
+async completeTransition() {
+    return new Promise((resolve) => {
+        const remainingTime = Math.max(0, 
+            this.transitionState.duration - (performance.now() - this.transitionState.startTime));
+
+        this.transitionState.timeout = setTimeout(() => {
+            // Resume all characters
+            this.characters.forEach(char => {
+                if (char && char.resumeUpdates) {
+                    console.log('Resuming character:', char.type);
+                    char.resumeUpdates();
+                }
+            });
+
+            this.transitionState = {
+                inProgress: false,
+                timeout: null,
+                startTime: null,
+                previousLevel: null,
+                targetLevel: null,
+                duration: 500
+            };
+
+            resolve();
+        }, remainingTime);
+    });
+}
+
+    handleTransitionError() {
+        this.transitionState = {
+            inProgress: false,
+            timeout: null,
+            startTime: null,
+            previousLevel: null,
+            targetLevel: null,
+            duration: 500
+        };
+
+        if (!this.isGameStopped()) {
+            this.characters.forEach(char => {
+                if (char && typeof char.resumeUpdates === 'function') {
+                    char.resumeUpdates();
+                }
+            });
+        }
+    }
+
+    loadCharactersForLevel(levelNumber, storedStates) {
+        switch (levelNumber) {
+            case 1:
+                this.addRandomCharacter('milly', 10000);
+                break;
+            case 2:
+            case 3:
+                // Start with Suina1
+                this.addCharacter('suina1', 
+                    Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH), 
+                    Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT), 
+                    storedStates);
+                break;
+            case 4:
+                this.addCharacter('walter', 600, 300);
+                break;
+            case 5:
+                this.addCharacter('diego', 700, 400);
+                break;
+            default:
+                console.warn(`No characters defined for level ${levelNumber}`);
+                break;
+        }
+    }
+
+    spawnNextRandomCharacter() {
+        // Only spawn in levels 2 or 3
+        if (this.currentLevel !== 2 && this.currentLevel !== 3) return;
+
+        // Randomly choose between Suina2 and SuinaEvil
+        const characterType = Math.random() < 0.5 ? 'suina2' : 'suinaevil';
+        
+        // Random position
+        const x = Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH);
+        const y = Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT);
+        
+        this.addCharacter(characterType, x, y);
+    }
+
+    handleCharacterDisappear(character) {
+        // Remove the character from the array
+        this.characters = this.characters.filter(c => c !== character);
+
+        // If it's Suina1, Suina2, or SuinaEvil in levels 2 or 3, spawn next character
+        if ((character.type === 'suina1' || character.type === 'suina2' || character.type === 'suinaevil') && 
+            (this.currentLevel === 2 || this.currentLevel === 3)) {
+            this.spawnNextRandomCharacter();
+        }
+    }
+
+addCharacter(type, x, y, storedStates = null) {
+    console.log('Adding character:', { type, x, y });
+    const CharacterClass = this.registry.getCharacterClass(type);
+    const sprites = this.assets.sprites[type];
+
+    if (!CharacterClass || !sprites) {
+        console.error(`Invalid character type or missing sprites: ${type}`);
+        return;
+    }
+
+    const character = new CharacterClass(x, y, CONFIG.PLAYER.WIDTH, CONFIG.PLAYER.HEIGHT, sprites, type.toLowerCase());
+
+    if (storedStates) {
+        const storedState = storedStates.get(type.toLowerCase());
+        if (storedState) {
+            Object.assign(character, storedState);
+        }
+    }
+
+    character.isIdle = false;
+    character.isPaused = false;  // Initialize as not paused
+    character.levelManager = this;
+
+    console.log('Character created:', {
+        type: character.type,
+        isPaused: character.isPaused,
+        isIdle: character.isIdle
+    });
+
+    this.characters.push(character);
+    return character;
+}
+
+
+
+
+    addDelayedCharacter(type, x, y, delay) {
+        if (!this.assets.sprites[type]) {
+            console.error(`Cannot add delayed character: Missing sprites for type ${type}`);
+            return;
+        }
+        this.characterTimers[type] = setTimeout(() => {
+            this.addCharacter(type, x, y);
+            delete this.characterTimers[type];
+        }, delay);
+    }
+
+    addRandomCharacter(type, interval) {
+        const spawnRandomly = () => {
+            if (this.currentLevel !== 1) return;
+            const x = Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH);
+            const y = Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT);
+            this.addCharacter(type, x, y);
+        };
+
+        this.characterTimers[type] = setInterval(spawnRandomly, interval);
+    }
+
+update(player, worldBounds, input) {
+        console.log('LevelManager Update:', {
+            isGameStopped: this.isGameStopped(),
+            characterCount: this.characters.length,
+            characters: this.characters.map(char => ({
+                type: char.type,
+                position: { x: char.x, y: char.y },
+                isPaused: char.isPaused,
+                isCaught: char.isCaught
+            }))
+        });
+
+        if (this.isGameStopped()) {
+            console.log('LevelManager Update blocked by isGameStopped');
+            return;
+        }
+
+        this.characters = this.characters.filter(character => character && character.type);
+
+        console.log('Updating characters:', this.characters.length);
+
+        this.characters.forEach((character) => {
+            console.log('Updating character:', {
+                type: character.type,
+                isPaused: character.isPaused,
+                isCaught: character.isCaught,
+                isVisible: character.isVisible
+            });
+
+            if (!character.isCaught && !character.isPaused) {
+                character.update(player, {
+                    width: CONFIG.WORLD.WIDTH,
+                    height: CONFIG.WORLD.HEIGHT
+                }, input);
+            } else {
+                console.log('Character update skipped:', {
+                    type: character.type,
+                    isCaught: character.isCaught,
+                    isPaused: character.isPaused
+                });
+            }
+        });
+    }
+
+    checkLevelTransition(player) {
+        if (this.isGameStopped()) return false;
+
+        const currentLevelConfig = CONFIG.LEVELS[this.currentLevel];
+        if (!currentLevelConfig || !currentLevelConfig.transitions) {
+            return false;
+        }
+
+        for (const transition of Object.values(currentLevelConfig.transitions)) {
+            if (
+                player.x >= transition.x.min &&
+                player.x <= transition.x.max &&
+                player.y >= transition.y.min &&
+                player.y <= transition.y.max
+            ) {
+                this.loadLevel(transition.nextLevel, player);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    clearTimers() {
+        for (const timer in this.characterTimers) {
+            clearTimeout(this.characterTimers[timer]);
+            clearInterval(this.characterTimers[timer]);
+        }
+        this.characterTimers = {};
+    }
+
+
+
+    getCurrentLevelBackground() {
+        const levelConfig = CONFIG.LEVELS[this.currentLevel];
+        if (!levelConfig) {
+            console.error(`Level ${this.currentLevel} configuration not found.`);
+            return null;
+        }
+
+        const backgroundKey = levelConfig.backgroundKey;
+        return this.assets.backgrounds[backgroundKey];
+    }
 }
 
 
@@ -936,6 +1460,7 @@ export class AudioManager {
 
 
 
+
 Camera.js:
 // Camera.js
 import { CONFIG } from '../../config.js';
@@ -967,6 +1492,8 @@ export class Camera {
         return Math.max(min, Math.min(value, max));
     }
 }
+
+
 
 
 
@@ -1013,6 +1540,7 @@ export class InputHandler {
         directions.forEach((dir) => {
             const element = document.getElementById(dir);
             if (element) {
+                // Touch events
                 element.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     this.handleDirectionTouch(e, dir, true);
@@ -1022,6 +1550,20 @@ export class InputHandler {
                     this.handleDirectionTouch(e, dir, false);
                 });
                 element.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    this.handleDirectionTouch(e, dir, false);
+                });
+
+                // Mouse events
+                element.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    this.handleDirectionTouch(e, dir, true);
+                });
+                element.addEventListener('mouseup', (e) => {
+                    e.preventDefault();
+                    this.handleDirectionTouch(e, dir, false);
+                });
+                element.addEventListener('mouseleave', (e) => {
                     e.preventDefault();
                     this.handleDirectionTouch(e, dir, false);
                 });
@@ -1037,6 +1579,7 @@ export class InputHandler {
         Object.entries(actionButtons).forEach(([buttonId, keyCode]) => {
             const element = document.getElementById(buttonId);
             if (element) {
+                // Touch events
                 element.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     this.handleActionTouch(keyCode, true);
@@ -1048,6 +1591,23 @@ export class InputHandler {
                     element.classList.remove('active');
                 });
                 element.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    this.handleActionTouch(keyCode, false);
+                    element.classList.remove('active');
+                });
+
+                // Mouse events
+                element.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    this.handleActionTouch(keyCode, true);
+                    element.classList.add('active');
+                });
+                element.addEventListener('mouseup', (e) => {
+                    e.preventDefault();
+                    this.handleActionTouch(keyCode, false);
+                    element.classList.remove('active');
+                });
+                element.addEventListener('mouseleave', (e) => {
                     e.preventDefault();
                     this.handleActionTouch(keyCode, false);
                     element.classList.remove('active');
@@ -1089,14 +1649,16 @@ export class InputHandler {
 
 
 
+
 Renderer.js:
 // Renderer.js
 import { CONFIG } from '../../config.js';
 
 export class Renderer {
-    constructor(ctx, levelManager) {
+    constructor(ctx, levelManager, gameState) {
         this.ctx = ctx;
         this.levelManager = levelManager;
+        this.gameState = gameState;
         this.directions = { down: 0, left: 1, right: 2, up: 3 };
     }
 
@@ -1119,9 +1681,35 @@ export class Renderer {
     }
 
     drawPlayer(player, sprites, camera) {
+        if (!player) return;
+
         const drawX = player.x - camera.x;
         const drawY = player.y - camera.y;
 
+        // Handle game over state
+        if (this.gameState?.isGameOver) {
+            if (this.gameState.gameOverType === 'jail' && sprites.skull) {
+                // Draw skull sprite
+                this.ctx.drawImage(sprites.skull, drawX, drawY, player.width, player.height);
+                
+                // Draw jail overlay if loaded
+                if (this.gameState.jailOverlay) {
+                    const overlayWidth = player.width * 1.5;
+                    const overlayHeight = player.height * 1.5;
+                    const overlayX = drawX - (overlayWidth - player.width) / 2;
+                    const overlayY = drawY - (overlayHeight - player.height) / 2;
+                    
+                    this.ctx.drawImage(
+                        this.gameState.jailOverlay, 
+                        overlayX, overlayY, 
+                        overlayWidth, overlayHeight
+                    );
+                }
+                return;
+            }
+        }
+
+        // Normal player rendering
         if (player.isIdle) {
             if (sprites.idle) {
                 this.ctx.drawImage(sprites.idle, drawX, drawY, player.width, player.height);
@@ -1149,27 +1737,31 @@ export class Renderer {
         }
     }
 
-       drawCharacters(sprites, camera) {
+    drawCharacters(sprites, camera) {
         this.levelManager.characters.forEach((character) => {
             if (!character || !character.type || !sprites[character.type]) {
                 console.error(`Sprites for character type ${character ? character.type : 'undefined'} are undefined.`);
                 return;
             }
 
+            if (!character.isVisible) return;
+
             const drawX = character.x - camera.x;
             const drawY = character.y - camera.y;
-
             const characterSprites = sprites[character.type.toLowerCase()];
 
-            // Handle special attack sprite state for Suina1
-            if (character.type === 'suina1' && character.currentSprite === 'attack' && character.activeSprite) {
-                this.ctx.drawImage(character.activeSprite, drawX, drawY, character.width, character.height);
+            // Handle specific sprite states
+            if (character.currentSprite === 'attack' && character.activeSprite) {
+                this.ctx.drawImage(character.activeSprite, drawX, drawY, 
+                    character.width, character.height);
                 return;
             }
 
+            // Normal character rendering
             if (character.isIdle) {
                 if (characterSprites.idle) {
-                    this.ctx.drawImage(characterSprites.idle, drawX, drawY, character.width, character.height);
+                    this.ctx.drawImage(characterSprites.idle, drawX, drawY, 
+                        character.width, character.height);
                 }
             } else {
                 const directionIndex = this.directions[character.direction] !== undefined
@@ -1191,6 +1783,7 @@ export class Renderer {
         });
     }
 }
+
 
 
 
@@ -1275,6 +1868,7 @@ export class ScoreManager {
         this.ctx.restore();
     }
 }
+
 
 
 
@@ -1373,285 +1967,83 @@ export class ScoreAnimation {
 
 
 
-
-
-
-
-Levelmanager.js:
-// LevelManager.js
-import { CONFIG } from '../config.js';
-import { Suina1 } from '../characters/Suina1.js';
-import { Suina2 } from '../characters/Suina2.js';
-import { SuinaEvil } from '../characters/SuinaEvil.js';
-import { Walter } from '../characters/Walter.js';
-import { Diego } from '../characters/Diego.js';
-import { Milly } from '../characters/Milly.js';
-
-export class LevelManager {
-    constructor(assets) {
-        this.assets = assets;
-        this.currentLevel = 1;
-        this.characters = [];
-        this.characterTimers = {};
-        this.player = null;
-        this.transitionInProgress = false;
-        this.transitionTimeout = null;
-        this.setupBackButton();
+GameStateManager.js:
+// GameStateManager.js - to be placed in js/engine/
+export class GameStateManager {
+    constructor(game) {
+        this.game = game;
+        this.isGameOver = false;
+        this.gameOverType = null; // 'jail' or other future game over conditions
+        this.jailOverlay = null;
+        this.scoreAnimationInProgress = false;
+        this.setupJailOverlay();
     }
 
-    setupBackButton() {
-        const backButton = document.getElementById('back-button');
-        if (!backButton) return;
-
-        // Handle back button click
-        backButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (this.currentLevel !== 1) {
-                this.transitionToLevel1();
-            }
-        });
-
-        // Initial visibility
-        this.updateBackButtonVisibility();
+    setupJailOverlay() {
+        // Pre-load the jail overlay image
+        this.jailOverlay = new Image();
+        this.jailOverlay.src = './assets/sprites/jail.png';
     }
 
-    updateBackButtonVisibility() {
-        const backButton = document.getElementById('back-button');
-        if (backButton) {
-            backButton.style.display = this.currentLevel === 1 ? 'none' : 'block';
-        }
-    }
-
-    transitionToLevel1() {
-        // Clear any existing timers
-        this.clearTimers();
+    triggerJailGameOver(player) {
+        if (this.isGameOver) return;
         
-        // Reset player position to center of level 1
-        if (this.player) {
-            this.player.x = CONFIG.WORLD.WIDTH / 2;
-            this.player.y = CONFIG.WORLD.HEIGHT / 2;
+        this.isGameOver = true;
+        this.gameOverType = 'jail';
+        
+        // Change player sprite to skull
+        if (this.game.player) {
+            this.game.player.sprites = this.game.assets.sprites.skull;
+            this.game.player.freeze = true;
         }
 
-        // Load level 1
-        this.loadLevel(1, this.player);
-        
-        // Update back button visibility
-        this.updateBackButtonVisibility();
+        // Animate score reset
+        this.animateScoreReset();
     }
 
-    loadLevel(levelNumber, player) {
-        const levelConfig = CONFIG.LEVELS[levelNumber];
-        if (!levelConfig) {
-            console.error(`Level ${levelNumber} configuration not found.`);
-            return;
-        }
+    animateScoreReset() {
+        if (!this.game.scoreManager || this.scoreAnimationInProgress) return;
 
-        if (this.transitionTimeout) {
-            clearTimeout(this.transitionTimeout);
-        }
+        this.scoreAnimationInProgress = true;
+        const scores = this.game.scoreManager.scores;
+        const decrementInterval = 50; // ms between each decrement
+        const decrementAmount = 1; // points to decrease per step
 
-        this.transitionInProgress = true;
-
-        // Store character states before clearing
-        const storedStates = new Map();
-        this.characters.forEach(char => {
-            if (char && char.type) {
-                storedStates.set(char.type, {
-                    direction: char.direction,
-                    lastNonIdleDirection: char.lastNonIdleDirection,
-                    isIdle: false
-                });
-            }
-        });
-
-        this.clearTimers();
-        this.characters = [];
-        this.characterTimers = {};
-
-        this.currentLevel = levelNumber;
-        this.loadCharactersForLevel(levelNumber, storedStates);
-        this.updateBackButtonVisibility();
-
-        if (this.player !== player) {
-            this.player = player;
-        }
-
-        this.resetPlayerState();
-
-        console.log(`Loaded level ${levelNumber}`);
-
-        this.transitionTimeout = setTimeout(() => {
-            this.transitionInProgress = false;
-            // Force walking state after transition
-            this.characters.forEach(char => {
-                if (char) char.isIdle = false;
+        const animationInterval = setInterval(() => {
+            let allZero = true;
+            
+            // Decrease each score type
+            Object.keys(scores).forEach(scoreType => {
+                if (scores[scoreType] > 0) {
+                    scores[scoreType] = Math.max(0, scores[scoreType] - decrementAmount);
+                    allZero = false;
+                }
             });
-        }, 100);
+
+            // Stop animation when all scores are zero
+            if (allZero) {
+                clearInterval(animationInterval);
+                this.scoreAnimationInProgress = false;
+            }
+        }, decrementInterval);
     }
 
-    resetPlayerState() {
-        if (!this.player) return;
-
-        // Preserve timing consistency
-        const now = performance.now();
-        this.player.lastUpdateTime = now;
-        this.player.lastAnimationUpdate = now;
-        this.player.frameTime = now;
-
-        this.player.updateSpeedMultiplier();
+    reset() {
+        this.isGameOver = false;
+        this.gameOverType = null;
+        this.scoreAnimationInProgress = false;
         
-        // Reset movement tracking
-        this.player.velocity = { x: 0, y: 0 };
-        this.player.movementBuffer = { x: 0, y: 0 };
-
-        this.player.x = CONFIG.WORLD.WIDTH / 2;
-        this.player.y = CONFIG.WORLD.HEIGHT / 2;
-
-        this.player.frame = this.player.frame % this.player.totalFrames;
-    }
-
-    loadCharactersForLevel(levelNumber, storedStates) {
-        switch (levelNumber) {
-            case 1:
-                this.addRandomCharacter('milly', 10000);
-                break;
-            case 2:
-                this.addCharacter('suina1', 300, 200, storedStates);
-                this.addDelayedCharacter('suina2', 400, 250, 5000);
-                this.addDelayedCharacter('suinaevil', 500, 100, 6000);
-                break;
-            case 3:
-                this.addCharacter('suina1', 350, 300, storedStates);
-                this.addDelayedCharacter('suina2', 400, 200, 5000);
-                this.addDelayedCharacter('suinaevil', 450, 150, 6000);
-                break;
-            case 4:
-                this.addCharacter('walter', 600, 300);
-                break;
-            case 5:
-                this.addCharacter('diego', 700, 400);
-                break;
-            default:
-                console.warn(`No characters defined for level ${levelNumber}`);
-                break;
+        // Reset player state if exists
+        if (this.game.player) {
+            this.game.player.freeze = false;
         }
-    }
-
-    addCharacter(type, x, y, storedStates = null) {
-        const characterClasses = {
-            suina1: Suina1,
-            suina2: Suina2,
-            suinaevil: SuinaEvil,
-            walter: Walter,
-            diego: Diego,
-            milly: Milly
-        };
-
-        const CharacterClass = characterClasses[type.toLowerCase()];
-        const sprites = this.assets.sprites[type];
-
-        if (!CharacterClass || !sprites) {
-            console.error(`Invalid character type or missing sprites: ${type}`);
-            return;
-        }
-
-        const character = new CharacterClass(x, y, CONFIG.PLAYER.WIDTH, CONFIG.PLAYER.HEIGHT, sprites, type.toLowerCase());
-
-        // Restore previous state if available
-        if (storedStates) {
-            const storedState = storedStates.get(type.toLowerCase());
-            if (storedState) {
-                Object.assign(character, storedState);
-            }
-        }
-
-        // Ensure character starts in walking state
-        character.isIdle = false;
-
-        this.characters.push(character);
-    }
-
-    addDelayedCharacter(type, x, y, delay) {
-        if (!this.assets.sprites[type]) {
-            console.error(`Cannot add delayed character: Missing sprites for type ${type}`);
-            return;
-        }
-        this.characterTimers[type] = setTimeout(() => {
-            this.addCharacter(type, x, y);
-            delete this.characterTimers[type];
-        }, delay);
-    }
-
-    addRandomCharacter(type, interval) {
-        const spawnRandomly = () => {
-            if (this.currentLevel !== 1) return;
-            const x = Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH);
-            const y = Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT);
-            this.addCharacter(type, x, y);
-        };
-
-        this.characterTimers[type] = setInterval(spawnRandomly, interval);
-    }
-
-    update(player, worldBounds, input) {
-        if (this.transitionInProgress) return;
-
-        this.characters = this.characters.filter(character => character && character.type);
-
-        this.characters.forEach((character) => {
-            if (!character.isCaught) {
-                character.update(player, {
-                    width: CONFIG.WORLD.WIDTH,
-                    height: CONFIG.WORLD.HEIGHT
-                }, input);
-            }
-        });
-    }
-
-    checkLevelTransition(player) {
-        if (this.transitionInProgress) return false;
-
-        const currentLevelConfig = CONFIG.LEVELS[this.currentLevel];
-        if (!currentLevelConfig || !currentLevelConfig.transitions) {
-            return false;
-        }
-
-        for (const transition of Object.values(currentLevelConfig.transitions)) {
-            if (
-                player.x >= transition.x.min &&
-                player.x <= transition.x.max &&
-                player.y >= transition.y.min &&
-                player.y <= transition.y.max
-            ) {
-                const nextLevel = transition.nextLevel;
-                this.loadLevel(nextLevel, player);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    clearTimers() {
-        for (const timer in this.characterTimers) {
-            clearTimeout(this.characterTimers[timer]);
-            clearInterval(this.characterTimers[timer]);
-        }
-        this.characterTimers = {};
-    }
-
-    getCurrentLevelBackground() {
-        const levelConfig = CONFIG.LEVELS[this.currentLevel];
-        if (!levelConfig) {
-            console.error(`Level ${this.currentLevel} configuration not found.`);
-            return null;
-        }
-
-        const backgroundKey = levelConfig.backgroundKey;
-        return this.assets.backgrounds[backgroundKey];
     }
 }
+
+
+
+
+
 
 
 
@@ -1664,6 +2056,10 @@ import { CONFIG } from '../config.js';
 
 export class BaseCharacter {
     constructor(x, y, width, height, sprites, type, speedMultiplier = 1) {
+        console.log('BaseCharacter Constructor:', {
+            x, y, width, height, type, speedMultiplier
+        });
+
         this.x = x;
         this.y = y;
         this.width = width;
@@ -1678,47 +2074,106 @@ export class BaseCharacter {
         this.frame = 0;
         this.totalFrames = CONFIG.PLAYER.TOTAL_FRAMES;
         this.animationSpeed = 100;
-        this.lastAnimationUpdate = 0;
+        this.lastAnimationUpdate = performance.now();
         this.isCaught = false;
+        this.isPaused = false;
 
-        this.lastUpdateTime = performance.now();
+        console.log('BaseCharacter Initialized:', {
+            speed: this.speed,
+            direction: this.direction,
+            isIdle: this.isIdle,
+            totalFrames: this.totalFrames,
+            isPaused: this.isPaused
+        });
     }
 
-    update(player, worldBounds, input) {  // Add input parameter here
-        if (this.isCaught) return;
+update(player, worldBounds, input) {
+        console.log('BaseCharacter Update ENTRY:', {
+            type: this.type,
+            isPaused: this.isPaused,
+            isCaught: this.isCaught,
+            isVisible: this.isVisible,
+            position: { x: this.x, y: this.y }
+        });
+
+        if (this.isPaused || this.isCaught) {
+            console.log('BaseCharacter Update BLOCKED by:', {
+                isPaused: this.isPaused,
+                isCaught: this.isCaught
+            });
+            return;
+        }
 
         const currentTime = performance.now();
-        const deltaTime = (currentTime - this.lastUpdateTime) / 16.67;
+        const deltaTime = Math.min((currentTime - (this.lastUpdateTime || currentTime)) / 16.67, 32);
         this.lastUpdateTime = currentTime;
 
-        // Pass input to updateBehavior
+        console.log('BaseCharacter calling updateBehavior with:', {
+            deltaTime,
+            currentTime,
+            lastUpdateTime: this.lastUpdateTime
+        });
+
         this.updateBehavior(player, worldBounds, deltaTime, input);
+
+        console.log('BaseCharacter after updateBehavior:', {
+            isIdle: this.isIdle,
+            frame: this.frame,
+            position: { x: this.x, y: this.y }
+        });
 
         if (!this.isIdle) {
             if (currentTime - this.lastAnimationUpdate >= this.animationSpeed) {
                 this.frame = (this.frame + 1) % this.totalFrames;
                 this.lastAnimationUpdate = currentTime;
+                console.log('BaseCharacter animation updated:', {
+                    frame: this.frame,
+                    animationTime: currentTime - this.lastAnimationUpdate
+                });
             }
-        } else {
-            this.frame = 0;
-            this.lastAnimationUpdate = 0;
         }
     }
 
-    updateBehavior(player, worldBounds, deltaTime, input) {  // Add input parameter here
+    updateBehavior(player, worldBounds, deltaTime, input) {
+        console.log('BaseCharacter updateBehavior called');
         this.isIdle = true;
     }
 
     checkCollision(other) {
-        return (
+        const collision = (
             this.x < other.x + other.width &&
             this.x + this.width > other.x &&
             this.y < other.y + other.height &&
             this.y + this.height > other.y
         );
+        
+        if (collision) {
+            console.log('Collision detected:', {
+                myPos: { x: this.x, y: this.y },
+                otherPos: { x: other.x, y: other.y }
+            });
+        }
+        
+        return collision;
+    }
+
+    pauseUpdates() {
+        console.log('Character paused');
+        this.isPaused = true;
+    }
+
+    resumeUpdates() {
+        console.log('Character resumed');
+        this.isPaused = false;
+        this.lastUpdateTime = performance.now();
+        this.lastAnimationUpdate = performance.now();
+    }
+
+    cleanup() {
+        console.log('Character cleanup');
+        this.isPaused = false;
     }
 }
-
 
 
 
@@ -1891,56 +2346,90 @@ export class Player extends BaseCharacter {
 
 
 
-// Suina1.js
+
+
+
+Suina1.js:
 // Suina1.js
 import { BaseCharacter } from './BaseCharacter.js';
 import { CONFIG } from '../config.js';
 
 export class Suina1 extends BaseCharacter {
-    constructor(x, y, width, height, sprites, type) {
+constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type, 1.5);
-        this.moveTimer = 0;
+        
+        console.log('Suina1 Constructor - Start');
+        
+        // Initialize timestamps
+        const now = performance.now();
+        
+        // Movement states with proper initialization
+        this.moveTimer = now;
         this.changeDirectionInterval = 2500;
         this.lastNonIdleDirection = 'down';
-        this.lastUpdateTime = performance.now();
-        this.frameTime = performance.now();
+        this.lastUpdateTime = now;
+        this.frameTime = now;
         this.movementBuffer = { x: 0, y: 0 };
         this.velocity = { x: 0, y: 0 };
         this.lastX = x;
         this.lastY = y;
+        this.stuckTimer = 0;
+        this.directionChangeCount = 0;
+        this.lastDirectionChange = now;
+
+        // Animation states
         this.frame = 0;
         this.isIdle = false;
         this.direction = 'down';
-        this.stuckTimer = 0;
-        this.directionChangeCount = 0;
-        this.lastDirectionChange = performance.now();
-
+        
         // Collision and interaction states
         this.isColliding = false;
-        this.collisionStartTime = null;
         this.isDisappearing = false;
-        this.hasChangedSprite = false;
         this.buttonInteractionAvailable = false;
         this.soundPlayed = false;
         this.isVisible = true;
-        this.respawnTimeout = null;
+        this.hasInteracted = false;
+
+        // Explicitly ensure not paused
+        this.isPaused = false;
+
+        // Set initial sprite state
+        if (this.sprites && this.sprites.walking) {
+            this.currentSprite = 'walking';
+            this.activeSprite = this.sprites.walking;
+        }
+
+        console.log('Suina1 Constructor - Complete:', {
+            position: { x: this.x, y: this.y },
+            isPaused: this.isPaused,
+            isIdle: this.isIdle,
+            currentSprite: this.currentSprite ? 'set' : 'not set'
+        });
+    }
+
+startDisappearance() {
+        this.isDisappearing = true;
+        this.isVisible = false;
+
+        // Schedule respawn
+        setTimeout(() => {
+            this.respawn();
+        }, 2000);
     }
 
     respawn() {
-        // Generate random coordinates within the world bounds
-        const padding = 50; // To avoid spawning too close to edges
+        // Generate random coordinates within bounds with padding
+        const padding = 50;
         this.x = Math.random() * (CONFIG.WORLD.WIDTH - this.width - padding * 2) + padding;
         this.y = Math.random() * (CONFIG.WORLD.HEIGHT - this.height - padding * 2) + padding;
         
         // Reset all states
         this.isColliding = false;
-        this.collisionStartTime = null;
         this.isDisappearing = false;
-        this.hasChangedSprite = false;
         this.buttonInteractionAvailable = false;
         this.soundPlayed = false;
         this.isVisible = true;
-        this.isCaught = false;
+        this.hasInteracted = false;
         this.currentSprite = null;
         this.activeSprite = null;
 
@@ -1950,138 +2439,96 @@ export class Suina1 extends BaseCharacter {
         this.stuckTimer = 0;
         this.directionChangeCount = 0;
         this.isIdle = false;
+        this.velocity = { x: 0, y: 0 };
+        this.movementBuffer = { x: 0, y: 0 };
         
-        // Set a random initial direction
+        // Set random initial direction
         const directions = ['up', 'down', 'left', 'right'];
         this.direction = directions[Math.floor(Math.random() * directions.length)];
         this.lastNonIdleDirection = this.direction;
     }
 
-    handleCollision(player, input) {
-        const currentTime = performance.now();
-        const gameInstance = window.gameInstance;
-
-        // Initial collision detection
-        if (!this.isColliding && !this.isDisappearing && this.isVisible) {
-            this.isColliding = true;
-            this.collisionStartTime = currentTime;
-            this.hasChangedSprite = true;
-            this.buttonInteractionAvailable = true;
-
-            // Play initial collision sound
-            if (!this.soundPlayed && gameInstance.audioManager) {
-                gameInstance.audioManager.playSound('suina_sound');
-                this.soundPlayed = true;
-            }
-
-            // Change to attack sprite
-            if (this.sprites.attack) {
-                this.currentSprite = 'attack';
-                this.activeSprite = this.sprites.attack;
-
-                // Set timer for disappearance after 2 seconds
-                setTimeout(() => {
-                    this.isVisible = false;
-                    this.isDisappearing = true;
-                    this.buttonInteractionAvailable = false;
-
-                    // Set timer for respawn after 2 more seconds
-                    this.respawnTimeout = setTimeout(() => {
-                        this.respawn();
-                    }, 2000);
-                }, 2000);
-            }
-        }
-
-        // Handle button interactions during the 2-second window
-        if (this.buttonInteractionAvailable && currentTime - this.collisionStartTime <= 1000) {
-            if (input.keys.KeyB) {
-                if (gameInstance.audioManager) {
-                    gameInstance.audioManager.playSound('professore_smack');
-                }
-                if (gameInstance.scoreManager) {
-                    gameInstance.scoreManager.increaseScore('love', 2);
-                }
-                this.buttonInteractionAvailable = false;
-            }
-            else if (input.keys.KeyF) {
-                if (gameInstance.audioManager) {
-                    gameInstance.audioManager.playSound('suina_fuck');
-                }
-                if (gameInstance.scoreManager) {
-                    gameInstance.scoreManager.increaseScore('love', 5);
-                }
-                this.buttonInteractionAvailable = false;
-            }
-        }
-    }
-
-    cleanup() {
-        if (this.respawnTimeout) {
-            clearTimeout(this.respawnTimeout);
-        }
-        this.isColliding = false;
-        this.collisionStartTime = null;
-        this.hasChangedSprite = false;
-        this.buttonInteractionAvailable = false;
-        this.soundPlayed = false;
-    }
-
     updateBehavior(player, worldBounds, deltaTime, input) {
-        if (!this.isVisible) return;
+        console.log('UpdateBehavior Called:', {
+            isPaused: this.isPaused,
+            isVisible: this.isVisible,
+            isColliding: this.isColliding,
+            isDisappearing: this.isDisappearing,
+            currentPosition: { x: this.x, y: this.y }
+        });
+
+        if (this.isPaused || !this.isVisible) {
+            console.log('Early return due to:', { isPaused: this.isPaused, isVisible: this.isVisible });
+            return;
+        }
 
         // Check for collision with player
         if (this.checkCollision(player)) {
+            console.log('Collision detected with player');
             this.handleCollision(player, input);
             return;
         }
 
-        // Reset collision states if not colliding
-        if (!this.checkCollision(player) && this.isColliding) {
-            this.cleanup();
+        // Only reset states if we've moved away from collision and aren't disappearing
+        if (!this.checkCollision(player) && !this.isDisappearing) {
+            if (this.isColliding) {
+                console.log('Cleaning up after collision');
+                this.cleanup();
+            }
         }
 
+        // If in collision or disappearing state, stop all movement
+        if (this.isColliding || this.isDisappearing) {
+            console.log('Stopping movement due to:', { isColliding: this.isColliding, isDisappearing: this.isDisappearing });
+            this.velocity = { x: 0, y: 0 };
+            this.movementBuffer = { x: 0, y: 0 };
+            return;
+        }
+
+        // Process movement logic
         const currentTime = performance.now();
         const maxDeltaTime = 32;
         const effectiveDeltaTime = Math.min(deltaTime, maxDeltaTime);
 
-        // Regular movement behavior when not colliding
-        if (!this.isColliding) {
-            const timeSinceLastChange = currentTime - this.lastDirectionChange;
-            
-            if (currentTime - this.moveTimer > this.changeDirectionInterval || 
-                (this.stuckTimer > 500 && timeSinceLastChange > 1000)) {
-                this.randomizeDirection(worldBounds);
-                this.moveTimer = currentTime;
-                this.lastDirectionChange = currentTime;
-                this.stuckTimer = 0;
-                this.directionChangeCount = 0;
-            }
+        const timeSinceLastChange = currentTime - this.lastDirectionChange;
+        
+        console.log('Movement timing:', {
+            currentTime,
+            timeSinceLastChange,
+            moveTimer: this.moveTimer,
+            changeInterval: this.changeDirectionInterval
+        });
 
-            const distance = Math.hypot(player.x - this.x, player.y - this.y);
-
-            if (distance < 150) {
-                this.runAwayFrom(player, effectiveDeltaTime, worldBounds);
-                this.isIdle = false;
-            } else {
-                const moved = this.moveRandomly(effectiveDeltaTime, worldBounds);
-                if (!moved) {
-                    this.stuckTimer += deltaTime * 16.67;
-                } else {
-                    this.stuckTimer = 0;
-                }
-            }
+        if (currentTime - this.moveTimer > this.changeDirectionInterval || 
+            (this.stuckTimer > 500 && timeSinceLastChange > 1000)) {
+            console.log('Changing direction');
+            this.randomizeDirection(worldBounds);
+            this.moveTimer = currentTime;
+            this.lastDirectionChange = currentTime;
+            this.stuckTimer = 0;
+            this.directionChangeCount = 0;
         }
 
-        // Update animation frame
-        if (!this.isIdle && currentTime - this.lastUpdateTime >= this.animationSpeed) {
-            this.frame = (this.frame + 1) % this.totalFrames;
-            this.lastUpdateTime = currentTime;
+        const distance = Math.hypot(player.x - this.x, player.y - this.y);
+        console.log('Distance to player:', distance);
+
+        if (distance < 150) {
+            console.log('Running away from player');
+            this.runAwayFrom(player, effectiveDeltaTime, worldBounds);
+            this.isIdle = false;
+        } else {
+            console.log('Moving randomly');
+            const moved = this.moveRandomly(effectiveDeltaTime, worldBounds);
+            if (!moved) {
+                this.stuckTimer += deltaTime * 16.67;
+                console.log('Stuck timer increased:', this.stuckTimer);
+            } else {
+                this.stuckTimer = 0;
+            }
         }
     }
 
-
-    runAwayFrom(player, deltaTime, worldBounds) {
+runAwayFrom(player, deltaTime, worldBounds) {
         const dx = this.x - player.x;
         const dy = this.y - player.y;
         const angle = Math.atan2(dy, dx);
@@ -2105,10 +2552,77 @@ export class Suina1 extends BaseCharacter {
         }
     }
 
+
+handleCollision(player, input) {
+        const gameInstance = window.gameInstance;
+
+        // Initial collision detection
+        if (!this.isColliding && !this.isDisappearing && this.isVisible) {
+            // 1. Stop all movement and set initial states
+            this.isColliding = true;
+            this.velocity = { x: 0, y: 0 };
+            this.movementBuffer = { x: 0, y: 0 };
+            this.isIdle = true;
+            this.buttonInteractionAvailable = true;
+
+            // 2. Play sound once
+            if (!this.soundPlayed && gameInstance.audioManager) {
+                gameInstance.audioManager.playSound('suina_sound');
+                this.soundPlayed = true;
+            }
+
+            // 3. Change to attack sprite
+            if (this.sprites.attack) {
+                this.currentSprite = 'attack';
+                this.activeSprite = this.sprites.attack;
+                this.frame = 0;
+            }
+        }
+
+        // 4. Handle button interactions (B or F)
+        if (this.buttonInteractionAvailable) {
+            if (input.keys.KeyB || input.keys.KeyF) {
+                // 5. Play appropriate sound and update score
+                if (input.keys.KeyB && gameInstance.audioManager) {
+                    gameInstance.audioManager.playSound('professore_smack');
+                    if (gameInstance.scoreManager) {
+                        gameInstance.scoreManager.increaseScore('love', 2);
+                    }
+                } else if (input.keys.KeyF && gameInstance.audioManager) {
+                    gameInstance.audioManager.playSound('suina_fuck');
+                    if (gameInstance.scoreManager) {
+                        gameInstance.scoreManager.increaseScore('love', 5);
+                    }
+                }
+
+                // 6. Change sprite again to attack
+                if (this.sprites.attack) {
+                    this.currentSprite = 'attack';
+                    this.activeSprite = this.sprites.attack;
+                    this.frame = 0;
+                }
+
+                // 7. Trigger disappearance
+                this.hasInteracted = true;
+                this.buttonInteractionAvailable = false;
+                this.startDisappearance();
+            }
+        }
+    }
+
+
     moveRandomly(deltaTime, worldBounds) {
         const adjustedSpeed = this.speed * deltaTime * 0.8;
         const oldX = this.x;
         const oldY = this.y;
+
+        console.log('MoveRandomly:', {
+            direction: this.direction,
+            adjustedSpeed,
+            currentPos: { x: this.x, y: this.y },
+            speed: this.speed,
+            deltaTime
+        });
 
         switch (this.direction) {
             case 'up':
@@ -2126,7 +2640,12 @@ export class Suina1 extends BaseCharacter {
         }
 
         const moved = (Math.abs(this.x - oldX) > 0.01 || Math.abs(this.y - oldY) > 0.01);
-        
+        console.log('Movement result:', {
+            moved,
+            newPos: { x: this.x, y: this.y },
+            delta: { x: this.x - oldX, y: this.y - oldY }
+        });
+
         if (moved) {
             this.isIdle = false;
             this.lastNonIdleDirection = this.direction;
@@ -2201,9 +2720,32 @@ export class Suina1 extends BaseCharacter {
         }
         this.lastNonIdleDirection = this.direction;
     }
+
+    cleanup() {
+        super.cleanup();
+        
+        if (!this.isDisappearing) {
+            this.isColliding = false;
+            this.buttonInteractionAvailable = false;
+            this.soundPlayed = false;
+            this.currentSprite = null;
+            this.activeSprite = null;
+            this.hasInteracted = false;
+        }
+    }
+
+    pauseUpdates() {
+        super.pauseUpdates();
+    }
+
+     resumeUpdates() {
+        super.resumeUpdates();
+        this.moveTimer = performance.now();
+        this.lastDirectionChange = performance.now();
+        this.lastUpdateTime = performance.now();
+        this.frameTime = performance.now();
+    }
 }
-
-
 
 
 
@@ -2221,13 +2763,23 @@ import { BaseCharacter } from './BaseCharacter.js';
 export class Suina2 extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type);
+        this.lastBehaviorUpdate = performance.now();
     }
 
-    updateBehavior(player, worldBounds, deltaTime) {
-        // Currently no special behavior: remains idle
-        // If needed, add logic similar to Suina1 or other chars
+    updateBehavior(player, worldBounds, deltaTime, input) {
+        if (this.isPaused) return;
+        
+        const currentTime = performance.now();
+        this.lastBehaviorUpdate = currentTime;
+        
+        // Currently remains idle - future behavior can be added here
         this.isIdle = true;
         this.direction = 'down';
+    }
+
+    cleanup() {
+        super.cleanup();
+        // Add any Suina2-specific cleanup here
     }
 }
 
@@ -2241,10 +2793,16 @@ import { BaseCharacter } from './BaseCharacter.js';
 export class SuinaEvil extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type);
+        this.lastBehaviorUpdate = performance.now();
     }
 
-    updateBehavior(player, worldBounds, deltaTime) {
-        // Placeholder: remains idle
+    updateBehavior(player, worldBounds, deltaTime, input) {
+        if (this.isPaused) return;
+        
+        const currentTime = performance.now();
+        this.lastBehaviorUpdate = currentTime;
+        
+        // Currently remains idle - future behavior can be added here
         this.isIdle = true;
         this.direction = 'down';
     }
@@ -2261,10 +2819,16 @@ import { BaseCharacter } from './BaseCharacter.js';
 export class Diego extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type);
+        this.lastBehaviorUpdate = performance.now();
     }
 
-    updateBehavior(player, worldBounds, deltaTime) {
-        // Placeholder: remains idle
+    updateBehavior(player, worldBounds, deltaTime, input) {
+        if (this.isPaused) return;
+        
+        const currentTime = performance.now();
+        this.lastBehaviorUpdate = currentTime;
+        
+        // Currently remains idle - future behavior can be added here
         this.isIdle = true;
         this.direction = 'down';
     }
@@ -2281,10 +2845,16 @@ import { BaseCharacter } from './BaseCharacter.js';
 export class Milly extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type);
+        this.lastBehaviorUpdate = performance.now();
     }
 
-    updateBehavior(player, worldBounds, deltaTime) {
-        // Placeholder: remains idle
+    updateBehavior(player, worldBounds, deltaTime, input) {
+        if (this.isPaused) return;
+        
+        const currentTime = performance.now();
+        this.lastBehaviorUpdate = currentTime;
+        
+        // Currently remains idle - future behavior can be added here
         this.isIdle = true;
         this.direction = 'down';
     }
@@ -2301,15 +2871,20 @@ import { BaseCharacter } from './BaseCharacter.js';
 export class Walter extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type);
+        this.lastBehaviorUpdate = performance.now();
     }
 
-    updateBehavior(player, worldBounds, deltaTime) {
-        // Placeholder: remains idle
+    updateBehavior(player, worldBounds, deltaTime, input) {
+        if (this.isPaused) return;
+        
+        const currentTime = performance.now();
+        this.lastBehaviorUpdate = currentTime;
+        
+        // Currently remains idle - future behavior can be added here
         this.isIdle = true;
         this.direction = 'down';
     }
 }
-
 
 
 
