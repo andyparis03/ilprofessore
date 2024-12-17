@@ -8,6 +8,7 @@ import { AssetLoader } from './utils/AssetLoader.js';
 import { AudioManager } from './js/engine/AudioManager.js';
 import { LevelManager } from './levels/LevelManager.js';
 import { ScoreManager } from './js/engine/ScoreManager.js';
+import { GameStateManager } from './js/engine/GameStateManager.js';
 
 const audioManager = new AudioManager();
 let gameInitialized = false;
@@ -75,6 +76,7 @@ class Game {
         this.input = new InputHandler();
         this.audioManager = audioManager;
         this.scoreManager = new ScoreManager(this.ctx);
+        this.gameState = new GameStateManager(this);  // Initialize GameState first
 
         this.player = new Player(
             CONFIG.WORLD.WIDTH / 2,
@@ -110,15 +112,15 @@ class Game {
         this.camera.height = this.canvas.height;
     }
 
-    async init() {
+     async init() {
         try {
             const assets = await AssetLoader.loadAssets();
             console.log('Loaded assets:', assets);
             this.assets = assets;
             this.player.sprites = assets.sprites.professore;
 
-            this.levelManager = new LevelManager(assets);
-            this.renderer = new Renderer(this.ctx, this.levelManager);
+            this.levelManager = new LevelManager(assets, this.gameState);  // Pass gameState here
+            this.renderer = new Renderer(this.ctx, this.levelManager, this.gameState);  // Pass gameState to renderer too
 
             await this.audioManager.init();
 
@@ -130,7 +132,9 @@ class Game {
         }
     }
 
-    update() {
+update() {
+        console.log('Game Update cycle start');
+        
         this.player.update(this.input, {
             width: CONFIG.WORLD.WIDTH,
             height: CONFIG.WORLD.HEIGHT
@@ -142,8 +146,10 @@ class Game {
                 width: CONFIG.WORLD.WIDTH,
                 height: CONFIG.WORLD.HEIGHT
             },
-            this.input  // Pass input here
+            this.input
         );
+
+        console.log('Game Update cycle complete');
 
         if (this.levelManager.checkLevelTransition(this.player)) {
             console.log(`Transitioned to Level ${this.levelManager.currentLevel}`);
@@ -152,6 +158,8 @@ class Game {
         this.camera.follow(this.player, CONFIG.WORLD.WIDTH, CONFIG.WORLD.HEIGHT);
         this.audioManager.handleFootsteps(this.player, !this.player.isIdle);
     }
+
+
 
     draw() {
         this.renderer.clear();
