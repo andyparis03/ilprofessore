@@ -1900,29 +1900,24 @@ ScoreAnimation.js:
 export class ScoreAnimation {
     constructor() {
         this.animations = [];
+        this.scoreCountdownElement = null;
+        this.isResetting = false;
+        this.countdownAnimationFrame = null;
     }
 
     addAnimation(score) {
-        // Get canvas dimensions directly from the game canvas
         const canvas = document.getElementById('gameCanvas');
         const centerX = Math.round(canvas.width / 2);
         const centerY = Math.round(canvas.height / 2);
         
-        console.log('Canvas dimensions:', {
-            width: canvas.width,
-            height: canvas.height,
-            centerX: centerX,
-            centerY: centerY
-        });
-
         this.animations.push({
             score: `+${score}`,
-            x: centerX,         // Center X
-            y: centerY,         // Center Y
+            x: centerX,
+            y: centerY,
             startTime: performance.now(),
-            duration: 2000,     // 2 seconds
-            startFontSize: 72,  // Starting size
-            endFontSize: 24,    // Ending size
+            duration: 2000,
+            startFontSize: 72,
+            endFontSize: 24,
             opacity: 1
         });
     }
@@ -1944,17 +1939,11 @@ export class ScoreAnimation {
             // Calculate opacity (fade out in the last 30% of animation)
             anim.opacity = progress > 0.7 ? 1 - ((progress - 0.7) / 0.3) : 1;
 
-            // Draw score with debug info
             ctx.save();
             
-            // Set text properties
             ctx.font = `bold ${fontSize}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-
-            // Draw debug point at center (temporary)
-            ctx.fillStyle = 'red';
-            ctx.fillRect(anim.x - 2, anim.y - 2, 4, 4);
             
             // Move upward as it fades
             const yOffset = 50 * easeOutCubic;
@@ -1970,14 +1959,99 @@ export class ScoreAnimation {
 
             ctx.restore();
 
-            // Remove finished animations
             if (progress >= 1) {
                 this.animations.splice(i, 1);
             }
         }
     }
-}
 
+
+    animateScoreReset(scoreManager, onComplete) {
+        if (this.isResetting) return;
+        
+        this.isResetting = true;
+        const scores = scoreManager.scores;
+        const startScores = { ...scores };
+        const animationDuration = 2000;
+        const startTime = performance.now();
+        const startFontSize = 120; // Starting larger
+        const endFontSize = 48;   // Ending smaller
+
+        this.createCountdownElement(startFontSize);
+
+        const animate = (currentTime) => {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / animationDuration, 1);
+
+            // Easing function for smooth animation
+            const easeInOutQuad = progress < 0.5 
+                ? 2 * progress * progress 
+                : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+            // Animate scores down
+            Object.keys(scores).forEach(type => {
+                scores[type] = Math.round(startScores[type] * (1 - easeInOutQuad));
+            });
+
+            // Update countdown number with size and opacity animation
+            const countdownValue = Math.round(100 * (1 - easeInOutQuad));
+            if (this.scoreCountdownElement) {
+                // Calculate current font size
+                const currentFontSize = startFontSize - (startFontSize - endFontSize) * easeInOutQuad;
+                
+                // Calculate opacity (start fading halfway through)
+                const opacity = progress > 0.5 ? 2 * (1 - progress) : 1;
+                
+                this.scoreCountdownElement.style.fontSize = `${currentFontSize}px`;
+                this.scoreCountdownElement.style.opacity = opacity;
+                this.scoreCountdownElement.textContent = countdownValue;
+            }
+
+            if (progress < 1) {
+                this.countdownAnimationFrame = requestAnimationFrame(animate);
+            } else {
+                this.cleanup();
+                this.isResetting = false;
+                if (onComplete) onComplete();
+            }
+        };
+
+        this.countdownAnimationFrame = requestAnimationFrame(animate);
+    }
+
+    createCountdownElement(fontSize) {
+        this.scoreCountdownElement = document.createElement('div');
+        this.scoreCountdownElement.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: ${fontSize}px;
+            font-family: 'Arial Black', Arial;
+            color: white;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5),
+                         -3px -3px 6px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            transition: transform 0.1s ease-out;
+            opacity: 1;
+        `;
+        document.body.appendChild(this.scoreCountdownElement);
+    }
+
+
+    cleanup() {
+        if (this.countdownAnimationFrame) {
+            cancelAnimationFrame(this.countdownAnimationFrame);
+            this.countdownAnimationFrame = null;
+        }
+        
+        if (this.scoreCountdownElement) {
+            document.body.removeChild(this.scoreCountdownElement);
+            this.scoreCountdownElement = null;
+        }
+    }
+}
 
 
 
@@ -1986,21 +2060,30 @@ export class ScoreAnimation {
 
 
 GameStateManager.js:
-// GameStateManager.js - to be placed in js/engine/
+// GameStateManager.js
 export class GameStateManager {
     constructor(game) {
         this.game = game;
         this.isGameOver = false;
-        this.gameOverType = null; // 'jail' or other future game over conditions
+        this.gameOverType = null;
         this.jailOverlay = null;
-        this.scoreAnimationInProgress = false;
+        this.transitionState = {
+            active: false,
+            startTime: null,
+            duration: 1000
+        };
         this.setupJailOverlay();
     }
 
     setupJailOverlay() {
-        // Pre-load the jail overlay image
         this.jailOverlay = new Image();
         this.jailOverlay.src = './assets/sprites/jail.png';
+        this.jailOverlay.onload = () => {
+            console.log('Jail overlay loaded successfully');
+        };
+        this.jailOverlay.onerror = (error) => {
+            console.error('Failed to load jail overlay:', error);
+        };
     }
 
     triggerJailGameOver(player) {
@@ -2008,55 +2091,85 @@ export class GameStateManager {
         
         this.isGameOver = true;
         this.gameOverType = 'jail';
-        
-        // Change player sprite to skull
-        if (this.game.player) {
-            this.game.player.sprites = this.game.assets.sprites.skull;
-            this.game.player.freeze = true;
+        this.transitionState.active = true;
+        this.transitionState.startTime = performance.now();
+
+        // Stop background music with fade out
+        if (this.game.audioManager?.currentMusicSource) {
+            const gainNode = this.game.audioManager.musicGainNode;
+            const currentTime = this.game.audioManager.audioContext.currentTime;
+            gainNode.gain.setValueAtTime(gainNode.gain.value, currentTime);
+            gainNode.gain.linearRampToValueAtTime(0, currentTime + 1);
+            
+            setTimeout(() => {
+                this.game.audioManager.currentMusicSource.stop();
+            }, 1000);
         }
 
         // Animate score reset
-        this.animateScoreReset();
+        if (this.game.scoreManager) {
+            this.game.scoreManager.scoreAnimation.animateScoreReset(
+                this.game.scoreManager,
+                () => {
+                    console.log('Score reset animation complete');
+                    this.transitionState.active = false;
+                }
+            );
+        }
+
+        // Freeze player and change sprite
+        if (player) {
+            player.freeze = true;
+            if (this.game.assets.sprites.skull1) {
+                player.sprites = {
+                    idle: this.game.assets.sprites.skull1,
+                    walking: this.game.assets.sprites.skull1
+                };
+            }
+        }
     }
 
-    animateScoreReset() {
-        if (!this.game.scoreManager || this.scoreAnimationInProgress) return;
-
-        this.scoreAnimationInProgress = true;
-        const scores = this.game.scoreManager.scores;
-        const decrementInterval = 50; // ms between each decrement
-        const decrementAmount = 1; // points to decrease per step
-
-        const animationInterval = setInterval(() => {
-            let allZero = true;
-            
-            // Decrease each score type
-            Object.keys(scores).forEach(scoreType => {
-                if (scores[scoreType] > 0) {
-                    scores[scoreType] = Math.max(0, scores[scoreType] - decrementAmount);
-                    allZero = false;
-                }
-            });
-
-            // Stop animation when all scores are zero
-            if (allZero) {
-                clearInterval(animationInterval);
-                this.scoreAnimationInProgress = false;
-            }
-        }, decrementInterval);
+    isInTransition() {
+        if (!this.transitionState.active) return false;
+        
+        const elapsed = performance.now() - this.transitionState.startTime;
+        return elapsed < this.transitionState.duration;
     }
 
     reset() {
         this.isGameOver = false;
         this.gameOverType = null;
-        this.scoreAnimationInProgress = false;
-        
-        // Reset player state if exists
+        this.transitionState.active = false;
+        this.transitionState.startTime = null;
+
+        // Reset player state
         if (this.game.player) {
             this.game.player.freeze = false;
+            // Restore original sprites if needed
+            if (this.game.assets.sprites.professore) {
+                this.game.player.sprites = this.game.assets.sprites.professore;
+            }
+        }
+
+        // Reset score animation state
+        if (this.game.scoreManager?.scoreAnimation) {
+            this.game.scoreManager.scoreAnimation.cleanup();
+        }
+
+        // Reset audio
+        if (this.game.audioManager) {
+            this.game.audioManager.musicGainNode.gain.setValueAtTime(
+                this.game.audioManager.musicGainNode.gain.defaultValue,
+                this.game.audioManager.audioContext.currentTime
+            );
         }
     }
+
+    getJailOverlay() {
+        return this.jailOverlay?.complete ? this.jailOverlay : null;
+    }
 }
+
 
 
 
@@ -3042,6 +3155,7 @@ export class SuinaEvil extends BaseCharacter {
         
         const now = performance.now();
         
+        // Movement related properties
         this.moveTimer = now;
         this.changeDirectionInterval = 2500;
         this.lastNonIdleDirection = 'down';
@@ -3055,109 +3169,139 @@ export class SuinaEvil extends BaseCharacter {
         this.directionChangeCount = 0;
         this.lastDirectionChange = now;
 
+        // Animation and state properties
         this.frame = 0;
         this.isIdle = false;
         this.direction = 'down';
+        this.currentSprite = 'walking';
+        this.activeSprite = sprites?.walking;
         
+        // Interaction states
         this.isColliding = false;
         this.isDisappearing = false;
         this.soundPlayed = false;
         this.isVisible = true;
         this.hasInteracted = false;
-        this.disappearanceTimer = null;
         this.canInteract = false;
+        this.isGameOverTriggered = false;
+
+        // Timers
+        this.disappearanceTimer = null;
+        this.interactionCooldown = null;
+        this.gameOverAnimationInProgress = false;
     }
 
     updateBehavior(player, worldBounds, deltaTime, input) {
-        if (this.isPaused || !this.isVisible) {
+        if (this.isPaused || !this.isVisible || this.gameOverAnimationInProgress) {
             return;
         }
 
         const isCollidingNow = this.checkCollision(player);
 
+        // First collision detection
+        if (isCollidingNow && !this.isColliding && !this.isDisappearing) {
+            this.handleInitialCollision();
+        }
 
-    // First collision detection
-    if (isCollidingNow && !this.isColliding && !this.isDisappearing && !this.disappearanceTimer) {
-        // Change to suina1-attack.png sprite
+        // Handle button interactions
+        if (this.canInteract && !this.isDisappearing) {
+            this.handleInteraction(input, player);
+        }
+
+        // Handle movement if not in collision or disappearing state
+        if (!this.isColliding && !this.isDisappearing) {
+            this.handleMovement(player, deltaTime, worldBounds);
+        }
+    }
+
+    handleInitialCollision() {
+        // Change to attack sprite
         if (this.sprites.attack) {
             this.currentSprite = 'attack';
-            this.activeSprite = this.sprites.attack;  // This will be suina1-attack.png
+            this.activeSprite = this.sprites.attack;
             this.frame = 0;
         }
 
+        // Play initial collision sound
         const gameInstance = window.gameInstance;
         if (!this.soundPlayed && gameInstance?.audioManager) {
             gameInstance.audioManager.playSound('suina_sound');
             this.soundPlayed = true;
         }
 
+        // Set up interaction window
         this.canInteract = true;
-
-        // Set disappearance timer for 2 seconds
-        this.disappearanceTimer = setTimeout(() => {
-            this.startDisappearance();
-        }, 2000);
-
         this.isColliding = true;
+        
+        // Reset movement
         this.velocity = { x: 0, y: 0 };
         this.movementBuffer = { x: 0, y: 0 };
         this.isIdle = true;
+
+        // Set disappearance timer
+        this.disappearanceTimer = setTimeout(() => {
+            this.startDisappearance();
+        }, 2000);
     }
 
-        // Handle button interactions within the 2-second window
-        if (this.canInteract && !this.isDisappearing) {
-            const gameInstance = window.gameInstance;
-            
-            if (input.keys.KeyB) {
-                if (gameInstance?.audioManager) {
-                    gameInstance.audioManager.playSound('professore_smack');
-                    if (gameInstance.scoreManager) {
-                        gameInstance.scoreManager.increaseScore('love', -2); // Decrease love score
-                    }
+    handleInteraction(input, player) {
+        const gameInstance = window.gameInstance;
+        
+        if (input.keys.KeyB) {
+            if (gameInstance?.audioManager) {
+                gameInstance.audioManager.playSound('professore_smack');
+                if (gameInstance.scoreManager) {
+                    gameInstance.scoreManager.increaseScore('love', -2);
                 }
-                this.canInteract = false;
-                if (this.disappearanceTimer) {
-                    clearTimeout(this.disappearanceTimer);
-                }
-                this.startDisappearance();
             }
-            else if (input.keys.KeyF) {
-                if (gameInstance?.audioManager) {
-                    gameInstance.audioManager.playSound('suina_evil');
-                    
-                    // Trigger game over sequence
-                    if (gameInstance.gameState) {
-                        gameInstance.gameState.triggerJailGameOver(player);
-                    }
-                    
-                    // Reset all scores
-                    if (gameInstance.scoreManager) {
-                        Object.keys(gameInstance.scoreManager.scores).forEach(scoreType => {
-                            gameInstance.scoreManager.scores[scoreType] = 0;
-                        });
-                    }
-                }
-                this.canInteract = false;
-                if (this.disappearanceTimer) {
-                    clearTimeout(this.disappearanceTimer);
-                }
-                this.startDisappearance();
-            }
+            this.triggerDisappearance();
+        }
+        else if (input.keys.KeyF && !this.isGameOverTriggered) {
+            this.triggerGameOver(player);
+        }
+    }
+
+    triggerGameOver(player) {
+        const gameInstance = window.gameInstance;
+        if (!gameInstance) return;
+
+        this.isGameOverTriggered = true;
+        this.gameOverAnimationInProgress = true;
+
+        // Play evil sound effect
+        if (gameInstance.audioManager) {
+            gameInstance.audioManager.playSound('suina_evil');
         }
 
-        // Handle movement if not in collision or disappearing state
-        if (!this.isColliding && !this.isDisappearing) {
-            const distance = Math.hypot(player.x - this.x, player.y - this.y);
-            if (distance < 150) {
-                this.runAwayFrom(player, deltaTime, worldBounds);
-                this.isIdle = false;
-            } else {
-                this.moveRandomly(deltaTime, worldBounds);
-            }
+        // Trigger game over sequence
+        if (gameInstance.gameState) {
+            gameInstance.gameState.triggerJailGameOver(player);
         }
+
+        // Clean up interaction state
+        this.canInteract = false;
+        if (this.disappearanceTimer) {
+            clearTimeout(this.disappearanceTimer);
+        }
+
+        // Start disappearance after game over animation
+        setTimeout(() => {
+            this.gameOverAnimationInProgress = false;
+            this.startDisappearance();
+        }, 2000); // Match with score animation duration
+    }
+
+    triggerDisappearance() {
+        this.canInteract = false;
+        if (this.disappearanceTimer) {
+            clearTimeout(this.disappearanceTimer);
+        }
+        this.startDisappearance();
     }
 
     startDisappearance() {
+        if (this.isDisappearing) return;
+        
         this.isDisappearing = true;
         this.isVisible = false;
         this.canInteract = false;
@@ -3168,8 +3312,19 @@ export class SuinaEvil extends BaseCharacter {
             this.disappearanceTimer = null;
         }
 
+        // Notify level manager
         if (this.levelManager) {
             this.levelManager.handleCharacterDisappear(this);
+        }
+    }
+
+    handleMovement(player, deltaTime, worldBounds) {
+        const distance = Math.hypot(player.x - this.x, player.y - this.y);
+        if (distance < 150) {
+            this.runAwayFrom(player, deltaTime, worldBounds);
+            this.isIdle = false;
+        } else {
+            this.moveRandomly(deltaTime, worldBounds);
         }
     }
 
@@ -3254,10 +3409,17 @@ export class SuinaEvil extends BaseCharacter {
             clearTimeout(this.disappearanceTimer);
             this.disappearanceTimer = null;
         }
+        if (this.interactionCooldown) {
+            clearTimeout(this.interactionCooldown);
+            this.interactionCooldown = null;
+        }
         this.canInteract = false;
+        this.isGameOverTriggered = false;
+        this.gameOverAnimationInProgress = false;
         super.cleanup();
     }
 }
+
 
 
 
