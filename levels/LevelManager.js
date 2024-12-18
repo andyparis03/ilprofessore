@@ -247,18 +247,20 @@ async completeTransition() {
         }
     }
 
-    loadCharactersForLevel(levelNumber, storedStates) {
+        loadCharactersForLevel(levelNumber, storedStates) {
         switch (levelNumber) {
             case 1:
                 this.addRandomCharacter('milly', 10000);
                 break;
             case 2:
             case 3:
-                // Start with Suina1
-                this.addCharacter('suina1', 
-                    Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH), 
-                    Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT), 
-                    storedStates);
+                // Start with Suina1 for initial spawn only
+                if (this.characters.length === 0) {
+                    this.addCharacter('suina1', 
+                        Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH), 
+                        Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT), 
+                        storedStates);
+                }
                 break;
             case 4:
                 this.addCharacter('walter', 600, 300);
@@ -273,11 +275,18 @@ async completeTransition() {
     }
 
     spawnNextRandomCharacter() {
+        console.log("Spawning next random character...");
         // Only spawn in levels 2 or 3
-        if (this.currentLevel !== 2 && this.currentLevel !== 3) return;
+        if (this.currentLevel !== 2 && this.currentLevel !== 3) {
+            console.log("Not in level 2 or 3, skipping spawn");
+            return;
+        }
 
-        // Randomly choose between Suina2 and SuinaEvil
-        const characterType = Math.random() < 0.5 ? 'suina2' : 'suinaevil';
+        // Include all three Suina types in random selection
+        const characterTypes = ['suina1', 'suina2', 'suinaevil'];
+        const characterType = characterTypes[Math.floor(Math.random() * characterTypes.length)];
+        
+        console.log(`Selected character type: ${characterType}`);
         
         // Random position
         const x = Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH);
@@ -287,15 +296,21 @@ async completeTransition() {
     }
 
     handleCharacterDisappear(character) {
+        console.log(`Handling disappearance of character: ${character.type}`);
+        
         // Remove the character from the array
         this.characters = this.characters.filter(c => c !== character);
 
-        // If it's Suina1, Suina2, or SuinaEvil in levels 2 or 3, spawn next character
+        // If it's any Suina type in levels 2 or 3, spawn next random character
         if ((character.type === 'suina1' || character.type === 'suina2' || character.type === 'suinaevil') && 
             (this.currentLevel === 2 || this.currentLevel === 3)) {
+            
+            console.log("Triggering next random character spawn");
             this.spawnNextRandomCharacter();
         }
     }
+
+
 
 addCharacter(type, x, y, storedStates = null) {
     console.log('Adding character:', { type, x, y });

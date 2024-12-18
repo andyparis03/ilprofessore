@@ -117,8 +117,8 @@ export class AssetLoader {
                     professore: { idle: professoreidle, walking: professorewalking },
                     milly: { idle: millyidle, spritesheet: millyspritesheet, interact: millyinteract },
                     suina1: { idle: suina1idle, walking: suina1walking, attack: suina1attack },
-                    suina2: { idle: suina2idle, walking: suina2walking, attack: suina2attack },
-                    suinaevil: { idle: suinaevilidle, walking: suinaevilwalking, attack: suinaevilattack },
+                    suina2: { idle: suina2idle, walking: suina2walking, attack: suina1attack },
+                    suinaevil: { idle: suinaevilidle, walking: suinaevilwalking, attack: suina1attack },
                     walter: { idle: walteridle, walking: walterwalking, attack: walterattack },
                     diego: { idle: diegoidle, walking: diegowalking, attack: diegoattack }
                 },

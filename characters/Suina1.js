@@ -120,7 +120,8 @@ export class Suina1 extends BaseCharacter {
         }
     }
 
-    startDisappearance() {
+startDisappearance() {
+        console.log('Starting disappearance sequence for Suina1');
         this.isDisappearing = true;
         this.isVisible = false;
         this.canInteract = false;
@@ -131,11 +132,13 @@ export class Suina1 extends BaseCharacter {
             this.disappearanceTimer = null;
         }
 
-        // Schedule respawn
-        const respawnDelay = 1000 + Math.random() * 1000;
-        setTimeout(() => {
-            this.respawn();
-        }, respawnDelay);
+        // Notify level manager about disappearance
+        if (this.levelManager) {
+            console.log('Notifying LevelManager about Suina1 disappearance');
+            this.levelManager.handleCharacterDisappear(this);
+        } else {
+            console.warn('No levelManager reference found in Suina1');
+        }
     }
 
     respawn() {
