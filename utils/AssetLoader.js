@@ -35,6 +35,7 @@ export class AssetLoader {
             const [
                 professoreidle,
                 professorewalking,
+		skullSprite,
                 millyidle,
                 millyspritesheet,
                 millyinteract,
@@ -63,6 +64,7 @@ export class AssetLoader {
                 profsmack,
                 profstep,
                 proftheme,
+		skull,
                 suinafuck,
                 suinasound,
                 suinaevil,
@@ -74,6 +76,7 @@ export class AssetLoader {
             ] = await Promise.all([
                 this.loadImage('./assets/sprites/professore/professore-idle.png'),
                 this.loadImage('./assets/sprites/professore/professore-spritesheet.png'),
+ 		this.loadImage('./assets/sprites/skull.png'),
                 this.loadImage('./assets/sprites/milly/milly-idle.png'),
                 this.loadImage('./assets/sprites/milly/milly-spritesheet.png'),
                 this.loadImage('./assets/sprites/milly/milly-interact.png'),
@@ -114,7 +117,7 @@ export class AssetLoader {
 
             return {
                 sprites: {
-                    professore: { idle: professoreidle, walking: professorewalking },
+                    professore: { idle: professoreidle, walking: professorewalking, freeze: skullSprite },
                     milly: { idle: millyidle, spritesheet: millyspritesheet, interact: millyinteract },
                     suina1: { idle: suina1idle, walking: suina1walking, attack: suina1attack },
                     suina2: { idle: suina2idle, walking: suina2walking, attack: suina1attack },

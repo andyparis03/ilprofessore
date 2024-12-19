@@ -7,6 +7,12 @@ export class Renderer {
         this.levelManager = levelManager;
         this.gameState = gameState;
         this.directions = { down: 0, left: 1, right: 2, up: 3 };
+        this.flashStartTime = 0;
+        this.flashDuration = 2000; // 2 seconds total
+        this.flashInterval = 400;   // Flash every 400ms
+        
+        // Debug flag
+        this.debug = true;
     }
 
     clear() {
@@ -22,10 +28,58 @@ export class Renderer {
                 0, 0,
                 camera.width, camera.height
             );
-        } else {
-            console.warn('Background image is undefined.');
         }
     }
+
+// Renderer.js
+
+// Only the modified method shown, rest of the class remains the same
+drawGameOverText() {
+    if (!this.gameState?.isGameOver || this.gameState.gameOverType !== 'jail') return;
+
+    const currentTime = performance.now();
+    const elapsed = currentTime - this.flashStartTime;
+    
+    const NUMBER_OF_FLASHES = 2;
+    const FLASH_DURATION = 400; // Duration of each flash (on + off)
+    const TOTAL_FLASH_TIME = NUMBER_OF_FLASHES * FLASH_DURATION;
+
+    // If we're within the flash period, handle flashing
+    if (elapsed <= TOTAL_FLASH_TIME) {
+        // Calculate flash state (on/off)
+        const flashPhase = Math.floor(elapsed / (FLASH_DURATION / 2));
+        const isVisible = flashPhase % 2 === 0;
+        
+        if (!isVisible) return;
+    }
+    
+    // Draw text (either flashing or persistent after flashes)
+    this.ctx.save();
+    
+    // Set text style
+    this.ctx.font = 'bold 32px Arial';
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+
+    // Create stroke effect
+    this.ctx.strokeStyle = 'black';
+    this.ctx.lineWidth = 4;
+    this.ctx.strokeText(
+        'Hai beccato la Suina Mala... :(',
+        this.ctx.canvas.width / 2,
+        this.ctx.canvas.height / 2
+    );
+
+    // Fill text in white
+    this.ctx.fillStyle = '#FFFFFF';  // Changed to white
+    this.ctx.fillText(
+        'Hai beccato la Suina Mala... :(',
+        this.ctx.canvas.width / 2,
+        this.ctx.canvas.height / 2
+    );
+
+    this.ctx.restore();
+}
 
     drawPlayer(player, sprites, camera) {
         if (!player) return;
@@ -33,40 +87,40 @@ export class Renderer {
         const drawX = player.x - camera.x;
         const drawY = player.y - camera.y;
 
-        // Handle game over state
-        if (this.gameState?.isGameOver) {
-            if (this.gameState.gameOverType === 'jail' && sprites.skull) {
-                // Draw skull sprite
-                this.ctx.drawImage(sprites.skull, drawX, drawY, player.width, player.height);
+        // Game Over State Handling
+        if (this.gameState?.isGameOver && 
+            this.gameState.gameOverType === 'jail' && 
+            player.freeze) {
+            
+            // Draw freeze sprite (skull)
+            if (sprites.freeze) {
+                this.ctx.drawImage(sprites.freeze, drawX, drawY, player.width, player.height);
                 
-                // Draw jail overlay if loaded
-                if (this.gameState.jailOverlay) {
+                // Draw jail overlay
+                const jailOverlay = this.gameState.getJailOverlay();
+                if (jailOverlay) {
                     const overlayWidth = player.width * 1.5;
                     const overlayHeight = player.height * 1.5;
                     const overlayX = drawX - (overlayWidth - player.width) / 2;
                     const overlayY = drawY - (overlayHeight - player.height) / 2;
                     
                     this.ctx.drawImage(
-                        this.gameState.jailOverlay, 
+                        jailOverlay, 
                         overlayX, overlayY, 
                         overlayWidth, overlayHeight
                     );
                 }
-                return;
             }
+            return;
         }
 
-        // Normal player rendering
+        // Normal State Rendering
         if (player.isIdle) {
             if (sprites.idle) {
                 this.ctx.drawImage(sprites.idle, drawX, drawY, player.width, player.height);
-            } else {
-                console.error('Player idle sprite is undefined.');
             }
         } else {
-            const directionIndex = this.directions[player.direction] !== undefined 
-                ? this.directions[player.direction] 
-                : this.directions['down'];
+            const directionIndex = this.directions[player.direction] || this.directions['down'];
             const spriteX = player.frame * player.width;
             const spriteY = directionIndex * player.height;
 
@@ -78,42 +132,32 @@ export class Renderer {
                     drawX, drawY,
                     player.width, player.height
                 );
-            } else {
-                console.error('Player walking sprite is undefined.');
             }
         }
     }
 
     drawCharacters(sprites, camera) {
         this.levelManager.characters.forEach((character) => {
-            if (!character || !character.type || !sprites[character.type]) {
-                console.error(`Sprites for character type ${character ? character.type : 'undefined'} are undefined.`);
-                return;
-            }
-
+            if (!character || !character.type || !sprites[character.type]) return;
             if (!character.isVisible) return;
 
             const drawX = character.x - camera.x;
             const drawY = character.y - camera.y;
             const characterSprites = sprites[character.type.toLowerCase()];
 
-            // Handle specific sprite states
             if (character.currentSprite === 'attack' && character.activeSprite) {
                 this.ctx.drawImage(character.activeSprite, drawX, drawY, 
                     character.width, character.height);
                 return;
             }
 
-            // Normal character rendering
             if (character.isIdle) {
                 if (characterSprites.idle) {
                     this.ctx.drawImage(characterSprites.idle, drawX, drawY, 
                         character.width, character.height);
                 }
             } else {
-                const directionIndex = this.directions[character.direction] !== undefined
-                    ? this.directions[character.direction]
-                    : this.directions['down'];
+                const directionIndex = this.directions[character.direction] || this.directions['down'];
                 const spriteX = character.frame * character.width;
                 const spriteY = directionIndex * character.height;
 
@@ -128,5 +172,12 @@ export class Renderer {
                 }
             }
         });
+    }
+
+    setFlashStartTime() {
+        this.flashStartTime = performance.now();
+        if (this.debug) {
+            console.log('Flash start time set to:', this.flashStartTime);
+        }
     }
 }

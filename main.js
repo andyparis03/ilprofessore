@@ -10,89 +10,31 @@ import { LevelManager } from './levels/LevelManager.js';
 import { ScoreManager } from './js/engine/ScoreManager.js';
 import { GameStateManager } from './js/engine/GameStateManager.js';
 
-const audioManager = new AudioManager();
-let gameInitialized = false;
-
-// Listen for initial game start
-const startGameListener = async (event) => {
-    if (!gameInitialized) {
-        try {
-            if (!audioManager.initialized) {
-                await audioManager.init();
-            }
-            console.log('Starting the game...');
-            game.init();
-            gameInitialized = true;
-            
-            // Remove the event listeners once game is started
-            window.removeEventListener('click', startGameListener);
-            window.removeEventListener('touchstart', startGameListener);
-        } catch (error) {
-            console.error('Error initializing the game:', error);
-        }
-    }
-};
-
-// Add listeners for initial game start only
-window.addEventListener('click', startGameListener);
-window.addEventListener('touchstart', startGameListener);
-
-// Prevent unwanted touch behaviors
-window.addEventListener('touchmove', (event) => {
-    event.preventDefault();
-}, { passive: false });
-
-window.addEventListener('gesturestart', (event) => {
-    event.preventDefault();
-}, { passive: false });
-
-window.addEventListener('gesturechange', (event) => {
-    event.preventDefault();
-}, { passive: false });
-
-window.addEventListener('gestureend', (event) => {
-    event.preventDefault();
-}, { passive: false });
-
-function toggleControls() {
-    const controlsContainer = document.getElementById('controls-container');
-    if (window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT) {
-        controlsContainer.style.display = 'flex';
-    } else {
-        controlsContainer.style.display = 'none';
-    }
-}
-
-window.addEventListener('load', toggleControls);
-window.addEventListener('resize', toggleControls);
-
 class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         this.camera = new Camera(CONFIG.CANVAS.DEFAULT_WIDTH, CONFIG.CANVAS.DEFAULT_HEIGHT);
-        this.setupCanvas();
-
+        
+        // Initialize managers
+        this.audioManager = new AudioManager();
         this.input = new InputHandler();
-        this.audioManager = audioManager;
         this.scoreManager = new ScoreManager(this.ctx);
-        this.gameState = new GameStateManager(this);  // Initialize GameState first
-
-        this.player = new Player(
-            CONFIG.WORLD.WIDTH / 2,
-            CONFIG.WORLD.HEIGHT / 2,
-            CONFIG.PLAYER.WIDTH,
-            CONFIG.PLAYER.HEIGHT,
-            null,
-            'professore'
-        );
-
+        this.gameState = new GameStateManager(this);
+        
+        this.setupCanvas();
+        this.initialized = false;
+        
+        // Make game instance globally available
         window.gameInstance = this;
+        
+        // Set up event listeners
         window.addEventListener('resize', () => this.setupCanvas());
     }
 
     setupCanvas() {
         const isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT;
+        
         if (isMobile) {
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
@@ -108,67 +50,112 @@ class Game {
             this.canvas.style.left = '50%';
             this.canvas.style.transform = 'translate(-50%, -50%)';
         }
+        
         this.camera.width = this.canvas.width;
         this.camera.height = this.canvas.height;
     }
 
-     async init() {
+    async init() {
+        if (this.initialized) return;
+
         try {
+            console.log('Starting game initialization...');
+
+            // Load assets first
             const assets = await AssetLoader.loadAssets();
-            console.log('Loaded assets:', assets);
+            console.log('Assets loaded successfully');
             this.assets = assets;
-            this.player.sprites = assets.sprites.professore;
 
-            this.levelManager = new LevelManager(assets, this.gameState);  // Pass gameState here
-            this.renderer = new Renderer(this.ctx, this.levelManager, this.gameState);  // Pass gameState to renderer too
-
+            // Initialize audio
             await this.audioManager.init();
+            console.log('Audio initialized');
 
-            // Load Level 1 and pass the player object
-            this.levelManager.loadLevel(1, this.player);
+            // Create player
+            this.player = new Player(
+                CONFIG.WORLD.WIDTH / 2,
+                CONFIG.WORLD.HEIGHT / 2,
+                CONFIG.PLAYER.WIDTH,
+                CONFIG.PLAYER.HEIGHT,
+                assets.sprites.professore,
+                'professore'
+            );
+
+            // Initialize managers that depend on other components
+            this.levelManager = new LevelManager(assets, this.gameState);
+            this.renderer = new Renderer(this.ctx, this.levelManager, this.gameState);
+            
+            // Store renderer reference in gameState
+            this.gameState.renderer = this.renderer;
+
+            // Load initial level
+            await this.levelManager.loadLevel(1, this.player);
+            
+            this.initialized = true;
+            console.log('Game initialization complete');
+
+            // Start game loop
             this.gameLoop();
+
         } catch (error) {
             console.error('Game initialization failed:', error);
+            throw error;
         }
     }
 
-update() {
-        console.log('Game Update cycle start');
-        
-        this.player.update(this.input, {
-            width: CONFIG.WORLD.WIDTH,
-            height: CONFIG.WORLD.HEIGHT
-        });
+    update() {
+        if (!this.initialized) return;
 
-        this.levelManager.update(
-            this.player,
-            {
+        console.log('Game Update cycle start');
+
+        if (!this.gameState.isGameOver) {
+            // Update player
+            this.player.update(this.input, {
                 width: CONFIG.WORLD.WIDTH,
                 height: CONFIG.WORLD.HEIGHT
-            },
-            this.input
-        );
+            });
 
-        console.log('Game Update cycle complete');
+            // Update level and characters
+            this.levelManager.update(
+                this.player,
+                {
+                    width: CONFIG.WORLD.WIDTH,
+                    height: CONFIG.WORLD.HEIGHT
+                },
+                this.input
+            );
 
-        if (this.levelManager.checkLevelTransition(this.player)) {
-            console.log(`Transitioned to Level ${this.levelManager.currentLevel}`);
+            // Check level transitions
+            if (this.levelManager.checkLevelTransition(this.player)) {
+                console.log(`Transitioned to Level ${this.levelManager.currentLevel}`);
+            }
+
+            // Update camera and audio
+            this.camera.follow(this.player, CONFIG.WORLD.WIDTH, CONFIG.WORLD.HEIGHT);
+            this.audioManager.handleFootsteps(this.player, !this.player.isIdle);
         }
 
-        this.camera.follow(this.player, CONFIG.WORLD.WIDTH, CONFIG.WORLD.HEIGHT);
-        this.audioManager.handleFootsteps(this.player, !this.player.isIdle);
+        console.log('Game Update cycle complete');
     }
 
-
-
     draw() {
+        if (!this.initialized) return;
+
+        // Clear and draw background
         this.renderer.clear();
         this.renderer.drawBackground(this.levelManager.getCurrentLevelBackground(), this.camera);
+        
+        // Draw characters and player
         this.renderer.drawCharacters(this.assets.sprites, this.camera);
         this.renderer.drawPlayer(this.player, this.assets.sprites.professore, this.camera);
         
-        // Draw score bars last so they're always on top
+        // Draw UI elements
         this.scoreManager.draw();
+        
+        // Draw game over text if needed
+        if (this.gameState.isGameOver) {
+            console.log('Drawing game over state');
+            this.renderer.drawGameOverText();
+        }
     }
 
     gameLoop() {
@@ -178,5 +165,15 @@ update() {
     }
 }
 
-const game = new Game();
-game.init().catch(console.error);
+// Game startup
+const startGame = async () => {
+    const game = new Game();
+    try {
+        await game.init();
+        console.log('Game started successfully');
+    } catch (error) {
+        console.error('Failed to start game:', error);
+    }
+};
+
+startGame();

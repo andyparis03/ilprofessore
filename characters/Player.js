@@ -91,62 +91,72 @@ export class Player extends BaseCharacter {
         }
     }
 
-    updateBehavior(input, worldBounds, deltaTime) {
-        // Store current input for state preservation
-        this.currentInput = { ...input.keys };
-        
-        const moving = input.isMoving();
-        this.isIdle = !moving;
 
-        if (moving) {
-            const adjustedSpeed = this.speed * deltaTime;
-            const keys = input.keys;
-            
-            // Reset velocity
-            this.velocity.x = 0;
-            this.velocity.y = 0;
 
-            // Calculate velocity based on input
-            if (keys.ArrowRight) {
-                this.velocity.x = adjustedSpeed;
-                this.direction = 'right';
-            }
-            if (keys.ArrowLeft) {
-                this.velocity.x = -adjustedSpeed;
-                this.direction = 'left';
-            }
-            if (keys.ArrowDown) {
-                this.velocity.y = adjustedSpeed;
-                this.direction = 'down';
-            }
-            if (keys.ArrowUp) {
-                this.velocity.y = -adjustedSpeed;
-                this.direction = 'up';
-            }
-
-            // Add to movement buffer
-            this.movementBuffer.x += this.velocity.x;
-            this.movementBuffer.y += this.velocity.y;
-
-            // Apply whole pixel movements
-            const newX = this.x + Math.round(this.movementBuffer.x);
-            const newY = this.y + Math.round(this.movementBuffer.y);
-
-            // Clamp to world bounds
-            this.x = Math.min(Math.max(newX, 0), worldBounds.width - this.width);
-            this.y = Math.min(Math.max(newY, 0), worldBounds.height - this.height);
-
-            // Remove used movement from buffer
-            this.movementBuffer.x -= Math.round(this.movementBuffer.x);
-            this.movementBuffer.y -= Math.round(this.movementBuffer.y);
-
-            // Update last position
-            this.lastX = this.x;
-            this.lastY = this.y;
-        } else {
-            // Reset movement buffer when idle
-            this.movementBuffer.x = 0;
-            this.movementBuffer.y = 0;
-        }
+updateBehavior(input, worldBounds, deltaTime) {
+    // If player is frozen, don't process any movement
+    if (this.freeze) {
+        this.velocity = { x: 0, y: 0 };
+        this.movementBuffer = { x: 0, y: 0 };
+        this.isIdle = true;
+        return;
     }
+
+    // Store current input for state preservation
+    this.currentInput = { ...input.keys };
+    
+    const moving = input.isMoving();
+    this.isIdle = !moving;
+
+    if (moving) {
+        const adjustedSpeed = this.speed * deltaTime;
+        const keys = input.keys;
+        
+        // Reset velocity
+        this.velocity.x = 0;
+        this.velocity.y = 0;
+
+        // Calculate velocity based on input
+        if (keys.ArrowRight) {
+            this.velocity.x = adjustedSpeed;
+            this.direction = 'right';
+        }
+        if (keys.ArrowLeft) {
+            this.velocity.x = -adjustedSpeed;
+            this.direction = 'left';
+        }
+        if (keys.ArrowDown) {
+            this.velocity.y = adjustedSpeed;
+            this.direction = 'down';
+        }
+        if (keys.ArrowUp) {
+            this.velocity.y = -adjustedSpeed;
+            this.direction = 'up';
+        }
+
+        // Add to movement buffer
+        this.movementBuffer.x += this.velocity.x;
+        this.movementBuffer.y += this.velocity.y;
+
+        // Apply whole pixel movements
+        const newX = this.x + Math.round(this.movementBuffer.x);
+        const newY = this.y + Math.round(this.movementBuffer.y);
+
+        // Clamp to world bounds
+        this.x = Math.min(Math.max(newX, 0), worldBounds.width - this.width);
+        this.y = Math.min(Math.max(newY, 0), worldBounds.height - this.height);
+
+        // Remove used movement from buffer
+        this.movementBuffer.x -= Math.round(this.movementBuffer.x);
+        this.movementBuffer.y -= Math.round(this.movementBuffer.y);
+
+        // Update last position
+        this.lastX = this.x;
+        this.lastY = this.y;
+    } else {
+        // Reset movement buffer when idle
+        this.movementBuffer.x = 0;
+        this.movementBuffer.y = 0;
+    }
+}
 }
