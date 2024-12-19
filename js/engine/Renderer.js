@@ -61,23 +61,30 @@ drawGameOverText() {
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
 
-    // Create stroke effect
-    this.ctx.strokeStyle = 'black';
-    this.ctx.lineWidth = 4;
-    this.ctx.strokeText(
-        'Hai beccato'
-	'la Suina Mala :(',
-        this.ctx.canvas.width / 2,
-        this.ctx.canvas.height / 2
-    );
+// Create stroke effect
+this.ctx.strokeText(
+    'Hai beccato',  // First line
+    this.ctx.canvas.width / 2,
+    this.ctx.canvas.height / 2 - 20  // Move up by 20 pixels
+);
+this.ctx.strokeText(
+    'la Suina Mala... :(',  // Second line
+    this.ctx.canvas.width / 2,
+    this.ctx.canvas.height / 2 + 20  // Move down by 20 pixels
+);
 
-    // Fill text in white
-    this.ctx.fillStyle = '#FFFFFF';  // Changed to white
-    this.ctx.fillText(
-        'Hai beccato la Suina Mala... :(',
-        this.ctx.canvas.width / 2,
-        this.ctx.canvas.height / 2
-    );
+// Fill text
+this.ctx.fillStyle = '#FFFFFF';
+this.ctx.fillText(
+    'Hai beccato',  // First line
+    this.ctx.canvas.width / 2,
+    this.ctx.canvas.height / 2 - 20  // Move up by 20 pixels
+);
+this.ctx.fillText(
+    'la Suina Mala... :(',  // Second line
+    this.ctx.canvas.width / 2,
+    this.ctx.canvas.height / 2 + 20  // Move down by 20 pixels
+);
 
     this.ctx.restore();
 }
