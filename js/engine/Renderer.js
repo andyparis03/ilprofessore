@@ -65,7 +65,8 @@ drawGameOverText() {
     this.ctx.strokeStyle = 'black';
     this.ctx.lineWidth = 4;
     this.ctx.strokeText(
-        'Hai beccato la Suina Mala... :(',
+        'Hai beccato'
+	'la Suina Mala :(',
         this.ctx.canvas.width / 2,
         this.ctx.canvas.height / 2
     );
