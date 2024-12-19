@@ -40,7 +40,7 @@ drawGameOverText() {
     const currentTime = performance.now();
     const elapsed = currentTime - this.flashStartTime;
     
-    const NUMBER_OF_FLASHES = 2;
+    const NUMBER_OF_FLASHES = 3;
     const FLASH_DURATION = 400; // Duration of each flash (on + off)
     const TOTAL_FLASH_TIME = NUMBER_OF_FLASHES * FLASH_DURATION;
 
