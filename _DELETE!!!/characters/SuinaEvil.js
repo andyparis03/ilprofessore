@@ -44,81 +44,37 @@ export class SuinaEvil extends BaseCharacter {
         this.gameOverAnimationInProgress = false;
     }
 
-    updateBehavior(player, worldBounds, deltaTime, input) {
-        if (this.isPaused || !this.isVisible || this.gameOverAnimationInProgress) {
-            return;
-        }
-
-        const isCollidingNow = this.checkCollision(player);
-
-        // First collision detection
-        if (isCollidingNow && !this.isColliding && !this.isDisappearing) {
-            this.handleInitialCollision();
-        }
-
-        // Handle button interactions
-        if (this.canInteract && !this.isDisappearing) {
-            this.handleInteraction(input, player);
-        }
-
-        // Handle movement if not in collision or disappearing state
-        if (!this.isColliding && !this.isDisappearing) {
-            this.handleMovement(player, deltaTime, worldBounds);
-        }
-    }
-
-    handleInitialCollision() {
-        // Change to attack sprite
-        if (this.sprites.attack) {
-            this.currentSprite = 'attack';
-            this.activeSprite = this.sprites.attack;
-            this.frame = 0;
-        }
-
-        // Play initial collision sound
+    handleInteraction(input, player) {
         const gameInstance = window.gameInstance;
-        if (!this.soundPlayed && gameInstance?.audioManager) {
-            gameInstance.audioManager.playSound('suina_sound');
-            this.soundPlayed = true;
-        }
-
-        // Set up interaction window
-        this.canInteract = true;
-        this.isColliding = true;
         
-        // Reset movement
-        this.velocity = { x: 0, y: 0 };
-        this.movementBuffer = { x: 0, y: 0 };
-        this.isIdle = true;
-
-        // Set disappearance timer
-        this.disappearanceTimer = setTimeout(() => {
-            this.startDisappearance();
-        }, 2000);
-    }
-
-handleInteraction(input, player) {
-    const gameInstance = window.gameInstance;
-    
-    if (input.keys.KeyB) {
-        if (gameInstance?.audioManager) {
-            gameInstance.audioManager.playSound('professore_smack');
-            if (gameInstance.scoreManager) {
-                // Use the centralized message system
-                if (gameInstance.renderer) {
-                    gameInstance.renderer.showSuinaMalaMessage();
+        if (input.keys.KeyB && !this.isGameOverTriggered) {
+            console.log('B button interaction with SuinaEvil');
+            if (gameInstance?.audioManager) {
+                // Play sound effect
+                gameInstance.audioManager.playSound('professore_smack');
+                
+                // Update score and show animation
+                if (gameInstance.scoreManager) {
+                    gameInstance.scoreManager.increaseScore('love', -5);
+                    gameInstance.scoreManager.scoreAnimation.addAnimation(-5);
                 }
-                gameInstance.scoreManager.increaseScore('love', -5);
-                gameInstance.scoreManager.scoreAnimation.addAnimation(5, true);
+                
+                // Show flash message
+                if (gameInstance.renderer) {
+                    gameInstance.renderer.showFlashMessage("Suina mala");
+                }
             }
-        }
-        this.triggerDisappearance();
-    }
-    else if (input.keys.KeyF && !this.isGameOverTriggered) {
-        this.triggerGameOver(player);
-    }
-}
 
+            this.canInteract = false;
+            if (this.disappearanceTimer) {
+                clearTimeout(this.disappearanceTimer);
+            }
+            this.startDisappearance();
+        }
+        else if (input.keys.KeyF && !this.isGameOverTriggered) {
+            this.triggerGameOver(player);
+        }
+    }
 
     triggerGameOver(player) {
         const gameInstance = window.gameInstance;
@@ -147,15 +103,7 @@ handleInteraction(input, player) {
         setTimeout(() => {
             this.gameOverAnimationInProgress = false;
             this.startDisappearance();
-        }, 2000);
-    }
-
-    triggerDisappearance() {
-        this.canInteract = false;
-        if (this.disappearanceTimer) {
-            clearTimeout(this.disappearanceTimer);
-        }
-        this.startDisappearance();
+        }, 2000); // Match with score animation duration
     }
 
     startDisappearance() {
@@ -173,9 +121,11 @@ handleInteraction(input, player) {
 
         // Notify level manager
         if (this.levelManager) {
+            console.log('Notifying LevelManager about SuinaEvil disappearance');
             this.levelManager.handleCharacterDisappear(this);
         }
     }
+
 
     handleMovement(player, deltaTime, worldBounds) {
         const distance = Math.hypot(player.x - this.x, player.y - this.y);

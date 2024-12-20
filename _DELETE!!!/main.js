@@ -16,7 +16,7 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.camera = new Camera(CONFIG.CANVAS.DEFAULT_WIDTH, CONFIG.CANVAS.DEFAULT_HEIGHT);
         
-        // Initialize managers
+        // Initialize core managers
         this.audioManager = new AudioManager();
         this.input = new InputHandler();
         this.scoreManager = new ScoreManager(this.ctx);
@@ -139,12 +139,23 @@ class Game {
 
     draw() {
         if (!this.initialized) return;
+
+        // Clear and draw background
+        this.renderer.clear();
+        this.renderer.drawBackground(this.levelManager.getCurrentLevelBackground(), this.camera);
         
-        // Use consolidated rendering approach
-        this.renderer.draw(this.player, this.assets.sprites, this.camera);
+        // Draw characters and player
+        this.renderer.drawCharacters(this.assets.sprites, this.camera);
+        this.renderer.drawPlayer(this.player, this.assets.sprites.professore, this.camera);
         
-        // Draw score
+        // Draw UI elements
         this.scoreManager.draw();
+        
+        // Draw game over text or flash message
+        if (this.gameState.isGameOver) {
+            this.renderer.drawGameOverText();
+        }
+        this.renderer.drawFlashMessage();
     }
 
     gameLoop() {
@@ -153,6 +164,37 @@ class Game {
         requestAnimationFrame(() => this.gameLoop());
     }
 }
+
+// Prevent unwanted touch behaviors
+window.addEventListener('touchmove', (event) => {
+    event.preventDefault();
+}, { passive: false });
+
+window.addEventListener('gesturestart', (event) => {
+    event.preventDefault();
+}, { passive: false });
+
+window.addEventListener('gesturechange', (event) => {
+    event.preventDefault();
+}, { passive: false });
+
+window.addEventListener('gestureend', (event) => {
+    event.preventDefault();
+}, { passive: false });
+
+// Controls visibility handler
+function toggleControls() {
+    const controlsContainer = document.getElementById('controls-container');
+    if (window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT) {
+        controlsContainer.style.display = 'flex';
+    } else {
+        controlsContainer.style.display = 'none';
+    }
+}
+
+// Set up controls visibility
+window.addEventListener('load', toggleControls);
+window.addEventListener('resize', toggleControls);
 
 // Game startup
 const startGame = async () => {

@@ -1,0 +1,49 @@
+Ilprofessore
+│ 
+│   .nojekyll
+│   config.js
+│   ilprofessore.txt
+│   index.html
+│   main.js
+│   package-lock.json
+│   package.json
+│
+├───assets
+│   ├───maps
+│   │       level1.json
+│   │
+│   ├───sounds
+│   │       prof-fuck.mp3
+│   │       prof-punch.mp3
+│   │       prof-smack.mp3
+│   │       prof-step.mp3
+│   │       prof-theme.mp3
+│   │
+│   └───sprites
+│           background.png
+│           professore-idle.png
+│           professore-spritesheet.png
+│           fallback-background.png
+│           fallback-idle.png
+│           fallback-spritesheet.png
+│
+├───characters
+│       Player.js
+│
+├───js
+│   └───engine
+│           AudioManager.js
+│           Camera.js
+│           Input.js
+│           Renderer.js
+│
+├───levels
+│       Level.js
+│       LevelLoader.js
+│
+│
+├───styles
+│       style.css
+│
+└───utils
+        AssetLoader.js

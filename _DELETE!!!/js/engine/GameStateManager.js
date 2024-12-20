@@ -39,11 +39,6 @@ export class GameStateManager {
         this.transitionState.active = true;
         this.transitionState.startTime = performance.now();
 
-        // Use the centralized message system
-        if (this.game.renderer) {
-            this.game.renderer.showGameOverMessage();
-        }
-
         // Set flash start time in renderer
         if (this.game.renderer) {
             console.log('Setting flash start time');

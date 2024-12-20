@@ -3,20 +3,114 @@ import { CONFIG } from '../../config.js';
 
 export class Renderer {
     constructor(ctx, levelManager, gameState) {
+        console.log('Initializing Renderer');
         this.ctx = ctx;
         this.levelManager = levelManager;
         this.gameState = gameState;
         this.directions = { down: 0, left: 1, right: 2, up: 3 };
-        this.flashStartTime = 0;
-        this.flashDuration = 2000; // 2 seconds total
-        this.flashInterval = 400;   // Flash every 400ms
+        
+        // Unified message system with predefined messages
+        this.screenMessages = {
+            gameOver: {
+                lines: ['Hai beccato', 'la Suina Mala... :('],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            },
+            suinaMala: {
+                lines: ['Suina mala!'],
+                startTime: 0,
+                duration: 800,
+                interval: 200,
+                isActive: false
+            }
+        };
         
         // Debug flag
         this.debug = true;
     }
 
+    showSuinaMalaMessage() {
+        console.log('Showing Suina Mala message');
+        this.setScreenMessage('suinaMala', this.screenMessages.suinaMala.lines);
+    }
+
+    showGameOverMessage() {
+        console.log('Showing Game Over message');
+        this.setScreenMessage('gameOver', this.screenMessages.gameOver.lines);
+    }
+
+
+
     clear() {
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    }
+
+    setScreenMessage(type, message, duration = null) {
+        console.log(`Setting screen message: ${type}`, message);
+        
+        if (!this.screenMessages[type]) return;
+        
+        const messageConfig = this.screenMessages[type];
+        messageConfig.startTime = performance.now();
+        messageConfig.isActive = true;
+        
+        if (duration) {
+            messageConfig.duration = duration;
+        }
+
+        if (Array.isArray(message)) {
+            messageConfig.lines = message;
+        } else {
+            messageConfig.lines = [message];
+        }
+    }
+
+    drawScreenMessage(type) {
+        const message = this.screenMessages[type];
+        if (!message || !message.isActive) return;
+
+        const currentTime = performance.now();
+        const elapsed = currentTime - message.startTime;
+        
+        console.log(`Drawing ${type} message, elapsed time:`, elapsed);
+
+        if (elapsed > message.duration) {
+            console.log(`${type} message duration expired`);
+            message.isActive = false;
+            return;
+        }
+
+        const flashPhase = Math.floor((elapsed / message.interval));
+        const isVisible = flashPhase % 2 === 0;
+        
+        console.log(`${type} message state:`, { flashPhase, isVisible });
+
+        if (isVisible) {
+            this.ctx.save();
+            this.ctx.font = 'bold 32px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillStyle = '#FFFFFF';
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 3;
+            
+            const x = this.ctx.canvas.width / 2;
+            const baseY = this.ctx.canvas.height / 2;
+            
+            message.lines.forEach((line, index) => {
+                const y = baseY + (index - (message.lines.length - 1) / 2) * 40;
+                this.ctx.strokeText(line, x, y);
+                this.ctx.fillText(line, x, y);
+            });
+            
+            this.ctx.restore();
+        }
+    }
+
+    setFlashMessage(message, duration) {
+        this.setScreenMessage('flash', message, duration);
     }
 
     drawBackground(background, camera) {
@@ -31,63 +125,33 @@ export class Renderer {
         }
     }
 
-// Renderer.js
+    draw(player, sprites, camera) {
+        console.log('Starting render cycle');
 
-// Only the modified method shown, rest of the class remains the same
-drawGameOverText() {
-    if (!this.gameState?.isGameOver || this.gameState.gameOverType !== 'jail') return;
-
-    const currentTime = performance.now();
-    const elapsed = currentTime - this.flashStartTime;
-    
-    const NUMBER_OF_FLASHES = 3;
-    const FLASH_DURATION = 400; // Duration of each flash (on + off)
-    const TOTAL_FLASH_TIME = NUMBER_OF_FLASHES * FLASH_DURATION;
-
-    // If we're within the flash period, handle flashing
-    if (elapsed <= TOTAL_FLASH_TIME) {
-        // Calculate flash state (on/off)
-        const flashPhase = Math.floor(elapsed / (FLASH_DURATION / 2));
-        const isVisible = flashPhase % 2 === 0;
+        // Draw background
+        this.clear();
+        this.drawBackground(this.levelManager.getCurrentLevelBackground(), camera);
         
-        if (!isVisible) return;
+        // Draw characters
+        console.log('Drawing characters');
+        if (this.levelManager?.characters) {
+            this.drawCharacters(camera);
+        }
+        
+        // Draw player
+        if (player && sprites.professore) {
+            this.drawPlayer(player, sprites.professore, camera);
+        }
+        
+        // Draw any active screen messages
+        Object.keys(this.screenMessages).forEach(type => {
+            if (this.screenMessages[type].isActive) {
+                this.drawScreenMessage(type);
+            }
+        });
+
+        console.log('Render cycle complete');
     }
-    
-    // Draw text (either flashing or persistent after flashes)
-    this.ctx.save();
-    
-    // Set text style
-    this.ctx.font = 'bold 32px Arial';
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'middle';
-
-// Create stroke effect
-this.ctx.strokeText(
-    'Hai beccato',  // First line
-    this.ctx.canvas.width / 2,
-    this.ctx.canvas.height / 2 - 20  // Move up by 20 pixels
-);
-this.ctx.strokeText(
-    'la Suina Mala... :(',  // Second line
-    this.ctx.canvas.width / 2,
-    this.ctx.canvas.height / 2 + 20  // Move down by 20 pixels
-);
-
-// Fill text
-this.ctx.fillStyle = '#FFFFFF';
-this.ctx.fillText(
-    'Hai beccato',  // First line
-    this.ctx.canvas.width / 2,
-    this.ctx.canvas.height / 2 - 20  // Move up by 20 pixels
-);
-this.ctx.fillText(
-    'la Suina Mala... :(',  // Second line
-    this.ctx.canvas.width / 2,
-    this.ctx.canvas.height / 2 + 20  // Move down by 20 pixels
-);
-
-    this.ctx.restore();
-}
 
     drawPlayer(player, sprites, camera) {
         if (!player) return;
@@ -99,6 +163,8 @@ this.ctx.fillText(
         if (this.gameState?.isGameOver && 
             this.gameState.gameOverType === 'jail' && 
             player.freeze) {
+            
+            console.log('Drawing frozen player state');
             
             // Draw freeze sprite (skull)
             if (sprites.freeze) {
@@ -144,14 +210,14 @@ this.ctx.fillText(
         }
     }
 
-    drawCharacters(sprites, camera) {
-        this.levelManager.characters.forEach((character) => {
-            if (!character || !character.type || !sprites[character.type]) return;
-            if (!character.isVisible) return;
+    drawCharacters(camera) {
+        if (!this.levelManager?.characters) return;
+        
+        this.levelManager.characters.forEach(character => {
+            if (!character || !character.type || !character.isVisible) return;
 
             const drawX = character.x - camera.x;
             const drawY = character.y - camera.y;
-            const characterSprites = sprites[character.type.toLowerCase()];
 
             if (character.currentSprite === 'attack' && character.activeSprite) {
                 this.ctx.drawImage(character.activeSprite, drawX, drawY, 
@@ -159,33 +225,30 @@ this.ctx.fillText(
                 return;
             }
 
-            if (character.isIdle) {
-                if (characterSprites.idle) {
-                    this.ctx.drawImage(characterSprites.idle, drawX, drawY, 
-                        character.width, character.height);
-                }
-            } else {
+            if (character.isIdle && character.sprites?.idle) {
+                this.ctx.drawImage(character.sprites.idle, drawX, drawY, 
+                    character.width, character.height);
+            } else if (character.sprites?.walking) {
                 const directionIndex = this.directions[character.direction] || this.directions['down'];
                 const spriteX = character.frame * character.width;
                 const spriteY = directionIndex * character.height;
 
-                if (characterSprites.walking) {
-                    this.ctx.drawImage(
-                        characterSprites.walking,
-                        spriteX, spriteY,
-                        character.width, character.height,
-                        drawX, drawY,
-                        character.width, character.height
-                    );
-                }
+                this.ctx.drawImage(
+                    character.sprites.walking,
+                    spriteX, spriteY,
+                    character.width, character.height,
+                    drawX, drawY,
+                    character.width, character.height
+                );
             }
         });
     }
 
     setFlashStartTime() {
-        this.flashStartTime = performance.now();
+        const startTime = performance.now();
+        this.screenMessages.gameOver.startTime = startTime;
         if (this.debug) {
-            console.log('Flash start time set to:', this.flashStartTime);
+            console.log('Flash start time set to:', startTime);
         }
     }
 }

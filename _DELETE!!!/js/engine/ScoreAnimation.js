@@ -7,65 +7,70 @@ export class ScoreAnimation {
         this.countdownAnimationFrame = null;
     }
 
-    addAnimation(score, isNegative = false) {
-        const canvas = document.getElementById('gameCanvas');
-        const centerX = Math.round(canvas.width / 2);
-        const centerY = Math.round(canvas.height / 2);
+
+addAnimation(score) {
+    const canvas = document.getElementById('gameCanvas');
+    const centerX = Math.round(canvas.width / 2);
+    const centerY = Math.round(canvas.height / 2);
+    
+    const prefix = score > 0 ? '+' : ''; // Only add + for positive numbers
+    
+    this.animations.push({
+        score: `${prefix}${score}`,
+        x: centerX,
+        y: centerY,
+        startTime: performance.now(),
+        duration: 2000,
+        startFontSize: 24,  // Start smaller
+        endFontSize: 72,    // End bigger
+        opacity: 1,
+        // For negative scores, use a different color
+        color: score >= 0 ? '#FFC0CB' : '#FF4444'  // Pink for positive, Red for negative
+    });
+}
+
+update(ctx) {
+    const currentTime = performance.now();
+    
+    for (let i = this.animations.length - 1; i >= 0; i--) {
+        const anim = this.animations[i];
+        const elapsed = currentTime - anim.startTime;
+        const progress = Math.min(elapsed / anim.duration, 1);
+
+        // Smooth easing function
+        const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+
+        // Calculate current font size (growing from small to large)
+        const fontSize = Math.round(anim.startFontSize + (anim.endFontSize - anim.startFontSize) * easeOutCubic);
         
-        this.animations.push({
-            score: `${isNegative ? '-' : '+'}${score}`,
-            x: centerX,
-            y: centerY,
-            startTime: performance.now(),
-            duration: 2000,
-            startFontSize: 72,
-            endFontSize: 24,
-            opacity: 1
-        });
-    }
+        // Calculate opacity (fade out in the last 30% of animation)
+        anim.opacity = progress > 0.7 ? 1 - ((progress - 0.7) / 0.3) : 1;
 
-    update(ctx) {
-        const currentTime = performance.now();
+        ctx.save();
         
-        for (let i = this.animations.length - 1; i >= 0; i--) {
-            const anim = this.animations[i];
-            const elapsed = currentTime - anim.startTime;
-            const progress = Math.min(elapsed / anim.duration, 1);
+        ctx.font = `bold ${fontSize}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Move upward as it grows
+        const yOffset = 50 * easeOutCubic;
 
-            // Smooth easing function
-            const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+        // Draw text outline
+        ctx.strokeStyle = `rgba(0, 0, 0, ${anim.opacity * 0.5})`;
+        ctx.lineWidth = 3;
+        ctx.strokeText(anim.score, anim.x, anim.y - yOffset);
 
-            // Calculate current font size
-            const fontSize = Math.round(anim.startFontSize + (anim.endFontSize - anim.startFontSize) * easeOutCubic);
-            
-            // Calculate opacity (fade out in the last 30% of animation)
-            anim.opacity = progress > 0.7 ? 1 - ((progress - 0.7) / 0.3) : 1;
+        // Draw text fill
+        ctx.fillStyle = `rgba(${anim.color}, ${anim.opacity})`;
+        ctx.fillText(anim.score, anim.x, anim.y - yOffset);
 
-            ctx.save();
-            
-            ctx.font = `bold ${fontSize}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            // Move upward as it fades
-            const yOffset = 50 * easeOutCubic;
+        ctx.restore();
 
-            // Draw text outline
-            ctx.strokeStyle = `rgba(0, 0, 0, ${anim.opacity * 0.5})`;
-            ctx.lineWidth = 3;
-            ctx.strokeText(anim.score, anim.x, anim.y - yOffset);
-
-            // Draw text fill
-            ctx.fillStyle = `rgba(255, 192, 203, ${anim.opacity})`;
-            ctx.fillText(anim.score, anim.x, anim.y - yOffset);
-
-            ctx.restore();
-
-            if (progress >= 1) {
-                this.animations.splice(i, 1);
-            }
+        if (progress >= 1) {
+            this.animations.splice(i, 1);
         }
     }
+}
 
 
     animateScoreReset(scoreManager, onComplete) {

@@ -1,14 +1,13 @@
-// SuinaEvil.js
+// Suina2.js
 import { BaseCharacter } from './BaseCharacter.js';
 import { CONFIG } from '../config.js';
 
-export class SuinaEvil extends BaseCharacter {
+export class Suina2 extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         super(x, y, width, height, sprites, type, 1.5);
         
         const now = performance.now();
         
-        // Movement related properties
         this.moveTimer = now;
         this.changeDirectionInterval = 2500;
         this.lastNonIdleDirection = 'down';
@@ -22,145 +21,102 @@ export class SuinaEvil extends BaseCharacter {
         this.directionChangeCount = 0;
         this.lastDirectionChange = now;
 
-        // Animation and state properties
         this.frame = 0;
         this.isIdle = false;
         this.direction = 'down';
-        this.currentSprite = 'walking';
-        this.activeSprite = sprites?.walking;
         
-        // Interaction states
         this.isColliding = false;
         this.isDisappearing = false;
         this.soundPlayed = false;
         this.isVisible = true;
         this.hasInteracted = false;
-        this.canInteract = false;
-        this.isGameOverTriggered = false;
-
-        // Timers
         this.disappearanceTimer = null;
-        this.interactionCooldown = null;
-        this.gameOverAnimationInProgress = false;
+        this.canInteract = false;
     }
 
     updateBehavior(player, worldBounds, deltaTime, input) {
-        if (this.isPaused || !this.isVisible || this.gameOverAnimationInProgress) {
+        if (this.isPaused || !this.isVisible) {
             return;
         }
 
         const isCollidingNow = this.checkCollision(player);
 
         // First collision detection
-        if (isCollidingNow && !this.isColliding && !this.isDisappearing) {
-            this.handleInitialCollision();
-        }
 
-        // Handle button interactions
-        if (this.canInteract && !this.isDisappearing) {
-            this.handleInteraction(input, player);
-        }
 
-        // Handle movement if not in collision or disappearing state
-        if (!this.isColliding && !this.isDisappearing) {
-            this.handleMovement(player, deltaTime, worldBounds);
-        }
-    }
-
-    handleInitialCollision() {
-        // Change to attack sprite
+    if (isCollidingNow && !this.isColliding && !this.isDisappearing && !this.disappearanceTimer) {
+        // Change to suina1-attack.png sprite
         if (this.sprites.attack) {
             this.currentSprite = 'attack';
-            this.activeSprite = this.sprites.attack;
+            this.activeSprite = this.sprites.attack;  // This will be suina1-attack.png
             this.frame = 0;
         }
 
-        // Play initial collision sound
         const gameInstance = window.gameInstance;
         if (!this.soundPlayed && gameInstance?.audioManager) {
             gameInstance.audioManager.playSound('suina_sound');
             this.soundPlayed = true;
         }
 
-        // Set up interaction window
         this.canInteract = true;
-        this.isColliding = true;
-        
-        // Reset movement
-        this.velocity = { x: 0, y: 0 };
-        this.movementBuffer = { x: 0, y: 0 };
-        this.isIdle = true;
 
-        // Set disappearance timer
+        // Set disappearance timer for 2 seconds
         this.disappearanceTimer = setTimeout(() => {
             this.startDisappearance();
         }, 2000);
+
+        this.isColliding = true;
+        this.velocity = { x: 0, y: 0 };
+        this.movementBuffer = { x: 0, y: 0 };
+        this.isIdle = true;
     }
 
-handleInteraction(input, player) {
-    const gameInstance = window.gameInstance;
-    
-    if (input.keys.KeyB) {
-        if (gameInstance?.audioManager) {
-            gameInstance.audioManager.playSound('professore_smack');
-            if (gameInstance.scoreManager) {
-                // Use the centralized message system
-                if (gameInstance.renderer) {
-                    gameInstance.renderer.showSuinaMalaMessage();
+
+        // Handle button interactions within the 2-second window
+        if (this.canInteract && !this.isDisappearing) {
+            const gameInstance = window.gameInstance;
+            
+            if (input.keys.KeyB) {
+                if (gameInstance?.audioManager) {
+                    gameInstance.audioManager.playSound('professore_smack');
+                    if (gameInstance.scoreManager) {
+                        gameInstance.scoreManager.increaseScore('love', 3);
+                    }
                 }
-                gameInstance.scoreManager.increaseScore('love', -5);
-                gameInstance.scoreManager.scoreAnimation.addAnimation(5, true);
+                this.canInteract = false;
+                if (this.disappearanceTimer) {
+                    clearTimeout(this.disappearanceTimer);
+                }
+                this.startDisappearance();
+            }
+            else if (input.keys.KeyF) {
+                if (gameInstance?.audioManager) {
+                    gameInstance.audioManager.playSound('suina_fuck');
+                    if (gameInstance.scoreManager) {
+                        gameInstance.scoreManager.increaseScore('love', 6);
+                    }
+                }
+                this.canInteract = false;
+                if (this.disappearanceTimer) {
+                    clearTimeout(this.disappearanceTimer);
+                }
+                this.startDisappearance();
             }
         }
-        this.triggerDisappearance();
-    }
-    else if (input.keys.KeyF && !this.isGameOverTriggered) {
-        this.triggerGameOver(player);
-    }
-}
 
-
-    triggerGameOver(player) {
-        const gameInstance = window.gameInstance;
-        if (!gameInstance) return;
-
-        this.isGameOverTriggered = true;
-        this.gameOverAnimationInProgress = true;
-
-        // Play evil sound effect
-        if (gameInstance.audioManager) {
-            gameInstance.audioManager.playSound('suina_evil');
+        // Handle movement if not in collision or disappearing state
+        if (!this.isColliding && !this.isDisappearing) {
+            const distance = Math.hypot(player.x - this.x, player.y - this.y);
+            if (distance < 150) {
+                this.runAwayFrom(player, deltaTime, worldBounds);
+                this.isIdle = false;
+            } else {
+                this.moveRandomly(deltaTime, worldBounds);
+            }
         }
-
-        // Trigger game over sequence
-        if (gameInstance.gameState) {
-            gameInstance.gameState.triggerJailGameOver(player);
-        }
-
-        // Clean up interaction state
-        this.canInteract = false;
-        if (this.disappearanceTimer) {
-            clearTimeout(this.disappearanceTimer);
-        }
-
-        // Start disappearance after game over animation
-        setTimeout(() => {
-            this.gameOverAnimationInProgress = false;
-            this.startDisappearance();
-        }, 2000);
-    }
-
-    triggerDisappearance() {
-        this.canInteract = false;
-        if (this.disappearanceTimer) {
-            clearTimeout(this.disappearanceTimer);
-        }
-        this.startDisappearance();
     }
 
     startDisappearance() {
-        if (this.isDisappearing) return;
-        
         this.isDisappearing = true;
         this.isVisible = false;
         this.canInteract = false;
@@ -171,19 +127,8 @@ handleInteraction(input, player) {
             this.disappearanceTimer = null;
         }
 
-        // Notify level manager
         if (this.levelManager) {
             this.levelManager.handleCharacterDisappear(this);
-        }
-    }
-
-    handleMovement(player, deltaTime, worldBounds) {
-        const distance = Math.hypot(player.x - this.x, player.y - this.y);
-        if (distance < 150) {
-            this.runAwayFrom(player, deltaTime, worldBounds);
-            this.isIdle = false;
-        } else {
-            this.moveRandomly(deltaTime, worldBounds);
         }
     }
 
@@ -268,13 +213,7 @@ handleInteraction(input, player) {
             clearTimeout(this.disappearanceTimer);
             this.disappearanceTimer = null;
         }
-        if (this.interactionCooldown) {
-            clearTimeout(this.interactionCooldown);
-            this.interactionCooldown = null;
-        }
         this.canInteract = false;
-        this.isGameOverTriggered = false;
-        this.gameOverAnimationInProgress = false;
         super.cleanup();
     }
 }
