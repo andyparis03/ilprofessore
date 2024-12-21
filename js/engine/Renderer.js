@@ -137,28 +137,19 @@ export class Renderer {
     }
 
 drawBackground(background, camera) {
-        if (background) {
-            const isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT;
-            const scale = isMobile ? 
-                Math.max(this.ctx.canvas.width / CONFIG.WORLD.WIDTH, 
-                        this.ctx.canvas.height / CONFIG.WORLD.HEIGHT) : 1;
+        if (!background) return;
 
-            // Calculate dimensions to maintain aspect ratio and cover screen
-            const scaledWidth = CONFIG.WORLD.WIDTH * scale;
-            const scaledHeight = CONFIG.WORLD.HEIGHT * scale;
+        // Always draw at world coordinates relative to camera
+        const sourceX = Math.floor(camera.x);
+        const sourceY = Math.floor(camera.y);
 
-            // Center the background
-            const x = (this.ctx.canvas.width - scaledWidth) / 2;
-            const y = (this.ctx.canvas.height - scaledHeight) / 2;
-
-            this.ctx.drawImage(
-                background,
-                camera.x, camera.y,
-                CONFIG.WORLD.WIDTH, CONFIG.WORLD.HEIGHT,
-                x, y,
-                scaledWidth, scaledHeight
-            );
-        }
+        this.ctx.drawImage(
+            background,
+            sourceX, sourceY,
+            camera.width, camera.height,
+            0, 0,
+            this.ctx.canvas.width, this.ctx.canvas.height
+        );
     }
 
     drawScreenMessage(type) {
@@ -207,10 +198,6 @@ drawBackground(background, camera) {
         }
     }
 
-    clear() {
-        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-    }
-
     draw(player, sprites, camera) {
         this.clear();
         this.drawBackground(this.levelManager.getCurrentLevelBackground(), camera);
@@ -223,10 +210,12 @@ drawBackground(background, camera) {
             this.drawPlayer(player, sprites.professore, camera);
         }
         
+        // Draw all active messages each frame
         Object.keys(this.screenMessages).forEach(type => {
             this.drawScreenMessage(type);
         });
     }
+
 
     drawPlayer(player, sprites, camera) {
         if (!player) return;
