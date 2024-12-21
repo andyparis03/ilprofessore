@@ -67,29 +67,34 @@ class Game {
 
 
 setupCanvas() {
-    const isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT;
-    
-    if (isMobile) {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-        this.canvas.style.width = '100%';
-        this.canvas.style.height = '100%';
-    } else {
-        this.canvas.width = CONFIG.CANVAS.DEFAULT_WIDTH;
-        this.canvas.height = CONFIG.CANVAS.DEFAULT_HEIGHT;  // Now uses the new height
-        this.canvas.style.width = `${CONFIG.CANVAS.DEFAULT_WIDTH}px`;
-        this.canvas.style.height = `${CONFIG.CANVAS.DEFAULT_HEIGHT}px`;
-        this.canvas.style.position = 'absolute';
-        this.canvas.style.top = '50%';
-        this.canvas.style.left = '50%';
-        this.canvas.style.transform = 'translate(-50%, -50%)';
+        const isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT;
+        
+        if (isMobile) {
+            // Calculate height while maintaining aspect ratio
+            const aspectRatio = CONFIG.WORLD.WIDTH / CONFIG.WORLD.HEIGHT;
+            const targetWidth = window.innerWidth;
+            const targetHeight = targetWidth / aspectRatio;
+
+            this.canvas.width = targetWidth;
+            this.canvas.height = targetHeight;
+            this.canvas.style.width = '100%';
+            this.canvas.style.height = `${targetHeight}px`;
+        } else {
+            this.canvas.width = CONFIG.CANVAS.DEFAULT_WIDTH;
+            this.canvas.height = CONFIG.CANVAS.DEFAULT_HEIGHT;
+            this.canvas.style.width = `${CONFIG.CANVAS.DEFAULT_WIDTH}px`;
+            this.canvas.style.height = `${CONFIG.CANVAS.DEFAULT_HEIGHT}px`;
+            this.canvas.style.position = 'absolute';
+            this.canvas.style.top = '50%';
+            this.canvas.style.left = '50%';
+            this.canvas.style.transform = 'translate(-50%, -50%)';
+        }
+        
+        if (this.camera) {
+            this.camera.width = CONFIG.WORLD.WIDTH;
+            this.camera.height = CONFIG.WORLD.HEIGHT;
+        }
     }
-    
-    if (this.camera) {
-        this.camera.width = this.canvas.width;
-        this.camera.height = this.canvas.height;
-    }
-}
 
     async initAudio() {
         try {

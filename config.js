@@ -2,14 +2,12 @@
 export const CONFIG = {
     CANVAS: {
         DEFAULT_WIDTH: 800,
-        DEFAULT_HEIGHT: 680, // Updated to match new background height
-        MOBILE_BREAKPOINT: 768,
-        GAMEPLAY_HEIGHT: 600 // Added to define original gameplay area
+        DEFAULT_HEIGHT: 680,
+        MOBILE_BREAKPOINT: 768
     },
     WORLD: {
         WIDTH: 800,
-        HEIGHT: 600,  // Gameplay area height stays the same
-        VISUAL_HEIGHT: 680 // Added for visual rendering
+        HEIGHT: 680  // Updated to match visual height
     },
     PLAYER: {
         WIDTH: 68,
@@ -35,8 +33,8 @@ export const CONFIG = {
             transitions: {
                 TEATRO: { x: { min: 0, max: 150 }, y: { min: 0, max: 100 }, nextLevel: 2 },
                 MALAFAMA: { x: { min: 550, max: 800 }, y: { min: 0, max: 100 }, nextLevel: 3 },
-                GUSTO: { x: { min: 0, max: 150 }, y: { min: 400, max: 600 }, nextLevel: 4 },
-                CHESTER: { x: { min: 600, max: 800 }, y: { min: 450, max: 600 }, nextLevel: 5 }
+                GUSTO: { x: { min: 0, max: 150 }, y: { min: 500, max: 680 }, nextLevel: 4 }, // Updated Y positions
+                CHESTER: { x: { min: 600, max: 800 }, y: { min: 530, max: 680 }, nextLevel: 5 } // Updated Y positions
             }
         },
         2: { name: 'Teatro', backgroundKey: 'background2' },

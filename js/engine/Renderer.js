@@ -36,7 +36,6 @@ export class Renderer {
             }
         };
 
-        // Initialize new game button
         this.newGameButton = {
             element: null,
             visible: false
@@ -45,28 +44,6 @@ export class Renderer {
         this.createNewGameButton();
         this.debug = true;
     }
-
-    showSuinaMalaMessage() {
-        console.log('Showing Suina Mala message');
-        this.setScreenMessage('suinaMala');
-    }
-
-    showGameOverMessage() {
-        console.log('Showing Game Over message');
-        this.setScreenMessage('gameOver');
-    }
-
-    drawBackground(background, camera) {
-        if (background) {
-        this.ctx.drawImage(
-            background,
-            camera.x, camera.y,
-            CONFIG.WORLD.WIDTH, CONFIG.WORLD.VISUAL_HEIGHT,  
-            0, 0,
-            this.ctx.canvas.width, this.ctx.canvas.height   
-        );
-    }
-}
 
     createNewGameButton() {
         if (this.newGameButton.element) {
@@ -101,7 +78,6 @@ export class Renderer {
         };
 
         button.onclick = () => this.handleNewGameClick();
-
         document.body.appendChild(button);
         this.newGameButton.element = button;
     }
@@ -142,12 +118,35 @@ export class Renderer {
         }
     }
 
+    showSuinaMalaMessage() {
+        console.log('Showing Suina Mala message');
+        this.setScreenMessage('suinaMala');
+    }
+
+    showGameOverMessage() {
+        console.log('Showing Game Over message');
+        this.setScreenMessage('gameOver');
+    }
+
     setScreenMessage(type) {
         if (!this.screenMessages[type]) return;
         
         const message = this.screenMessages[type];
         message.startTime = performance.now();
         message.isActive = true;
+    }
+
+    drawBackground(background, camera) {
+        if (background) {
+            // Draw the background to fill the entire canvas
+            this.ctx.drawImage(
+                background,
+                camera.x, camera.y,
+                CONFIG.WORLD.WIDTH, CONFIG.WORLD.HEIGHT,
+                0, 0,
+                this.ctx.canvas.width, this.ctx.canvas.height
+            );
+        }
     }
 
     drawScreenMessage(type) {
@@ -202,21 +201,16 @@ export class Renderer {
 
     draw(player, sprites, camera) {
         this.clear();
-        
-        // Draw background
         this.drawBackground(this.levelManager.getCurrentLevelBackground(), camera);
         
-        // Draw characters
         if (this.levelManager?.characters) {
             this.drawCharacters(camera);
         }
         
-        // Draw player
         if (player && sprites.professore) {
             this.drawPlayer(player, sprites.professore, camera);
         }
         
-        // Draw messages
         Object.keys(this.screenMessages).forEach(type => {
             this.drawScreenMessage(type);
         });
@@ -225,28 +219,28 @@ export class Renderer {
     drawPlayer(player, sprites, camera) {
         if (!player) return;
 
-        const drawX = player.x - camera.x;
-        const drawY = player.y - camera.y;
+        const scaleX = this.ctx.canvas.width / CONFIG.WORLD.WIDTH;
+        const scaleY = this.ctx.canvas.height / CONFIG.WORLD.HEIGHT;
+        const drawX = (player.x - camera.x) * scaleX;
+        const drawY = (player.y - camera.y) * scaleY;
+        const drawWidth = player.width * scaleX;
+        const drawHeight = player.height * scaleY;
 
         if (this.gameState?.isGameOver && 
             this.gameState.gameOverType === 'jail' && 
             player.freeze) {
             
             if (sprites.freeze) {
-                this.ctx.drawImage(sprites.freeze, drawX, drawY, player.width, player.height);
+                this.ctx.drawImage(sprites.freeze, drawX, drawY, drawWidth, drawHeight);
                 
                 const jailOverlay = this.gameState.getJailOverlay();
                 if (jailOverlay) {
-                    const overlayWidth = player.width * 1.5;
-                    const overlayHeight = player.height * 1.5;
-                    const overlayX = drawX - (overlayWidth - player.width) / 2;
-                    const overlayY = drawY - (overlayHeight - player.height) / 2;
+                    const overlayWidth = drawWidth * 1.5;
+                    const overlayHeight = drawHeight * 1.5;
+                    const overlayX = drawX - (overlayWidth - drawWidth) / 2;
+                    const overlayY = drawY - (overlayHeight - drawHeight) / 2;
                     
-                    this.ctx.drawImage(
-                        jailOverlay, 
-                        overlayX, overlayY, 
-                        overlayWidth, overlayHeight
-                    );
+                    this.ctx.drawImage(jailOverlay, overlayX, overlayY, overlayWidth, overlayHeight);
                 }
             }
             return;
@@ -254,7 +248,7 @@ export class Renderer {
 
         if (player.isIdle) {
             if (sprites.idle) {
-                this.ctx.drawImage(sprites.idle, drawX, drawY, player.width, player.height);
+                this.ctx.drawImage(sprites.idle, drawX, drawY, drawWidth, drawHeight);
             }
         } else {
             const directionIndex = this.directions[player.direction] || this.directions['down'];
@@ -267,7 +261,7 @@ export class Renderer {
                     spriteX, spriteY,
                     player.width, player.height,
                     drawX, drawY,
-                    player.width, player.height
+                    drawWidth, drawHeight
                 );
             }
         }
@@ -276,21 +270,32 @@ export class Renderer {
     drawCharacters(camera) {
         if (!this.levelManager?.characters) return;
         
+        const scaleX = this.ctx.canvas.width / CONFIG.WORLD.WIDTH;
+        const scaleY = this.ctx.canvas.height / CONFIG.WORLD.HEIGHT;
+        
         this.levelManager.characters.forEach(character => {
             if (!character || !character.type || !character.isVisible) return;
 
-            const drawX = character.x - camera.x;
-            const drawY = character.y - camera.y;
+            const drawX = (character.x - camera.x) * scaleX;
+            const drawY = (character.y - camera.y) * scaleY;
+            const drawWidth = character.width * scaleX;
+            const drawHeight = character.height * scaleY;
 
             if (character.currentSprite === 'attack' && character.activeSprite) {
-                this.ctx.drawImage(character.activeSprite, drawX, drawY, 
-                    character.width, character.height);
+                this.ctx.drawImage(
+                    character.activeSprite, 
+                    drawX, drawY, 
+                    drawWidth, drawHeight
+                );
                 return;
             }
 
             if (character.isIdle && character.sprites?.idle) {
-                this.ctx.drawImage(character.sprites.idle, drawX, drawY, 
-                    character.width, character.height);
+                this.ctx.drawImage(
+                    character.sprites.idle, 
+                    drawX, drawY, 
+                    drawWidth, drawHeight
+                );
             } else if (character.sprites?.walking) {
                 const directionIndex = this.directions[character.direction] || this.directions['down'];
                 const spriteX = character.frame * character.width;
@@ -301,7 +306,7 @@ export class Renderer {
                     spriteX, spriteY,
                     character.width, character.height,
                     drawX, drawY,
-                    character.width, character.height
+                    drawWidth, drawHeight
                 );
             }
         });
