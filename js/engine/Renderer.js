@@ -45,6 +45,28 @@ export class Renderer {
         this.debug = true;
     }
 
+    clear() {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    }
+
+    showSuinaMalaMessage() {
+        console.log('Showing Suina Mala message');
+        this.setScreenMessage('suinaMala');
+    }
+
+    showGameOverMessage() {
+        console.log('Showing Game Over message');
+        this.setScreenMessage('gameOver');
+    }
+
+    setScreenMessage(type) {
+        if (!this.screenMessages[type]) return;
+        
+        const message = this.screenMessages[type];
+        message.startTime = performance.now();
+        message.isActive = true;
+    }
+
     createNewGameButton() {
         if (this.newGameButton.element) {
             document.body.removeChild(this.newGameButton.element);
@@ -118,25 +140,7 @@ export class Renderer {
         }
     }
 
-    showSuinaMalaMessage() {
-        console.log('Showing Suina Mala message');
-        this.setScreenMessage('suinaMala');
-    }
-
-    showGameOverMessage() {
-        console.log('Showing Game Over message');
-        this.setScreenMessage('gameOver');
-    }
-
-    setScreenMessage(type) {
-        if (!this.screenMessages[type]) return;
-        
-        const message = this.screenMessages[type];
-        message.startTime = performance.now();
-        message.isActive = true;
-    }
-
-drawBackground(background, camera) {
+    drawBackground(background, camera) {
         if (!background) return;
 
         // Always draw at world coordinates relative to camera
@@ -210,36 +214,31 @@ drawBackground(background, camera) {
             this.drawPlayer(player, sprites.professore, camera);
         }
         
-        // Draw all active messages each frame
         Object.keys(this.screenMessages).forEach(type => {
             this.drawScreenMessage(type);
         });
     }
 
-
     drawPlayer(player, sprites, camera) {
         if (!player) return;
 
-        const scaleX = this.ctx.canvas.width / CONFIG.WORLD.WIDTH;
-        const scaleY = this.ctx.canvas.height / CONFIG.WORLD.HEIGHT;
-        const drawX = (player.x - camera.x) * scaleX;
-        const drawY = (player.y - camera.y) * scaleY;
-        const drawWidth = player.width * scaleX;
-        const drawHeight = player.height * scaleY;
+        // Calculate screen position relative to camera
+        const screenX = Math.floor(player.x - camera.x);
+        const screenY = Math.floor(player.y - camera.y);
 
         if (this.gameState?.isGameOver && 
             this.gameState.gameOverType === 'jail' && 
             player.freeze) {
             
             if (sprites.freeze) {
-                this.ctx.drawImage(sprites.freeze, drawX, drawY, drawWidth, drawHeight);
+                this.ctx.drawImage(sprites.freeze, screenX, screenY, player.width, player.height);
                 
                 const jailOverlay = this.gameState.getJailOverlay();
                 if (jailOverlay) {
-                    const overlayWidth = drawWidth * 1.5;
-                    const overlayHeight = drawHeight * 1.5;
-                    const overlayX = drawX - (overlayWidth - drawWidth) / 2;
-                    const overlayY = drawY - (overlayHeight - drawHeight) / 2;
+                    const overlayWidth = player.width * 1.5;
+                    const overlayHeight = player.height * 1.5;
+                    const overlayX = screenX - (overlayWidth - player.width) / 2;
+                    const overlayY = screenY - (overlayHeight - player.height) / 2;
                     
                     this.ctx.drawImage(jailOverlay, overlayX, overlayY, overlayWidth, overlayHeight);
                 }
@@ -249,7 +248,7 @@ drawBackground(background, camera) {
 
         if (player.isIdle) {
             if (sprites.idle) {
-                this.ctx.drawImage(sprites.idle, drawX, drawY, drawWidth, drawHeight);
+                this.ctx.drawImage(sprites.idle, screenX, screenY, player.width, player.height);
             }
         } else {
             const directionIndex = this.directions[player.direction] || this.directions['down'];
@@ -261,8 +260,8 @@ drawBackground(background, camera) {
                     sprites.walking,
                     spriteX, spriteY,
                     player.width, player.height,
-                    drawX, drawY,
-                    drawWidth, drawHeight
+                    screenX, screenY,
+                    player.width, player.height
                 );
             }
         }
@@ -271,32 +270,21 @@ drawBackground(background, camera) {
     drawCharacters(camera) {
         if (!this.levelManager?.characters) return;
         
-        const scaleX = this.ctx.canvas.width / CONFIG.WORLD.WIDTH;
-        const scaleY = this.ctx.canvas.height / CONFIG.WORLD.HEIGHT;
-        
         this.levelManager.characters.forEach(character => {
             if (!character || !character.type || !character.isVisible) return;
 
-            const drawX = (character.x - camera.x) * scaleX;
-            const drawY = (character.y - camera.y) * scaleY;
-            const drawWidth = character.width * scaleX;
-            const drawHeight = character.height * scaleY;
+            const screenX = Math.floor(character.x - camera.x);
+            const screenY = Math.floor(character.y - camera.y);
 
             if (character.currentSprite === 'attack' && character.activeSprite) {
-                this.ctx.drawImage(
-                    character.activeSprite, 
-                    drawX, drawY, 
-                    drawWidth, drawHeight
-                );
+                this.ctx.drawImage(character.activeSprite, screenX, screenY, 
+                    character.width, character.height);
                 return;
             }
 
             if (character.isIdle && character.sprites?.idle) {
-                this.ctx.drawImage(
-                    character.sprites.idle, 
-                    drawX, drawY, 
-                    drawWidth, drawHeight
-                );
+                this.ctx.drawImage(character.sprites.idle, screenX, screenY, 
+                    character.width, character.height);
             } else if (character.sprites?.walking) {
                 const directionIndex = this.directions[character.direction] || this.directions['down'];
                 const spriteX = character.frame * character.width;
@@ -306,8 +294,8 @@ drawBackground(background, camera) {
                     character.sprites.walking,
                     spriteX, spriteY,
                     character.width, character.height,
-                    drawX, drawY,
-                    drawWidth, drawHeight
+                    screenX, screenY,
+                    character.width, character.height
                 );
             }
         });
