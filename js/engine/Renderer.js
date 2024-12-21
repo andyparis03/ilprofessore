@@ -9,7 +9,6 @@ export class Renderer {
         this.gameState = gameState;
         this.directions = { down: 0, left: 1, right: 2, up: 3 };
         
-        // Message system with both flashing and permanent messages
         this.screenMessages = {
             gameOver: {
                 lines: ['Hai beccato', 'la Suina Mala... :('],
@@ -22,10 +21,11 @@ export class Renderer {
             finalGameOver: {
                 lines: ['GAME OVER'],
                 startTime: 0,
-                duration: Infinity,  // Permanent message
-                interval: 0,         // No flashing
+                duration: Infinity,
+                interval: 0,
                 isActive: false,
-                isPermanent: true    // Flag for permanent display
+                isPermanent: true,
+                showNewGameButton: true
             },
             suinaMala: {
                 lines: ['Suina mala!'],
@@ -35,18 +35,111 @@ export class Renderer {
                 isActive: false
             }
         };
-        
+
+        // Initialize new game button
+        this.newGameButton = {
+            element: null,
+            visible: false
+        };
+
+        this.createNewGameButton();
         this.debug = true;
     }
 
     showSuinaMalaMessage() {
         console.log('Showing Suina Mala message');
-        this.setScreenMessage('suinaMala', this.screenMessages.suinaMala.lines);
+        this.setScreenMessage('suinaMala');
     }
 
     showGameOverMessage() {
         console.log('Showing Game Over message');
-        this.setScreenMessage('gameOver', this.screenMessages.gameOver.lines);
+        this.setScreenMessage('gameOver');
+    }
+
+    drawBackground(background, camera) {
+        if (background) {
+            this.ctx.drawImage(
+                background,
+                camera.x, camera.y,
+                camera.width, camera.height,
+                0, 0,
+                camera.width, camera.height
+            );
+        }
+    }
+
+    createNewGameButton() {
+        if (this.newGameButton.element) {
+            document.body.removeChild(this.newGameButton.element);
+        }
+
+        const button = document.createElement('button');
+        button.textContent = 'New Game';
+        button.style.cssText = `
+            position: absolute;
+            padding: 10px 20px;
+            font-size: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+            font-family: Arial, sans-serif;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s, transform 0.2s;
+            z-index: 1000;
+        `;
+
+        button.onmouseover = () => {
+            button.style.backgroundColor = '#45a049';
+            button.style.transform = 'scale(1.05)';
+        };
+        button.onmouseout = () => {
+            button.style.backgroundColor = '#4CAF50';
+            button.style.transform = 'scale(1)';
+        };
+
+        button.onclick = () => this.handleNewGameClick();
+
+        document.body.appendChild(button);
+        this.newGameButton.element = button;
+    }
+
+    handleNewGameClick() {
+        this.hideNewGameButton();
+        if (this.gameState) {
+            this.gameState.reset();
+        }
+        Object.keys(this.screenMessages).forEach(key => {
+            this.screenMessages[key].isActive = false;
+        });
+        window.location.reload();
+    }
+
+    showNewGameButton() {
+        if (!this.newGameButton.element) return;
+
+        const button = this.newGameButton.element;
+        const canvas = this.ctx.canvas;
+        
+        const rect = canvas.getBoundingClientRect();
+        const buttonX = rect.left + (canvas.width / 2);
+        const buttonY = rect.top + (canvas.height / 2) + 50;
+
+        button.style.left = `${buttonX}px`;
+        button.style.top = `${buttonY}px`;
+        button.style.transform = 'translate(-50%, -50%)';
+        button.style.display = 'block';
+        
+        this.newGameButton.visible = true;
+    }
+
+    hideNewGameButton() {
+        if (this.newGameButton.element) {
+            this.newGameButton.element.style.display = 'none';
+            this.newGameButton.visible = false;
+        }
     }
 
     setScreenMessage(type) {
@@ -64,19 +157,18 @@ export class Renderer {
         const currentTime = performance.now();
         const elapsed = currentTime - message.startTime;
         
-        // Handle message duration
         if (elapsed > message.duration && !message.isPermanent) {
             message.isActive = false;
             
-            // If there's a next message, show it
             if (message.nextMessage) {
                 this.setScreenMessage(message.nextMessage);
             }
             return;
         }
 
-        // Determine visibility based on whether message is permanent or flashing
-        const isVisible = message.isPermanent || (Math.floor((elapsed / message.interval)) % 2 === 0);
+        const isVisible = message.isPermanent || 
+                         message.interval === 0 || 
+                         (Math.floor(elapsed / message.interval) % 2 === 0);
         
         if (isVisible) {
             this.ctx.save();
@@ -97,105 +189,24 @@ export class Renderer {
             });
             
             this.ctx.restore();
+
+            if (message.showNewGameButton && !this.newGameButton.visible) {
+                this.showNewGameButton();
+            }
         }
     }
-
-
 
     clear() {
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     }
 
-
-
-
-    setScreenMessage(type, message, duration = null) {
-        console.log(`Setting screen message: ${type}`, message);
-        
-        if (!this.screenMessages[type]) return;
-        
-        const messageConfig = this.screenMessages[type];
-        messageConfig.startTime = performance.now();
-        messageConfig.isActive = true;
-        
-        if (duration) {
-            messageConfig.duration = duration;
-        }
-
-        if (Array.isArray(message)) {
-            messageConfig.lines = message;
-        } else {
-            messageConfig.lines = [message];
-        }
-    }
-
-    drawScreenMessage(type) {
-        const message = this.screenMessages[type];
-        if (!message || !message.isActive) return;
-
-        const currentTime = performance.now();
-        const elapsed = currentTime - message.startTime;
-        
-        console.log(`Drawing ${type} message, elapsed time:`, elapsed);
-
-        if (elapsed > message.duration) {
-            console.log(`${type} message duration expired`);
-            message.isActive = false;
-            return;
-        }
-
-        const flashPhase = Math.floor((elapsed / message.interval));
-        const isVisible = flashPhase % 2 === 0;
-        
-        console.log(`${type} message state:`, { flashPhase, isVisible });
-
-        if (isVisible) {
-            this.ctx.save();
-            this.ctx.font = 'bold 32px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillStyle = '#FFFFFF';
-            this.ctx.strokeStyle = '#000000';
-            this.ctx.lineWidth = 3;
-            
-            const x = this.ctx.canvas.width / 2;
-            const baseY = this.ctx.canvas.height / 2;
-            
-            message.lines.forEach((line, index) => {
-                const y = baseY + (index - (message.lines.length - 1) / 2) * 40;
-                this.ctx.strokeText(line, x, y);
-                this.ctx.fillText(line, x, y);
-            });
-            
-            this.ctx.restore();
-        }
-    }
-
-    setFlashMessage(message, duration) {
-        this.setScreenMessage('flash', message, duration);
-    }
-
-    drawBackground(background, camera) {
-        if (background) {
-            this.ctx.drawImage(
-                background,
-                camera.x, camera.y,
-                camera.width, camera.height,
-                0, 0,
-                camera.width, camera.height
-            );
-        }
-    }
-
     draw(player, sprites, camera) {
-        console.log('Starting render cycle');
-
-        // Draw background
         this.clear();
+        
+        // Draw background
         this.drawBackground(this.levelManager.getCurrentLevelBackground(), camera);
         
         // Draw characters
-        console.log('Drawing characters');
         if (this.levelManager?.characters) {
             this.drawCharacters(camera);
         }
@@ -205,14 +216,10 @@ export class Renderer {
             this.drawPlayer(player, sprites.professore, camera);
         }
         
-        // Draw any active screen messages
+        // Draw messages
         Object.keys(this.screenMessages).forEach(type => {
-            if (this.screenMessages[type].isActive) {
-                this.drawScreenMessage(type);
-            }
+            this.drawScreenMessage(type);
         });
-
-        console.log('Render cycle complete');
     }
 
     drawPlayer(player, sprites, camera) {
@@ -221,18 +228,13 @@ export class Renderer {
         const drawX = player.x - camera.x;
         const drawY = player.y - camera.y;
 
-        // Game Over State Handling
         if (this.gameState?.isGameOver && 
             this.gameState.gameOverType === 'jail' && 
             player.freeze) {
             
-            console.log('Drawing frozen player state');
-            
-            // Draw freeze sprite (skull)
             if (sprites.freeze) {
                 this.ctx.drawImage(sprites.freeze, drawX, drawY, player.width, player.height);
                 
-                // Draw jail overlay
                 const jailOverlay = this.gameState.getJailOverlay();
                 if (jailOverlay) {
                     const overlayWidth = player.width * 1.5;
@@ -250,7 +252,6 @@ export class Renderer {
             return;
         }
 
-        // Normal State Rendering
         if (player.isIdle) {
             if (sprites.idle) {
                 this.ctx.drawImage(sprites.idle, drawX, drawY, player.width, player.height);
@@ -311,6 +312,13 @@ export class Renderer {
         this.screenMessages.gameOver.startTime = startTime;
         if (this.debug) {
             console.log('Flash start time set to:', startTime);
+        }
+    }
+
+    cleanup() {
+        if (this.newGameButton.element) {
+            document.body.removeChild(this.newGameButton.element);
+            this.newGameButton.element = null;
         }
     }
 }
