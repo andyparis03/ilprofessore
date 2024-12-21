@@ -70,15 +70,18 @@ setupCanvas() {
         const isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT;
         
         if (isMobile) {
-            // Calculate height while maintaining aspect ratio
+            // Fill screen width
+            this.canvas.width = window.innerWidth;
+            // Calculate height to maintain aspect ratio
             const aspectRatio = CONFIG.WORLD.WIDTH / CONFIG.WORLD.HEIGHT;
-            const targetWidth = window.innerWidth;
-            const targetHeight = targetWidth / aspectRatio;
-
-            this.canvas.width = targetWidth;
-            this.canvas.height = targetHeight;
+            this.canvas.height = window.innerWidth / aspectRatio;
+            
+            // Fill available space
             this.canvas.style.width = '100%';
-            this.canvas.style.height = `${targetHeight}px`;
+            this.canvas.style.height = 'auto';
+            this.canvas.style.position = 'fixed';
+            this.canvas.style.top = '0';
+            this.canvas.style.left = '0';
         } else {
             this.canvas.width = CONFIG.CANVAS.DEFAULT_WIDTH;
             this.canvas.height = CONFIG.CANVAS.DEFAULT_HEIGHT;
@@ -90,6 +93,7 @@ setupCanvas() {
             this.canvas.style.transform = 'translate(-50%, -50%)';
         }
         
+        // Update camera dimensions to match world size, not canvas size
         if (this.camera) {
             this.camera.width = CONFIG.WORLD.WIDTH;
             this.camera.height = CONFIG.WORLD.HEIGHT;

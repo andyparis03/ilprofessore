@@ -5,26 +5,33 @@ export class Camera {
     constructor(width, height) {
         this.x = 0;
         this.y = 0;
-        this.width = width;
-        this.height = height || CONFIG.WORLD.HEIGHT; // Added fallback to new world height
+        this.width = CONFIG.WORLD.WIDTH;
+        this.height = CONFIG.WORLD.HEIGHT;
+        this.lastTargetX = null;
+        this.lastTargetY = null;
     }
 
     follow(target, worldWidth, worldHeight) {
-        // Calculate ideal camera position (centered on target)
+        if (!target) return;
+
+        // Center camera on target
         const idealX = target.x + target.width / 2 - this.width / 2;
         const idealY = target.y + target.height / 2 - this.height / 2;
 
-        // Clamp camera position to world boundaries
-        this.x = this.clamp(idealX, 0, Math.max(0, worldWidth - this.width));
-        this.y = this.clamp(idealY, 0, Math.max(0, worldHeight - this.height));
+        // Smooth camera movement
+        if (this.lastTargetX === null) {
+            this.lastTargetX = idealX;
+            this.lastTargetY = idealY;
+        }
 
-        // Handle smaller world dimensions
-        if (worldWidth < this.width) {
-            this.x = 0;
-        }
-        if (worldHeight < this.height) {
-            this.y = 0;
-        }
+        // Lerp to target position
+        const lerp = 0.1;
+        this.lastTargetX += (idealX - this.lastTargetX) * lerp;
+        this.lastTargetY += (idealY - this.lastTargetY) * lerp;
+
+        // Clamp camera position to world boundaries
+        this.x = this.clamp(this.lastTargetX, 0, Math.max(0, worldWidth - this.width));
+        this.y = this.clamp(this.lastTargetY, 0, Math.max(0, worldHeight - this.height));
     }
 
     clamp(value, min, max) {
