@@ -50,6 +50,7 @@ Ilprofessore
 │   │       prof-fuck.mp3
 │   │       prof-punch.mp3
 │   │       prof-smack.mp3
+│   │       buzz.mp3
 │   │       prof-step.mp3
 │   │       prof-theme.mp3
 │   │       suina-evil.mp3
@@ -148,7 +149,7 @@ Ilprofessore
 
 
 
-main.js:
+// main.js
 // main.js
 import { CONFIG } from './config.js';
 import { Camera } from './js/engine/Camera.js';
@@ -165,21 +166,54 @@ class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.camera = new Camera(CONFIG.CANVAS.DEFAULT_WIDTH, CONFIG.CANVAS.DEFAULT_HEIGHT);
         
-        // Initialize managers
-        this.audioManager = new AudioManager();
-        this.input = new InputHandler();
-        this.scoreManager = new ScoreManager(this.ctx);
-        this.gameState = new GameStateManager(this);
+        // Core systems initialization with verified state
+        this.initializationState = {
+            audio: false,
+            assets: false,
+            player: false,
+            levelManager: false,
+            renderer: false
+        };
+
+        // Core components (initially null)
+        this.camera = null;
+        this.input = null;
+        this.audioManager = null;
+        this.scoreManager = null;
+        this.gameState = null;
+        this.renderer = null;
+        this.levelManager = null;
+        this.player = null;
         
-        this.setupCanvas();
-        this.initialized = false;
-        
-        // Make game instance globally available
+        // Make game instance globally available immediately
         window.gameInstance = this;
         
-        // Set up event listeners
+        // Initialize core systems
+        this.setupCoreSystems();
+        
+        // State tracking
+        this.initialized = false;
+        this.assetsLoaded = false;
+        
+        // Performance monitoring
+        this.lastUpdateTime = performance.now();
+        this.frameCount = 0;
+        this.fps = 0;
+        this.fpsUpdateInterval = 1000;
+        this.lastFpsUpdate = performance.now();
+    }
+
+    setupCoreSystems() {
+        // Initialize core components
+        this.camera = new Camera(CONFIG.CANVAS.DEFAULT_WIDTH, CONFIG.CANVAS.DEFAULT_HEIGHT);
+        this.input = new InputHandler();
+        this.audioManager = new AudioManager();
+        this.scoreManager = new ScoreManager(this.ctx);
+        this.gameState = new GameStateManager(this);
+
+        // Set up canvas and event listeners
+        this.setupCanvas();
         window.addEventListener('resize', () => this.setupCanvas());
     }
 
@@ -202,26 +236,62 @@ class Game {
             this.canvas.style.transform = 'translate(-50%, -50%)';
         }
         
-        this.camera.width = this.canvas.width;
-        this.camera.height = this.canvas.height;
+        if (this.camera) {
+            this.camera.width = this.canvas.width;
+            this.camera.height = this.canvas.height;
+        }
+    }
+
+    async initAudio() {
+        try {
+            console.log('Initializing audio system...');
+            await this.audioManager.init();
+            this.initializationState.audio = true;
+            console.log('Audio system initialized successfully');
+        } catch (error) {
+            console.error('Audio initialization failed:', error);
+            this.initializationState.audio = false;
+            throw new Error('Audio initialization failed');
+        }
+    }
+
+    async loadGameAssets() {
+        try {
+            console.log('Loading game assets...');
+            const assets = await AssetLoader.loadAssets();
+            this.assets = assets;
+            this.assetsLoaded = true;
+            this.initializationState.assets = true;
+            console.log('Game assets loaded successfully');
+            return assets;
+        } catch (error) {
+            console.error('Asset loading failed:', error);
+            this.initializationState.assets = false;
+            throw new Error('Asset loading failed');
+        }
     }
 
     async init() {
-        if (this.initialized) return;
+        if (this.initialized) {
+            console.warn('Game already initialized');
+            return;
+        }
 
         try {
-            console.log('Starting game initialization...');
+            console.log('Starting game initialization sequence...');
 
-            // Load assets first
-            const assets = await AssetLoader.loadAssets();
-            console.log('Assets loaded successfully');
-            this.assets = assets;
+            // Step 1: Initialize audio system
+            await this.initAudio();
+            
+            // Verify audio initialization
+            if (!this.audioManager.initialized) {
+                throw new Error('Audio system failed to initialize properly');
+            }
 
-            // Initialize audio
-            await this.audioManager.init();
-            console.log('Audio initialized');
-
-            // Create player
+            // Step 2: Load game assets
+            const assets = await this.loadGameAssets();
+            
+            // Step 3: Initialize player
             this.player = new Player(
                 CONFIG.WORLD.WIDTH / 2,
                 CONFIG.WORLD.HEIGHT / 2,
@@ -230,83 +300,133 @@ class Game {
                 assets.sprites.professore,
                 'professore'
             );
+            this.initializationState.player = true;
 
-            // Initialize managers that depend on other components
+            // Step 4: Initialize game systems
+            console.log('Initializing game systems...');
             this.levelManager = new LevelManager(assets, this.gameState);
+            this.initializationState.levelManager = true;
+
             this.renderer = new Renderer(this.ctx, this.levelManager, this.gameState);
+            this.initializationState.renderer = true;
             
             // Store renderer reference in gameState
             this.gameState.renderer = this.renderer;
 
-            // Load initial level
+            // Step 5: Load initial level
+            console.log('Loading initial level...');
             await this.levelManager.loadLevel(1, this.player);
-            
-            this.initialized = true;
-            console.log('Game initialization complete');
 
-            // Start game loop
-            this.gameLoop();
+            // Verify all systems
+            if (this.verifyInitialization()) {
+                this.initialized = true;
+                console.log('Game initialization complete');
+                this.startGameLoop();
+            } else {
+                throw new Error('System verification failed');
+            }
 
         } catch (error) {
             console.error('Game initialization failed:', error);
+            this.handleInitializationError(error);
             throw error;
         }
     }
 
-    update() {
-        if (!this.initialized) return;
+    verifyInitialization() {
+        const failed = Object.entries(this.initializationState)
+            .filter(([, value]) => !value)
+            .map(([key]) => key);
 
-        console.log('Game Update cycle start');
-
-        if (!this.gameState.isGameOver) {
-            // Update player
-            this.player.update(this.input, {
-                width: CONFIG.WORLD.WIDTH,
-                height: CONFIG.WORLD.HEIGHT
-            });
-
-            // Update level and characters
-            this.levelManager.update(
-                this.player,
-                {
-                    width: CONFIG.WORLD.WIDTH,
-                    height: CONFIG.WORLD.HEIGHT
-                },
-                this.input
-            );
-
-            // Check level transitions
-            if (this.levelManager.checkLevelTransition(this.player)) {
-                console.log(`Transitioned to Level ${this.levelManager.currentLevel}`);
-            }
-
-            // Update camera and audio
-            this.camera.follow(this.player, CONFIG.WORLD.WIDTH, CONFIG.WORLD.HEIGHT);
-            this.audioManager.handleFootsteps(this.player, !this.player.isIdle);
+        if (failed.length > 0) {
+            console.error('Initialization failed for:', failed);
+            return false;
         }
 
-        console.log('Game Update cycle complete');
+        return true;
+    }
+
+    handleInitializationError(error) {
+        // Display error message to user
+        this.ctx.fillStyle = 'black';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '20px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('Failed to start game. Please refresh the page.', 
+            this.canvas.width / 2, this.canvas.height / 2);
+    }
+
+    startGameLoop() {
+        console.log('Starting game loop');
+        this.lastUpdateTime = performance.now();
+        this.gameLoop();
+    }
+
+    update() {
+        if (!this.initialized || this.gameState.isGameOver) return;
+
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - this.lastUpdateTime) / 16.67;
+        this.lastUpdateTime = currentTime;
+
+        // Update player
+        this.player.update(this.input, {
+            width: CONFIG.WORLD.WIDTH,
+            height: CONFIG.WORLD.HEIGHT
+        });
+
+        // Update level and characters
+        this.levelManager.update(
+            this.player,
+            {
+                width: CONFIG.WORLD.WIDTH,
+                height: CONFIG.WORLD.HEIGHT
+            },
+            this.input
+        );
+
+        // Check level transitions
+        if (this.levelManager.checkLevelTransition(this.player)) {
+            console.log(`Transitioned to Level ${this.levelManager.currentLevel}`);
+        }
+
+        // Update camera and audio
+        this.camera.follow(this.player, CONFIG.WORLD.WIDTH, CONFIG.WORLD.HEIGHT);
+        this.audioManager.handleFootsteps(this.player, !this.player.isIdle);
     }
 
     draw() {
         if (!this.initialized) return;
-
-        // Clear and draw background
-        this.renderer.clear();
-        this.renderer.drawBackground(this.levelManager.getCurrentLevelBackground(), this.camera);
         
-        // Draw characters and player
-        this.renderer.drawCharacters(this.assets.sprites, this.camera);
-        this.renderer.drawPlayer(this.player, this.assets.sprites.professore, this.camera);
+        // Use consolidated rendering approach
+        this.renderer.draw(this.player, this.assets.sprites, this.camera);
         
-        // Draw UI elements
+        // Draw score
         this.scoreManager.draw();
-        
-        // Draw game over text if needed
-        if (this.gameState.isGameOver) {
-            console.log('Drawing game over state');
-            this.renderer.drawGameOverText();
+
+        // Update and draw FPS if in debug mode
+        if (CONFIG.DEBUG) {
+            this.updateFPS();
+            this.drawFPS();
         }
+    }
+
+    updateFPS() {
+        const now = performance.now();
+        this.frameCount++;
+
+        if (now - this.lastFpsUpdate >= this.fpsUpdateInterval) {
+            this.fps = Math.round((this.frameCount * 1000) / (now - this.lastFpsUpdate));
+            this.frameCount = 0;
+            this.lastFpsUpdate = now;
+        }
+    }
+
+    drawFPS() {
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '12px Arial';
+        this.ctx.fillText(`FPS: ${this.fps}`, 10, 20);
     }
 
     gameLoop() {
@@ -318,8 +438,9 @@ class Game {
 
 // Game startup
 const startGame = async () => {
-    const game = new Game();
     try {
+        console.log('Creating game instance...');
+        const game = new Game();
         await game.init();
         console.log('Game started successfully');
     } catch (error) {
@@ -328,11 +449,6 @@ const startGame = async () => {
 };
 
 startGame();
-
-
-
-
-
 
 
 
@@ -372,7 +488,6 @@ index.html:
   <script src="./main.js" type="module"></script>
 </body>
 </html>
-
 
 
 
@@ -437,8 +552,8 @@ export const CONFIG = {
 
 
 
-
 assetLoader.js:
+// AssetLoader.js
 // AssetLoader.js
 export class AssetLoader {
     static async loadImage(src, fallbackSrc = null) {
@@ -503,6 +618,7 @@ export class AssetLoader {
                 proffuck,
                 profpunch,
                 profsmack,
+		buzz,
                 profstep,
                 proftheme,
 		skull,
@@ -544,6 +660,7 @@ export class AssetLoader {
                 this.loadSound(audioContext, './assets/sounds/prof-fuck.mp3'),
                 this.loadSound(audioContext, './assets/sounds/prof-punch.mp3'),
                 this.loadSound(audioContext, './assets/sounds/prof-smack.mp3'),
+		this.loadSound(audioContext, './assets/sounds/buzz.mp3'), 
                 this.loadSound(audioContext, './assets/sounds/prof-step.mp3'),
                 this.loadSound(audioContext, './assets/sounds/prof-theme.mp3'),
                 this.loadSound(audioContext, './assets/sounds/suina-fuck.mp3'),
@@ -577,6 +694,7 @@ export class AssetLoader {
                     proffuck,
                     profpunch,
                     profsmack,
+		    buzz,
                     profstep,
                     proftheme,
                     suinafuck,
@@ -596,6 +714,9 @@ export class AssetLoader {
         }
     }
 }
+
+
+
 
 
 
@@ -648,8 +769,6 @@ export class CharacterRegistry {
         return state;
     }
 }
-
-
 
 
 
@@ -816,6 +935,8 @@ canvas {
 #controls-container {
   touch-action: none;
 }
+
+
 
 
 
@@ -1303,7 +1424,9 @@ update(player, worldBounds, input) {
 
 
 
+
 AudioManager.js:
+// AudioManager.js
 // AudioManager.js
 import { CONFIG } from '../../config.js';
 
@@ -1316,143 +1439,164 @@ export class AudioManager {
         this.sfxGainNode = null;
         this.currentMusicSource = null;
         this.initialized = false;
+        this.initializationPromise = null;
     }
 
     async init() {
-        try {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            this.musicGainNode = this.audioContext.createGain();
-            this.sfxGainNode = this.audioContext.createGain();
-            this.musicGainNode.connect(this.audioContext.destination);
-            this.sfxGainNode.connect(this.audioContext.destination);
+        if (this.initializationPromise) {
+            return this.initializationPromise;
+        }
 
-            this.musicGainNode.gain.setValueAtTime(CONFIG.AUDIO.MUSIC_VOLUME, this.audioContext.currentTime);
-            this.sfxGainNode.gain.setValueAtTime(CONFIG.AUDIO.SFX_VOLUME, this.audioContext.currentTime);
+        this.initializationPromise = (async () => {
+            try {
+                console.log('Starting AudioManager initialization...');
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Create and connect gain nodes
+                this.musicGainNode = this.audioContext.createGain();
+                this.sfxGainNode = this.audioContext.createGain();
+                this.musicGainNode.connect(this.audioContext.destination);
+                this.sfxGainNode.connect(this.audioContext.destination);
 
-            await this.ensureAudioContextResume();
-            await this.loadAllSounds();
-            this.initialized = true;
-            console.log('AudioManager initialized successfully.');
+                // Set initial volumes
+                this.musicGainNode.gain.setValueAtTime(CONFIG.AUDIO.MUSIC_VOLUME, this.audioContext.currentTime);
+                this.sfxGainNode.gain.setValueAtTime(CONFIG.AUDIO.SFX_VOLUME, this.audioContext.currentTime);
 
-            if (this.music['prof-theme']) {
-                this.playBackgroundMusic();
-            } else {
-                console.warn('Theme music is not loaded.');
+                // Ensure audio context is resumed
+                await this.ensureAudioContextResume();
+                
+                // Load all sounds
+                await this.loadAllSounds();
+                
+                this.initialized = true;
+                console.log('AudioManager initialized successfully');
+                console.log('Available sounds:', Object.keys(this.sounds));
+
+                // Start background music if available
+                if (this.sounds['prof-theme']) {
+                    await this.playBackgroundMusic();
+                }
+
+                return true;
+            } catch (error) {
+                console.error('AudioManager initialization failed:', error);
+                this.initialized = false;
+                throw error;
             }
+        })();
+
+        return this.initializationPromise;
+    }
+
+    async loadAllSounds() {
+        console.log('Loading sounds...');
+        try {
+            const soundsToLoad = [
+                ['buzz', './assets/sounds/buzz.mp3'],
+                ['prof-theme', './assets/sounds/prof-theme.mp3'],
+                ['professore_step', './assets/sounds/prof-step.mp3'],
+                ['professore_fuck', './assets/sounds/prof-fuck.mp3'],
+                ['professore_smack', './assets/sounds/prof-smack.mp3'],
+                ['professore_punch', './assets/sounds/prof-punch.mp3'],
+                ['walter_welcome', './assets/sounds/walter-welcome.mp3'],
+                ['walter_sound', './assets/sounds/walter-sound.mp3'],
+                ['suina_walk', './assets/sounds/suina-walk.mp3'],
+                ['suina_sound', './assets/sounds/suina-sound.mp3'],
+                ['suina_fuck', './assets/sounds/suina-fuck.mp3'],
+                ['suina_evil', './assets/sounds/suina-evil.mp3'],
+                ['milly_sound', './assets/sounds/milly-sound.mp3'],
+                ['diego_sound', './assets/sounds/diego-sound.mp3']
+            ];
+
+            await Promise.all(
+                soundsToLoad.map(([key, url]) => 
+                    this.loadSound(key, url).catch(error => {
+                        console.error(`Failed to load sound ${key}:`, error);
+                        return null;
+                    })
+                )
+            );
+
+            console.log('All sounds loaded. Available sounds:', Object.keys(this.sounds));
         } catch (error) {
-            console.error('AudioManager initialization failed:', error);
+            console.error('Error loading sounds:', error);
+            throw error;
+        }
+    }
+
+    async loadSound(key, url) {
+        try {
+            const response = await fetch(url);
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+            this.sounds[key] = audioBuffer;
+            console.log(`Loaded sound: ${key}`);
+        } catch (error) {
+            console.error(`Failed to load sound ${key}:`, error);
+            throw error;
+        }
+    }
+
+    playBackgroundMusic() {
+        if (!this.initialized || !this.sounds['prof-theme']) {
+            console.warn('Cannot play background music - system not ready or music not loaded');
+            return;
+        }
+
+        try {
+            // Stop current music if playing
+            if (this.currentMusicSource) {
+                this.currentMusicSource.stop();
+            }
+
+            // Create new source
+            this.currentMusicSource = this.audioContext.createBufferSource();
+            this.currentMusicSource.buffer = this.sounds['prof-theme'];
+            this.currentMusicSource.loop = true;
+            this.currentMusicSource.connect(this.musicGainNode);
+            this.currentMusicSource.start(0);
+            console.log('Background music started');
+        } catch (error) {
+            console.error('Error playing background music:', error);
         }
     }
 
     async ensureAudioContextResume() {
         if (this.audioContext.state === 'suspended') {
             return new Promise((resolve) => {
-                const resumeAudio = () => {
-                    this.audioContext.resume().then(() => {
-                        console.log('AudioContext resumed.');
-                        window.removeEventListener('click', resumeAudio);
-                        window.removeEventListener('keydown', resumeAudio);
-                        resolve();
-                    }).catch((error) => {
-                        console.error('Failed to resume AudioContext:', error);
-                    });
+                const resumeAudio = async () => {
+                    await this.audioContext.resume();
+                    window.removeEventListener('click', resumeAudio);
+                    window.removeEventListener('keydown', resumeAudio);
+                    resolve();
                 };
+
                 window.addEventListener('click', resumeAudio);
                 window.addEventListener('keydown', resumeAudio);
             });
         }
-    }
-
-    async loadAllSounds() {
-        console.log('Loading sounds...');
-        try {
-            await Promise.all([
-                this.loadSound('prof-theme', './assets/sounds/prof-theme.mp3', 'music'),
-                this.loadSound('professore_step', './assets/sounds/prof-step.mp3', 'sfx'),
-                this.loadSound('professore_fuck', './assets/sounds/prof-fuck.mp3', 'sfx'),
-                this.loadSound('professore_smack', './assets/sounds/prof-smack.mp3', 'sfx'),
-                this.loadSound('professore_punch', './assets/sounds/prof-punch.mp3', 'sfx'),
-                this.loadSound('walter_welcome', './assets/sounds/walter-welcome.mp3', 'sfx'),
-                this.loadSound('walter_sound', './assets/sounds/walter-sound.mp3', 'sfx'),
-                this.loadSound('suina_walk', './assets/sounds/suina-walk.mp3', 'sfx'),
-                this.loadSound('suina_sound', './assets/sounds/suina-sound.mp3', 'sfx'),
-                this.loadSound('suina_fuck', './assets/sounds/suina-fuck.mp3', 'sfx'),
-                this.loadSound('suina_evil', './assets/sounds/suina-evil.mp3', 'sfx'),
-                this.loadSound('milly_sound', './assets/sounds/milly-sound.mp3', 'sfx'),
-                this.loadSound('diego_sound', './assets/sounds/diego-sound.mp3', 'sfx')
-            ]);
-            console.log('All sounds loaded successfully.');
-        } catch (error) {
-            console.error('Failed to load some sounds:', error);
-        }
-    }
-
-    async loadSound(key, url, type = 'sfx') {
-        try {
-            const response = await fetch(url);
-            const arrayBuffer = await response.arrayBuffer();
-            const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
-
-            if (type === 'music') {
-                this.music[key] = audioBuffer;
-            } else {
-                this.sounds[key] = audioBuffer;
-            }
-            console.log(`Sound loaded: ${key} (${type})`);
-        } catch (error) {
-            console.error(`Failed to load sound: ${key} from ${url}`, error);
-            throw new Error(`Failed to load sound: ${key}`);
-        }
-    }
-
-    playBackgroundMusic() {
-        if (!this.initialized || !this.music['prof-theme']) {
-            console.warn('Background music not initialized or theme music not loaded.', {
-                initialized: this.initialized,
-                themeLoaded: !!this.music['prof-theme']
-            });
-            return;
-        }
-
-        if (this.currentMusicSource) {
-            this.currentMusicSource.stop();
-        }
-
-        this.currentMusicSource = this.audioContext.createBufferSource();
-        this.currentMusicSource.buffer = this.music['prof-theme'];
-        this.currentMusicSource.loop = true;
-        this.currentMusicSource.connect(this.musicGainNode);
-        this.currentMusicSource.start(0);
-        console.log('Background music started.');
+        return Promise.resolve();
     }
 
     playSound(key, type = 'sfx') {
         if (!this.initialized) {
-            console.warn('AudioManager not initialized.');
+            console.warn('AudioManager not initialized. Cannot play sound:', key);
             return;
         }
 
-        const buffer = type === 'music' ? this.music[key] : this.sounds[key];
-        if (!buffer) {
-            console.warn(`Sound not found: ${key}`);
+        if (!this.sounds[key]) {
+            console.warn(`Sound not found: ${key}. Available sounds:`, Object.keys(this.sounds));
             return;
         }
 
-        const source = this.audioContext.createBufferSource();
-        source.buffer = buffer;
-        const gainNode = type === 'music' ? this.musicGainNode : this.sfxGainNode;
-        source.connect(gainNode);
-        source.start();
-        console.log(`Playing sound: ${key}`);
-    }
-
-    handleFootsteps(player, isMoving) {
-        if (isMoving) {
-            const now = Date.now();
-            if (!this.lastFootstepTime || now - this.lastFootstepTime > CONFIG.AUDIO.FOOTSTEP_INTERVAL) {
-                this.playSound('professore_step');
-                this.lastFootstepTime = now;
-            }
+        try {
+            const source = this.audioContext.createBufferSource();
+            source.buffer = this.sounds[key];
+            source.connect(type === 'music' ? this.musicGainNode : this.sfxGainNode);
+            source.start(0);
+            console.log(`Playing sound: ${key}`);
+        } catch (error) {
+            console.error(`Error playing sound ${key}:`, error);
         }
     }
 
@@ -1467,7 +1611,19 @@ export class AudioManager {
             this.sfxGainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
         }
     }
+
+    handleFootsteps(player, isMoving) {
+        if (isMoving) {
+            const now = Date.now();
+            if (!this.lastFootstepTime || now - this.lastFootstepTime > CONFIG.AUDIO.FOOTSTEP_INTERVAL) {
+                this.playSound('professore_step');
+                this.lastFootstepTime = now;
+            }
+        }
+    }
 }
+
+
 
 
 
@@ -1514,6 +1670,7 @@ export class Camera {
         return Math.max(min, Math.min(value, max));
     }
 }
+
 
 
 
@@ -1675,26 +1832,183 @@ export class InputHandler {
 
 
 
+
 Renderer.js:
 // Renderer.js
 import { CONFIG } from '../../config.js';
 
 export class Renderer {
     constructor(ctx, levelManager, gameState) {
+        console.log('Initializing Renderer');
         this.ctx = ctx;
         this.levelManager = levelManager;
         this.gameState = gameState;
         this.directions = { down: 0, left: 1, right: 2, up: 3 };
-        this.flashStartTime = 0;
-        this.flashDuration = 2000; // 2 seconds total
-        this.flashInterval = 400;   // Flash every 400ms
         
-        // Debug flag
+        // Message system with both flashing and permanent messages
+        this.screenMessages = {
+            gameOver: {
+                lines: ['Hai beccato', 'la Suina Mala... :('],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false,
+                nextMessage: 'finalGameOver'
+            },
+            finalGameOver: {
+                lines: ['GAME OVER'],
+                startTime: 0,
+                duration: Infinity,  // Permanent message
+                interval: 0,         // No flashing
+                isActive: false,
+                isPermanent: true    // Flag for permanent display
+            },
+            suinaMala: {
+                lines: ['Suina mala!'],
+                startTime: 0,
+                duration: 800,
+                interval: 200,
+                isActive: false
+            }
+        };
+        
         this.debug = true;
     }
 
+    showSuinaMalaMessage() {
+        console.log('Showing Suina Mala message');
+        this.setScreenMessage('suinaMala', this.screenMessages.suinaMala.lines);
+    }
+
+    showGameOverMessage() {
+        console.log('Showing Game Over message');
+        this.setScreenMessage('gameOver', this.screenMessages.gameOver.lines);
+    }
+
+    setScreenMessage(type) {
+        if (!this.screenMessages[type]) return;
+        
+        const message = this.screenMessages[type];
+        message.startTime = performance.now();
+        message.isActive = true;
+    }
+
+    drawScreenMessage(type) {
+        const message = this.screenMessages[type];
+        if (!message || !message.isActive) return;
+
+        const currentTime = performance.now();
+        const elapsed = currentTime - message.startTime;
+        
+        // Handle message duration
+        if (elapsed > message.duration && !message.isPermanent) {
+            message.isActive = false;
+            
+            // If there's a next message, show it
+            if (message.nextMessage) {
+                this.setScreenMessage(message.nextMessage);
+            }
+            return;
+        }
+
+        // Determine visibility based on whether message is permanent or flashing
+        const isVisible = message.isPermanent || (Math.floor((elapsed / message.interval)) % 2 === 0);
+        
+        if (isVisible) {
+            this.ctx.save();
+            this.ctx.font = 'bold 32px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillStyle = '#FFFFFF';
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 3;
+            
+            const x = this.ctx.canvas.width / 2;
+            const baseY = this.ctx.canvas.height / 2;
+            
+            message.lines.forEach((line, index) => {
+                const y = baseY + (index - (message.lines.length - 1) / 2) * 40;
+                this.ctx.strokeText(line, x, y);
+                this.ctx.fillText(line, x, y);
+            });
+            
+            this.ctx.restore();
+        }
+    }
+
+
+
     clear() {
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    }
+
+
+
+
+    setScreenMessage(type, message, duration = null) {
+        console.log(`Setting screen message: ${type}`, message);
+        
+        if (!this.screenMessages[type]) return;
+        
+        const messageConfig = this.screenMessages[type];
+        messageConfig.startTime = performance.now();
+        messageConfig.isActive = true;
+        
+        if (duration) {
+            messageConfig.duration = duration;
+        }
+
+        if (Array.isArray(message)) {
+            messageConfig.lines = message;
+        } else {
+            messageConfig.lines = [message];
+        }
+    }
+
+    drawScreenMessage(type) {
+        const message = this.screenMessages[type];
+        if (!message || !message.isActive) return;
+
+        const currentTime = performance.now();
+        const elapsed = currentTime - message.startTime;
+        
+        console.log(`Drawing ${type} message, elapsed time:`, elapsed);
+
+        if (elapsed > message.duration) {
+            console.log(`${type} message duration expired`);
+            message.isActive = false;
+            return;
+        }
+
+        const flashPhase = Math.floor((elapsed / message.interval));
+        const isVisible = flashPhase % 2 === 0;
+        
+        console.log(`${type} message state:`, { flashPhase, isVisible });
+
+        if (isVisible) {
+            this.ctx.save();
+            this.ctx.font = 'bold 32px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillStyle = '#FFFFFF';
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 3;
+            
+            const x = this.ctx.canvas.width / 2;
+            const baseY = this.ctx.canvas.height / 2;
+            
+            message.lines.forEach((line, index) => {
+                const y = baseY + (index - (message.lines.length - 1) / 2) * 40;
+                this.ctx.strokeText(line, x, y);
+                this.ctx.fillText(line, x, y);
+            });
+            
+            this.ctx.restore();
+        }
+    }
+
+    setFlashMessage(message, duration) {
+        this.setScreenMessage('flash', message, duration);
     }
 
     drawBackground(background, camera) {
@@ -1709,63 +2023,33 @@ export class Renderer {
         }
     }
 
-// Renderer.js
+    draw(player, sprites, camera) {
+        console.log('Starting render cycle');
 
-// Only the modified method shown, rest of the class remains the same
-drawGameOverText() {
-    if (!this.gameState?.isGameOver || this.gameState.gameOverType !== 'jail') return;
-
-    const currentTime = performance.now();
-    const elapsed = currentTime - this.flashStartTime;
-    
-    const NUMBER_OF_FLASHES = 3;
-    const FLASH_DURATION = 400; // Duration of each flash (on + off)
-    const TOTAL_FLASH_TIME = NUMBER_OF_FLASHES * FLASH_DURATION;
-
-    // If we're within the flash period, handle flashing
-    if (elapsed <= TOTAL_FLASH_TIME) {
-        // Calculate flash state (on/off)
-        const flashPhase = Math.floor(elapsed / (FLASH_DURATION / 2));
-        const isVisible = flashPhase % 2 === 0;
+        // Draw background
+        this.clear();
+        this.drawBackground(this.levelManager.getCurrentLevelBackground(), camera);
         
-        if (!isVisible) return;
+        // Draw characters
+        console.log('Drawing characters');
+        if (this.levelManager?.characters) {
+            this.drawCharacters(camera);
+        }
+        
+        // Draw player
+        if (player && sprites.professore) {
+            this.drawPlayer(player, sprites.professore, camera);
+        }
+        
+        // Draw any active screen messages
+        Object.keys(this.screenMessages).forEach(type => {
+            if (this.screenMessages[type].isActive) {
+                this.drawScreenMessage(type);
+            }
+        });
+
+        console.log('Render cycle complete');
     }
-    
-    // Draw text (either flashing or persistent after flashes)
-    this.ctx.save();
-    
-    // Set text style
-    this.ctx.font = 'bold 32px Arial';
-    this.ctx.textAlign = 'center';
-    this.ctx.textBaseline = 'middle';
-
-// Create stroke effect
-this.ctx.strokeText(
-    'Hai beccato',  // First line
-    this.ctx.canvas.width / 2,
-    this.ctx.canvas.height / 2 - 20  // Move up by 20 pixels
-);
-this.ctx.strokeText(
-    'la Suina Mala... :(',  // Second line
-    this.ctx.canvas.width / 2,
-    this.ctx.canvas.height / 2 + 20  // Move down by 20 pixels
-);
-
-// Fill text
-this.ctx.fillStyle = '#FFFFFF';
-this.ctx.fillText(
-    'Hai beccato',  // First line
-    this.ctx.canvas.width / 2,
-    this.ctx.canvas.height / 2 - 20  // Move up by 20 pixels
-);
-this.ctx.fillText(
-    'la Suina Mala... :(',  // Second line
-    this.ctx.canvas.width / 2,
-    this.ctx.canvas.height / 2 + 20  // Move down by 20 pixels
-);
-
-    this.ctx.restore();
-}
 
     drawPlayer(player, sprites, camera) {
         if (!player) return;
@@ -1777,6 +2061,8 @@ this.ctx.fillText(
         if (this.gameState?.isGameOver && 
             this.gameState.gameOverType === 'jail' && 
             player.freeze) {
+            
+            console.log('Drawing frozen player state');
             
             // Draw freeze sprite (skull)
             if (sprites.freeze) {
@@ -1822,14 +2108,14 @@ this.ctx.fillText(
         }
     }
 
-    drawCharacters(sprites, camera) {
-        this.levelManager.characters.forEach((character) => {
-            if (!character || !character.type || !sprites[character.type]) return;
-            if (!character.isVisible) return;
+    drawCharacters(camera) {
+        if (!this.levelManager?.characters) return;
+        
+        this.levelManager.characters.forEach(character => {
+            if (!character || !character.type || !character.isVisible) return;
 
             const drawX = character.x - camera.x;
             const drawY = character.y - camera.y;
-            const characterSprites = sprites[character.type.toLowerCase()];
 
             if (character.currentSprite === 'attack' && character.activeSprite) {
                 this.ctx.drawImage(character.activeSprite, drawX, drawY, 
@@ -1837,36 +2123,35 @@ this.ctx.fillText(
                 return;
             }
 
-            if (character.isIdle) {
-                if (characterSprites.idle) {
-                    this.ctx.drawImage(characterSprites.idle, drawX, drawY, 
-                        character.width, character.height);
-                }
-            } else {
+            if (character.isIdle && character.sprites?.idle) {
+                this.ctx.drawImage(character.sprites.idle, drawX, drawY, 
+                    character.width, character.height);
+            } else if (character.sprites?.walking) {
                 const directionIndex = this.directions[character.direction] || this.directions['down'];
                 const spriteX = character.frame * character.width;
                 const spriteY = directionIndex * character.height;
 
-                if (characterSprites.walking) {
-                    this.ctx.drawImage(
-                        characterSprites.walking,
-                        spriteX, spriteY,
-                        character.width, character.height,
-                        drawX, drawY,
-                        character.width, character.height
-                    );
-                }
+                this.ctx.drawImage(
+                    character.sprites.walking,
+                    spriteX, spriteY,
+                    character.width, character.height,
+                    drawX, drawY,
+                    character.width, character.height
+                );
             }
         });
     }
 
     setFlashStartTime() {
-        this.flashStartTime = performance.now();
+        const startTime = performance.now();
+        this.screenMessages.gameOver.startTime = startTime;
         if (this.debug) {
-            console.log('Flash start time set to:', this.flashStartTime);
+            console.log('Flash start time set to:', startTime);
         }
     }
 }
+
+
 
 
 
@@ -1963,6 +2248,8 @@ export class ScoreManager {
 
 
 
+
+
 ScoreAnimation.js:
 // ScoreAnimation.js
 export class ScoreAnimation {
@@ -1973,13 +2260,13 @@ export class ScoreAnimation {
         this.countdownAnimationFrame = null;
     }
 
-    addAnimation(score) {
+    addAnimation(score, isNegative = false) {
         const canvas = document.getElementById('gameCanvas');
         const centerX = Math.round(canvas.width / 2);
         const centerY = Math.round(canvas.height / 2);
         
         this.animations.push({
-            score: `+${score}`,
+            score: `${isNegative ? '-' : '+'}${score}`,
             x: centerX,
             y: centerY,
             startTime: performance.now(),
@@ -2129,6 +2416,7 @@ export class ScoreAnimation {
 
 
 
+
 GameStateManager.js:
 // GameStateManager.js
 export class GameStateManager {
@@ -2170,6 +2458,11 @@ export class GameStateManager {
         this.gameOverType = 'jail';
         this.transitionState.active = true;
         this.transitionState.startTime = performance.now();
+
+        // Use the centralized message system
+        if (this.game.renderer) {
+            this.game.renderer.showGameOverMessage();
+        }
 
         // Set flash start time in renderer
         if (this.game.renderer) {
@@ -2250,7 +2543,6 @@ export class GameStateManager {
         }
     }
 }
-
 
 
 
@@ -2387,6 +2679,7 @@ update(player, worldBounds, input) {
         this.isPaused = false;
     }
 }
+
 
 
 
@@ -2558,9 +2851,8 @@ updateBehavior(input, worldBounds, deltaTime) {
         this.movementBuffer.x = 0;
         this.movementBuffer.y = 0;
     }
-  }
+ }
 }
-
 
 
 
@@ -3334,52 +3626,70 @@ export class SuinaEvil extends BaseCharacter {
         }, 2000);
     }
 
-    handleInteraction(input, player) {
-        const gameInstance = window.gameInstance;
-        
-        if (input.keys.KeyB) {
-            if (gameInstance?.audioManager) {
-                gameInstance.audioManager.playSound('professore_smack');
-                if (gameInstance.scoreManager) {
-                    gameInstance.scoreManager.increaseScore('love', -5);
+
+handleInteraction(input, player) {
+    const gameInstance = window.gameInstance;
+    
+    if (input.keys.KeyB) {
+        if (gameInstance?.audioManager) {
+            console.log('buzz');
+            gameInstance.audioManager.playSound('buzz');
+
+            if (gameInstance.scoreManager) {
+                // Use the centralized message system
+                if (gameInstance.renderer) {
+                    gameInstance.renderer.showSuinaMalaMessage();
                 }
+                gameInstance.scoreManager.increaseScore('love', -5);
+                gameInstance.scoreManager.scoreAnimation.addAnimation(5, true);
             }
-            this.triggerDisappearance();
         }
-        else if (input.keys.KeyF && !this.isGameOverTriggered) {
-            this.triggerGameOver(player);
-        }
+
+        this.triggerDisappearance();
+    }
+    else if (input.keys.KeyF && !this.isGameOverTriggered) {
+        this.triggerGameOver(player);
+    }
+}
+
+triggerGameOver(player) {
+    const gameInstance = window.gameInstance;
+    if (!gameInstance) return;
+
+    this.isGameOverTriggered = true;
+    this.gameOverAnimationInProgress = true;
+
+    // Play evil sound effect
+    if (gameInstance.audioManager) {
+        gameInstance.audioManager.playSound('buzz');  // Added buzz sound back
+        gameInstance.audioManager.playSound('suina_evil');
     }
 
-    triggerGameOver(player) {
-        const gameInstance = window.gameInstance;
-        if (!gameInstance) return;
-
-        this.isGameOverTriggered = true;
-        this.gameOverAnimationInProgress = true;
-
-        // Play evil sound effect
-        if (gameInstance.audioManager) {
-            gameInstance.audioManager.playSound('suina_evil');
-        }
-
-        // Trigger game over sequence
-        if (gameInstance.gameState) {
-            gameInstance.gameState.triggerJailGameOver(player);
-        }
-
-        // Clean up interaction state
-        this.canInteract = false;
-        if (this.disappearanceTimer) {
-            clearTimeout(this.disappearanceTimer);
-        }
-
-        // Start disappearance after game over animation
-        setTimeout(() => {
-            this.gameOverAnimationInProgress = false;
-            this.startDisappearance();
-        }, 2000); // Match with score animation duration
+    // Trigger game over sequence
+    if (gameInstance.gameState) {
+        gameInstance.gameState.triggerJailGameOver(player);
     }
+
+    // Show game over message sequence
+    if (gameInstance.renderer) {
+        gameInstance.renderer.showGameOverMessage();
+    }
+
+    // Clean up interaction state
+    this.canInteract = false;
+    if (this.disappearanceTimer) {
+        clearTimeout(this.disappearanceTimer);
+    }
+
+    // Start disappearance after game over animation
+    setTimeout(() => {
+        this.gameOverAnimationInProgress = false;
+        this.startDisappearance();
+    }, 2000);
+}
+
+
+
 
     triggerDisappearance() {
         this.canInteract = false;
@@ -3509,6 +3819,7 @@ export class SuinaEvil extends BaseCharacter {
         super.cleanup();
     }
 }
+
 
 
 

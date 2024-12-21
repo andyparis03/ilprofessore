@@ -14,21 +14,54 @@ class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.camera = new Camera(CONFIG.CANVAS.DEFAULT_WIDTH, CONFIG.CANVAS.DEFAULT_HEIGHT);
         
-        // Initialize managers
-        this.audioManager = new AudioManager();
-        this.input = new InputHandler();
-        this.scoreManager = new ScoreManager(this.ctx);
-        this.gameState = new GameStateManager(this);
+        // Core systems initialization with verified state
+        this.initializationState = {
+            audio: false,
+            assets: false,
+            player: false,
+            levelManager: false,
+            renderer: false
+        };
+
+        // Core components (initially null)
+        this.camera = null;
+        this.input = null;
+        this.audioManager = null;
+        this.scoreManager = null;
+        this.gameState = null;
+        this.renderer = null;
+        this.levelManager = null;
+        this.player = null;
         
-        this.setupCanvas();
-        this.initialized = false;
-        
-        // Make game instance globally available
+        // Make game instance globally available immediately
         window.gameInstance = this;
         
-        // Set up event listeners
+        // Initialize core systems
+        this.setupCoreSystems();
+        
+        // State tracking
+        this.initialized = false;
+        this.assetsLoaded = false;
+        
+        // Performance monitoring
+        this.lastUpdateTime = performance.now();
+        this.frameCount = 0;
+        this.fps = 0;
+        this.fpsUpdateInterval = 1000;
+        this.lastFpsUpdate = performance.now();
+    }
+
+    setupCoreSystems() {
+        // Initialize core components
+        this.camera = new Camera(CONFIG.CANVAS.DEFAULT_WIDTH, CONFIG.CANVAS.DEFAULT_HEIGHT);
+        this.input = new InputHandler();
+        this.audioManager = new AudioManager();
+        this.scoreManager = new ScoreManager(this.ctx);
+        this.gameState = new GameStateManager(this);
+
+        // Set up canvas and event listeners
+        this.setupCanvas();
         window.addEventListener('resize', () => this.setupCanvas());
     }
 
@@ -51,26 +84,62 @@ class Game {
             this.canvas.style.transform = 'translate(-50%, -50%)';
         }
         
-        this.camera.width = this.canvas.width;
-        this.camera.height = this.canvas.height;
+        if (this.camera) {
+            this.camera.width = this.canvas.width;
+            this.camera.height = this.canvas.height;
+        }
+    }
+
+    async initAudio() {
+        try {
+            console.log('Initializing audio system...');
+            await this.audioManager.init();
+            this.initializationState.audio = true;
+            console.log('Audio system initialized successfully');
+        } catch (error) {
+            console.error('Audio initialization failed:', error);
+            this.initializationState.audio = false;
+            throw new Error('Audio initialization failed');
+        }
+    }
+
+    async loadGameAssets() {
+        try {
+            console.log('Loading game assets...');
+            const assets = await AssetLoader.loadAssets();
+            this.assets = assets;
+            this.assetsLoaded = true;
+            this.initializationState.assets = true;
+            console.log('Game assets loaded successfully');
+            return assets;
+        } catch (error) {
+            console.error('Asset loading failed:', error);
+            this.initializationState.assets = false;
+            throw new Error('Asset loading failed');
+        }
     }
 
     async init() {
-        if (this.initialized) return;
+        if (this.initialized) {
+            console.warn('Game already initialized');
+            return;
+        }
 
         try {
-            console.log('Starting game initialization...');
+            console.log('Starting game initialization sequence...');
 
-            // Load assets first
-            const assets = await AssetLoader.loadAssets();
-            console.log('Assets loaded successfully');
-            this.assets = assets;
+            // Step 1: Initialize audio system
+            await this.initAudio();
+            
+            // Verify audio initialization
+            if (!this.audioManager.initialized) {
+                throw new Error('Audio system failed to initialize properly');
+            }
 
-            // Initialize audio
-            await this.audioManager.init();
-            console.log('Audio initialized');
-
-            // Create player
+            // Step 2: Load game assets
+            const assets = await this.loadGameAssets();
+            
+            // Step 3: Initialize player
             this.player = new Player(
                 CONFIG.WORLD.WIDTH / 2,
                 CONFIG.WORLD.HEIGHT / 2,
@@ -79,62 +148,100 @@ class Game {
                 assets.sprites.professore,
                 'professore'
             );
+            this.initializationState.player = true;
 
-            // Initialize managers that depend on other components
+            // Step 4: Initialize game systems
+            console.log('Initializing game systems...');
             this.levelManager = new LevelManager(assets, this.gameState);
+            this.initializationState.levelManager = true;
+
             this.renderer = new Renderer(this.ctx, this.levelManager, this.gameState);
+            this.initializationState.renderer = true;
             
             // Store renderer reference in gameState
             this.gameState.renderer = this.renderer;
 
-            // Load initial level
+            // Step 5: Load initial level
+            console.log('Loading initial level...');
             await this.levelManager.loadLevel(1, this.player);
-            
-            this.initialized = true;
-            console.log('Game initialization complete');
 
-            // Start game loop
-            this.gameLoop();
+            // Verify all systems
+            if (this.verifyInitialization()) {
+                this.initialized = true;
+                console.log('Game initialization complete');
+                this.startGameLoop();
+            } else {
+                throw new Error('System verification failed');
+            }
 
         } catch (error) {
             console.error('Game initialization failed:', error);
+            this.handleInitializationError(error);
             throw error;
         }
     }
 
-    update() {
-        if (!this.initialized) return;
+    verifyInitialization() {
+        const failed = Object.entries(this.initializationState)
+            .filter(([, value]) => !value)
+            .map(([key]) => key);
 
-        console.log('Game Update cycle start');
-
-        if (!this.gameState.isGameOver) {
-            // Update player
-            this.player.update(this.input, {
-                width: CONFIG.WORLD.WIDTH,
-                height: CONFIG.WORLD.HEIGHT
-            });
-
-            // Update level and characters
-            this.levelManager.update(
-                this.player,
-                {
-                    width: CONFIG.WORLD.WIDTH,
-                    height: CONFIG.WORLD.HEIGHT
-                },
-                this.input
-            );
-
-            // Check level transitions
-            if (this.levelManager.checkLevelTransition(this.player)) {
-                console.log(`Transitioned to Level ${this.levelManager.currentLevel}`);
-            }
-
-            // Update camera and audio
-            this.camera.follow(this.player, CONFIG.WORLD.WIDTH, CONFIG.WORLD.HEIGHT);
-            this.audioManager.handleFootsteps(this.player, !this.player.isIdle);
+        if (failed.length > 0) {
+            console.error('Initialization failed for:', failed);
+            return false;
         }
 
-        console.log('Game Update cycle complete');
+        return true;
+    }
+
+    handleInitializationError(error) {
+        // Display error message to user
+        this.ctx.fillStyle = 'black';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '20px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('Failed to start game. Please refresh the page.', 
+            this.canvas.width / 2, this.canvas.height / 2);
+    }
+
+    startGameLoop() {
+        console.log('Starting game loop');
+        this.lastUpdateTime = performance.now();
+        this.gameLoop();
+    }
+
+    update() {
+        if (!this.initialized || this.gameState.isGameOver) return;
+
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - this.lastUpdateTime) / 16.67;
+        this.lastUpdateTime = currentTime;
+
+        // Update player
+        this.player.update(this.input, {
+            width: CONFIG.WORLD.WIDTH,
+            height: CONFIG.WORLD.HEIGHT
+        });
+
+        // Update level and characters
+        this.levelManager.update(
+            this.player,
+            {
+                width: CONFIG.WORLD.WIDTH,
+                height: CONFIG.WORLD.HEIGHT
+            },
+            this.input
+        );
+
+        // Check level transitions
+        if (this.levelManager.checkLevelTransition(this.player)) {
+            console.log(`Transitioned to Level ${this.levelManager.currentLevel}`);
+        }
+
+        // Update camera and audio
+        this.camera.follow(this.player, CONFIG.WORLD.WIDTH, CONFIG.WORLD.HEIGHT);
+        this.audioManager.handleFootsteps(this.player, !this.player.isIdle);
     }
 
     draw() {
@@ -145,6 +252,29 @@ class Game {
         
         // Draw score
         this.scoreManager.draw();
+
+        // Update and draw FPS if in debug mode
+        if (CONFIG.DEBUG) {
+            this.updateFPS();
+            this.drawFPS();
+        }
+    }
+
+    updateFPS() {
+        const now = performance.now();
+        this.frameCount++;
+
+        if (now - this.lastFpsUpdate >= this.fpsUpdateInterval) {
+            this.fps = Math.round((this.frameCount * 1000) / (now - this.lastFpsUpdate));
+            this.frameCount = 0;
+            this.lastFpsUpdate = now;
+        }
+    }
+
+    drawFPS() {
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '12px Arial';
+        this.ctx.fillText(`FPS: ${this.fps}`, 10, 20);
     }
 
     gameLoop() {
@@ -156,8 +286,9 @@ class Game {
 
 // Game startup
 const startGame = async () => {
-    const game = new Game();
     try {
+        console.log('Creating game instance...');
+        const game = new Game();
         await game.init();
         console.log('Game started successfully');
     } catch (error) {

@@ -97,12 +97,15 @@ export class SuinaEvil extends BaseCharacter {
         }, 2000);
     }
 
+
 handleInteraction(input, player) {
     const gameInstance = window.gameInstance;
     
     if (input.keys.KeyB) {
         if (gameInstance?.audioManager) {
-            gameInstance.audioManager.playSound('professore_smack');
+            console.log('buzz');
+            gameInstance.audioManager.playSound('buzz');
+
             if (gameInstance.scoreManager) {
                 // Use the centralized message system
                 if (gameInstance.renderer) {
@@ -112,6 +115,7 @@ handleInteraction(input, player) {
                 gameInstance.scoreManager.scoreAnimation.addAnimation(5, true);
             }
         }
+
         this.triggerDisappearance();
     }
     else if (input.keys.KeyF && !this.isGameOverTriggered) {
@@ -119,36 +123,44 @@ handleInteraction(input, player) {
     }
 }
 
+triggerGameOver(player) {
+    const gameInstance = window.gameInstance;
+    if (!gameInstance) return;
 
-    triggerGameOver(player) {
-        const gameInstance = window.gameInstance;
-        if (!gameInstance) return;
+    this.isGameOverTriggered = true;
+    this.gameOverAnimationInProgress = true;
 
-        this.isGameOverTriggered = true;
-        this.gameOverAnimationInProgress = true;
-
-        // Play evil sound effect
-        if (gameInstance.audioManager) {
-            gameInstance.audioManager.playSound('suina_evil');
-        }
-
-        // Trigger game over sequence
-        if (gameInstance.gameState) {
-            gameInstance.gameState.triggerJailGameOver(player);
-        }
-
-        // Clean up interaction state
-        this.canInteract = false;
-        if (this.disappearanceTimer) {
-            clearTimeout(this.disappearanceTimer);
-        }
-
-        // Start disappearance after game over animation
-        setTimeout(() => {
-            this.gameOverAnimationInProgress = false;
-            this.startDisappearance();
-        }, 2000);
+    // Play evil sound effect
+    if (gameInstance.audioManager) {
+        gameInstance.audioManager.playSound('buzz');  // Added buzz sound back
+        gameInstance.audioManager.playSound('suina_evil');
     }
+
+    // Trigger game over sequence
+    if (gameInstance.gameState) {
+        gameInstance.gameState.triggerJailGameOver(player);
+    }
+
+    // Show game over message sequence
+    if (gameInstance.renderer) {
+        gameInstance.renderer.showGameOverMessage();
+    }
+
+    // Clean up interaction state
+    this.canInteract = false;
+    if (this.disappearanceTimer) {
+        clearTimeout(this.disappearanceTimer);
+    }
+
+    // Start disappearance after game over animation
+    setTimeout(() => {
+        this.gameOverAnimationInProgress = false;
+        this.startDisappearance();
+    }, 2000);
+}
+
+
+
 
     triggerDisappearance() {
         this.canInteract = false;
