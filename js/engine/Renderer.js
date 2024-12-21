@@ -36,6 +36,7 @@ export class Renderer {
             }
         };
 
+        // Initialize new game button
         this.newGameButton = {
             element: null,
             visible: false
@@ -43,10 +44,6 @@ export class Renderer {
 
         this.createNewGameButton();
         this.debug = true;
-    }
-
-    clear() {
-        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     }
 
     showSuinaMalaMessage() {
@@ -59,12 +56,16 @@ export class Renderer {
         this.setScreenMessage('gameOver');
     }
 
-    setScreenMessage(type) {
-        if (!this.screenMessages[type]) return;
-        
-        const message = this.screenMessages[type];
-        message.startTime = performance.now();
-        message.isActive = true;
+    drawBackground(background, camera) {
+        if (background) {
+            this.ctx.drawImage(
+                background,
+                camera.x, camera.y,
+                camera.width, camera.height,
+                0, 0,
+                camera.width, camera.height
+            );
+        }
     }
 
     createNewGameButton() {
@@ -100,6 +101,7 @@ export class Renderer {
         };
 
         button.onclick = () => this.handleNewGameClick();
+
         document.body.appendChild(button);
         this.newGameButton.element = button;
     }
@@ -140,20 +142,12 @@ export class Renderer {
         }
     }
 
-    drawBackground(background, camera) {
-        if (!background) return;
-
-        // Always draw at world coordinates relative to camera
-        const sourceX = Math.floor(camera.x);
-        const sourceY = Math.floor(camera.y);
-
-        this.ctx.drawImage(
-            background,
-            sourceX, sourceY,
-            camera.width, camera.height,
-            0, 0,
-            this.ctx.canvas.width, this.ctx.canvas.height
-        );
+    setScreenMessage(type) {
+        if (!this.screenMessages[type]) return;
+        
+        const message = this.screenMessages[type];
+        message.startTime = performance.now();
+        message.isActive = true;
     }
 
     drawScreenMessage(type) {
@@ -202,18 +196,27 @@ export class Renderer {
         }
     }
 
+    clear() {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    }
+
     draw(player, sprites, camera) {
         this.clear();
+        
+        // Draw background
         this.drawBackground(this.levelManager.getCurrentLevelBackground(), camera);
         
+        // Draw characters
         if (this.levelManager?.characters) {
             this.drawCharacters(camera);
         }
         
+        // Draw player
         if (player && sprites.professore) {
             this.drawPlayer(player, sprites.professore, camera);
         }
         
+        // Draw messages
         Object.keys(this.screenMessages).forEach(type => {
             this.drawScreenMessage(type);
         });
@@ -222,25 +225,28 @@ export class Renderer {
     drawPlayer(player, sprites, camera) {
         if (!player) return;
 
-        // Calculate screen position relative to camera
-        const screenX = Math.floor(player.x - camera.x);
-        const screenY = Math.floor(player.y - camera.y);
+        const drawX = player.x - camera.x;
+        const drawY = player.y - camera.y;
 
         if (this.gameState?.isGameOver && 
             this.gameState.gameOverType === 'jail' && 
             player.freeze) {
             
             if (sprites.freeze) {
-                this.ctx.drawImage(sprites.freeze, screenX, screenY, player.width, player.height);
+                this.ctx.drawImage(sprites.freeze, drawX, drawY, player.width, player.height);
                 
                 const jailOverlay = this.gameState.getJailOverlay();
                 if (jailOverlay) {
                     const overlayWidth = player.width * 1.5;
                     const overlayHeight = player.height * 1.5;
-                    const overlayX = screenX - (overlayWidth - player.width) / 2;
-                    const overlayY = screenY - (overlayHeight - player.height) / 2;
+                    const overlayX = drawX - (overlayWidth - player.width) / 2;
+                    const overlayY = drawY - (overlayHeight - player.height) / 2;
                     
-                    this.ctx.drawImage(jailOverlay, overlayX, overlayY, overlayWidth, overlayHeight);
+                    this.ctx.drawImage(
+                        jailOverlay, 
+                        overlayX, overlayY, 
+                        overlayWidth, overlayHeight
+                    );
                 }
             }
             return;
@@ -248,7 +254,7 @@ export class Renderer {
 
         if (player.isIdle) {
             if (sprites.idle) {
-                this.ctx.drawImage(sprites.idle, screenX, screenY, player.width, player.height);
+                this.ctx.drawImage(sprites.idle, drawX, drawY, player.width, player.height);
             }
         } else {
             const directionIndex = this.directions[player.direction] || this.directions['down'];
@@ -260,7 +266,7 @@ export class Renderer {
                     sprites.walking,
                     spriteX, spriteY,
                     player.width, player.height,
-                    screenX, screenY,
+                    drawX, drawY,
                     player.width, player.height
                 );
             }
@@ -273,17 +279,17 @@ export class Renderer {
         this.levelManager.characters.forEach(character => {
             if (!character || !character.type || !character.isVisible) return;
 
-            const screenX = Math.floor(character.x - camera.x);
-            const screenY = Math.floor(character.y - camera.y);
+            const drawX = character.x - camera.x;
+            const drawY = character.y - camera.y;
 
             if (character.currentSprite === 'attack' && character.activeSprite) {
-                this.ctx.drawImage(character.activeSprite, screenX, screenY, 
+                this.ctx.drawImage(character.activeSprite, drawX, drawY, 
                     character.width, character.height);
                 return;
             }
 
             if (character.isIdle && character.sprites?.idle) {
-                this.ctx.drawImage(character.sprites.idle, screenX, screenY, 
+                this.ctx.drawImage(character.sprites.idle, drawX, drawY, 
                     character.width, character.height);
             } else if (character.sprites?.walking) {
                 const directionIndex = this.directions[character.direction] || this.directions['down'];
@@ -294,7 +300,7 @@ export class Renderer {
                     character.sprites.walking,
                     spriteX, spriteY,
                     character.width, character.height,
-                    screenX, screenY,
+                    drawX, drawY,
                     character.width, character.height
                 );
             }

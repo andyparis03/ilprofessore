@@ -2,31 +2,29 @@
 import { CONFIG } from '../../config.js';
 
 export class Camera {
-    constructor() {
+    constructor(width, height) {
         this.x = 0;
         this.y = 0;
-        this.width = CONFIG.WORLD.WIDTH;
-        this.height = CONFIG.WORLD.HEIGHT;
-        this.smoothing = 0.15; // Camera smoothing factor
+        this.width = width;
+        this.height = height;
     }
 
     follow(target, worldWidth, worldHeight) {
-        if (!target) return;
+        const idealX = target.x + target.width / 2 - this.width / 2;
+        const idealY = target.y + target.height / 2 - this.height / 2;
 
-        // Calculate center position for target
-        const targetCenterX = target.x + target.width / 2;
-        const targetCenterY = target.y + target.height / 2;
+        this.x = this.clamp(idealX, 0, Math.max(0, worldWidth - this.width));
+        this.y = this.clamp(idealY, 0, Math.max(0, worldHeight - this.height));
 
-        // Calculate desired camera position (center on target)
-        const desiredX = targetCenterX - this.width / 2;
-        const desiredY = targetCenterY - this.height / 2;
+        if (worldWidth < this.width) {
+            this.x = 0;
+        }
+        if (worldHeight < this.height) {
+            this.y = 0;
+        }
+    }
 
-        // Smooth camera movement
-        this.x += (desiredX - this.x) * this.smoothing;
-        this.y += (desiredY - this.y) * this.smoothing;
-
-        // Clamp camera position to world boundaries
-        this.x = Math.max(0, Math.min(this.x, worldWidth - this.width));
-        this.y = Math.max(0, Math.min(this.y, worldHeight - this.height));
+    clamp(value, min, max) {
+        return Math.max(min, Math.min(value, max));
     }
 }

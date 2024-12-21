@@ -30,6 +30,7 @@ export class LevelManager {
         this.setupBackButton();
     }
 
+    // Helper method to check if game is in a stopped state
     isGameStopped() {
         return this.transitionState.inProgress || (this.gameState?.isGameOver ?? false);
     }
@@ -141,6 +142,8 @@ export class LevelManager {
     async clearCurrentLevel() {
         this.clearTimers();
         
+
+
         this.characters.forEach(char => {
             if (char && typeof char.cleanup === 'function') {
                 char.cleanup();
@@ -151,23 +154,31 @@ export class LevelManager {
         this.characterTimers = {};
     }
 
-    async setupNewLevel(levelNumber, player, storedStates) {
-        this.currentLevel = levelNumber;
-        
-        if (this.player !== player) {
-            this.player = player;
-        }
-
-        await this.loadCharactersForLevel(levelNumber, storedStates);
-        this.updateBackButtonVisibility();
-        this.resetPlayerState();
-
-        this.characters.forEach(char => {
-            if (char && char.resumeUpdates) {
-                char.resumeUpdates();
-            }
-        });
+async setupNewLevel(levelNumber, player, storedStates) {
+    this.currentLevel = levelNumber;
+    
+    if (this.player !== player) {
+        this.player = player;
     }
+
+    await this.loadCharactersForLevel(levelNumber, storedStates);
+    this.updateBackButtonVisibility();
+    this.resetPlayerState();
+
+    // Make sure characters aren't paused after level setup
+    this.characters.forEach(char => {
+        if (char && char.resumeUpdates) {
+            char.resumeUpdates();
+        }
+    });
+
+    console.log('Level setup complete, characters:', this.characters.map(char => ({
+        type: char.type,
+        isPaused: char.isPaused,
+        isIdle: char.isIdle
+    })));
+}
+
 
     resetPlayerState() {
         if (!this.player) return;
@@ -189,31 +200,33 @@ export class LevelManager {
         this.player.frame = this.player.frame % this.player.totalFrames;
     }
 
-    async completeTransition() {
-        return new Promise((resolve) => {
-            const remainingTime = Math.max(0, 
-                this.transitionState.duration - (performance.now() - this.transitionState.startTime));
+async completeTransition() {
+    return new Promise((resolve) => {
+        const remainingTime = Math.max(0, 
+            this.transitionState.duration - (performance.now() - this.transitionState.startTime));
 
-            this.transitionState.timeout = setTimeout(() => {
-                this.characters.forEach(char => {
-                    if (char && char.resumeUpdates) {
-                        char.resumeUpdates();
-                    }
-                });
+        this.transitionState.timeout = setTimeout(() => {
+            // Resume all characters
+            this.characters.forEach(char => {
+                if (char && char.resumeUpdates) {
+                    console.log('Resuming character:', char.type);
+                    char.resumeUpdates();
+                }
+            });
 
-                this.transitionState = {
-                    inProgress: false,
-                    timeout: null,
-                    startTime: null,
-                    previousLevel: null,
-                    targetLevel: null,
-                    duration: 500
-                };
+            this.transitionState = {
+                inProgress: false,
+                timeout: null,
+                startTime: null,
+                previousLevel: null,
+                targetLevel: null,
+                duration: 500
+            };
 
-                resolve();
-            }, remainingTime);
-        });
-    }
+            resolve();
+        }, remainingTime);
+    });
+}
 
     handleTransitionError() {
         this.transitionState = {
@@ -234,13 +247,14 @@ export class LevelManager {
         }
     }
 
-    loadCharactersForLevel(levelNumber, storedStates) {
+        loadCharactersForLevel(levelNumber, storedStates) {
         switch (levelNumber) {
             case 1:
                 this.addRandomCharacter('milly', 10000);
                 break;
             case 2:
             case 3:
+                // Start with Suina1 for initial spawn only
                 if (this.characters.length === 0) {
                     this.addCharacter('suina1', 
                         Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH), 
@@ -249,10 +263,10 @@ export class LevelManager {
                 }
                 break;
             case 4:
-                this.addCharacter('walter', 600, 500);  // Updated Y position for new height
+                this.addCharacter('walter', 600, 300);
                 break;
             case 5:
-                this.addCharacter('diego', 700, 550);   // Updated Y position for new height
+                this.addCharacter('diego', 700, 400);
                 break;
             default:
                 console.warn(`No characters defined for level ${levelNumber}`);
@@ -261,14 +275,20 @@ export class LevelManager {
     }
 
     spawnNextRandomCharacter() {
+        console.log("Spawning next random character...");
+        // Only spawn in levels 2 or 3
         if (this.currentLevel !== 2 && this.currentLevel !== 3) {
+            console.log("Not in level 2 or 3, skipping spawn");
             return;
         }
 
+        // Include all three Suina types in random selection
         const characterTypes = ['suina1', 'suina2', 'suinaevil'];
         const characterType = characterTypes[Math.floor(Math.random() * characterTypes.length)];
         
-        // Updated spawn position to use new height
+        console.log(`Selected character type: ${characterType}`);
+        
+        // Random position
         const x = Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH);
         const y = Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT);
         
@@ -276,39 +296,57 @@ export class LevelManager {
     }
 
     handleCharacterDisappear(character) {
+        console.log(`Handling disappearance of character: ${character.type}`);
+        
+        // Remove the character from the array
         this.characters = this.characters.filter(c => c !== character);
 
+        // If it's any Suina type in levels 2 or 3, spawn next random character
         if ((character.type === 'suina1' || character.type === 'suina2' || character.type === 'suinaevil') && 
             (this.currentLevel === 2 || this.currentLevel === 3)) {
+            
+            console.log("Triggering next random character spawn");
             this.spawnNextRandomCharacter();
         }
     }
 
-    addCharacter(type, x, y, storedStates = null) {
-        const CharacterClass = this.registry.getCharacterClass(type);
-        const sprites = this.assets.sprites[type];
 
-        if (!CharacterClass || !sprites) {
-            console.error(`Invalid character type or missing sprites: ${type}`);
-            return;
-        }
 
-        const character = new CharacterClass(x, y, CONFIG.PLAYER.WIDTH, CONFIG.PLAYER.HEIGHT, sprites, type.toLowerCase());
+addCharacter(type, x, y, storedStates = null) {
+    console.log('Adding character:', { type, x, y });
+    const CharacterClass = this.registry.getCharacterClass(type);
+    const sprites = this.assets.sprites[type];
 
-        if (storedStates) {
-            const storedState = storedStates.get(type.toLowerCase());
-            if (storedState) {
-                Object.assign(character, storedState);
-            }
-        }
-
-        character.isIdle = false;
-        character.isPaused = false;
-        character.levelManager = this;
-
-        this.characters.push(character);
-        return character;
+    if (!CharacterClass || !sprites) {
+        console.error(`Invalid character type or missing sprites: ${type}`);
+        return;
     }
+
+    const character = new CharacterClass(x, y, CONFIG.PLAYER.WIDTH, CONFIG.PLAYER.HEIGHT, sprites, type.toLowerCase());
+
+    if (storedStates) {
+        const storedState = storedStates.get(type.toLowerCase());
+        if (storedState) {
+            Object.assign(character, storedState);
+        }
+    }
+
+    character.isIdle = false;
+    character.isPaused = false;  // Initialize as not paused
+    character.levelManager = this;
+
+    console.log('Character created:', {
+        type: character.type,
+        isPaused: character.isPaused,
+        isIdle: character.isIdle
+    });
+
+    this.characters.push(character);
+    return character;
+}
+
+
+
 
     addDelayedCharacter(type, x, y, delay) {
         if (!this.assets.sprites[type]) {
@@ -332,19 +370,46 @@ export class LevelManager {
         this.characterTimers[type] = setInterval(spawnRandomly, interval);
     }
 
-    update(player, worldBounds, input) {
+update(player, worldBounds, input) {
+        console.log('LevelManager Update:', {
+            isGameStopped: this.isGameStopped(),
+            characterCount: this.characters.length,
+            characters: this.characters.map(char => ({
+                type: char.type,
+                position: { x: char.x, y: char.y },
+                isPaused: char.isPaused,
+                isCaught: char.isCaught
+            }))
+        });
+
         if (this.isGameStopped()) {
+            console.log('LevelManager Update blocked by isGameStopped');
             return;
         }
 
         this.characters = this.characters.filter(character => character && character.type);
 
+        console.log('Updating characters:', this.characters.length);
+
         this.characters.forEach((character) => {
+            console.log('Updating character:', {
+                type: character.type,
+                isPaused: character.isPaused,
+                isCaught: character.isCaught,
+                isVisible: character.isVisible
+            });
+
             if (!character.isCaught && !character.isPaused) {
                 character.update(player, {
                     width: CONFIG.WORLD.WIDTH,
                     height: CONFIG.WORLD.HEIGHT
                 }, input);
+            } else {
+                console.log('Character update skipped:', {
+                    type: character.type,
+                    isCaught: character.isCaught,
+                    isPaused: character.isPaused
+                });
             }
         });
     }
@@ -379,6 +444,8 @@ export class LevelManager {
         }
         this.characterTimers = {};
     }
+
+
 
     getCurrentLevelBackground() {
         const levelConfig = CONFIG.LEVELS[this.currentLevel];

@@ -65,47 +65,28 @@ class Game {
         window.addEventListener('resize', () => this.setupCanvas());
     }
 
-
-setupCanvas() {
+    setupCanvas() {
         const isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT;
         
         if (isMobile) {
-            // Keep original world dimensions for gameplay
-            this.canvas.width = CONFIG.WORLD.WIDTH;
-            this.canvas.height = CONFIG.WORLD.HEIGHT;
-            
-            // Scale canvas to fill screen while maintaining aspect ratio
-            const screenRatio = window.innerWidth / window.innerHeight;
-            const gameRatio = CONFIG.WORLD.WIDTH / CONFIG.WORLD.HEIGHT;
-            
-            if (screenRatio > gameRatio) {
-                // Screen is wider than game ratio
-                this.canvas.style.height = '100%';
-                this.canvas.style.width = 'auto';
-            } else {
-                // Screen is taller than game ratio
-                this.canvas.style.width = '100%';
-                this.canvas.style.height = 'auto';
-            }
-
-            this.canvas.style.position = 'fixed';
-            this.canvas.style.top = '0';
-            this.canvas.style.left = '0';
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            this.canvas.style.width = '100%';
+            this.canvas.style.height = '100%';
         } else {
-            this.canvas.width = CONFIG.WORLD.WIDTH;
-            this.canvas.height = CONFIG.WORLD.HEIGHT;
-            this.canvas.style.width = `${CONFIG.WORLD.WIDTH}px`;
-            this.canvas.style.height = `${CONFIG.WORLD.HEIGHT}px`;
+            this.canvas.width = CONFIG.CANVAS.DEFAULT_WIDTH;
+            this.canvas.height = CONFIG.CANVAS.DEFAULT_HEIGHT;
+            this.canvas.style.width = `${CONFIG.CANVAS.DEFAULT_WIDTH}px`;
+            this.canvas.style.height = `${CONFIG.CANVAS.DEFAULT_HEIGHT}px`;
             this.canvas.style.position = 'absolute';
             this.canvas.style.top = '50%';
             this.canvas.style.left = '50%';
             this.canvas.style.transform = 'translate(-50%, -50%)';
         }
-
-        // Ensure camera dimensions match world size
+        
         if (this.camera) {
-            this.camera.width = CONFIG.WORLD.WIDTH;
-            this.camera.height = CONFIG.WORLD.HEIGHT;
+            this.camera.width = this.canvas.width;
+            this.camera.height = this.canvas.height;
         }
     }
 
