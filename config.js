@@ -2,12 +2,14 @@
 export const CONFIG = {
     CANVAS: {
         DEFAULT_WIDTH: 800,
-        DEFAULT_HEIGHT: 600,
-        MOBILE_BREAKPOINT: 768
+        DEFAULT_HEIGHT: 680, // Updated to match new background height
+        MOBILE_BREAKPOINT: 768,
+        GAMEPLAY_HEIGHT: 600 // Added to define original gameplay area
     },
     WORLD: {
         WIDTH: 800,
-        HEIGHT: 600
+        HEIGHT: 600,  // Gameplay area height stays the same
+        VISUAL_HEIGHT: 680 // Added for visual rendering
     },
     PLAYER: {
         WIDTH: 68,

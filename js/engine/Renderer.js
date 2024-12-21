@@ -58,15 +58,15 @@ export class Renderer {
 
     drawBackground(background, camera) {
         if (background) {
-            this.ctx.drawImage(
-                background,
-                camera.x, camera.y,
-                camera.width, camera.height,
-                0, 0,
-                camera.width, camera.height
-            );
-        }
+        this.ctx.drawImage(
+            background,
+            camera.x, camera.y,
+            CONFIG.WORLD.WIDTH, CONFIG.WORLD.VISUAL_HEIGHT,  
+            0, 0,
+            this.ctx.canvas.width, this.ctx.canvas.height   
+        );
     }
+}
 
     createNewGameButton() {
         if (this.newGameButton.element) {
