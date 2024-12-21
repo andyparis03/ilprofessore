@@ -136,15 +136,27 @@ export class Renderer {
         message.isActive = true;
     }
 
-    drawBackground(background, camera) {
+drawBackground(background, camera) {
         if (background) {
-            // Draw the background to fill the entire canvas
+            const isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT;
+            const scale = isMobile ? 
+                Math.max(this.ctx.canvas.width / CONFIG.WORLD.WIDTH, 
+                        this.ctx.canvas.height / CONFIG.WORLD.HEIGHT) : 1;
+
+            // Calculate dimensions to maintain aspect ratio and cover screen
+            const scaledWidth = CONFIG.WORLD.WIDTH * scale;
+            const scaledHeight = CONFIG.WORLD.HEIGHT * scale;
+
+            // Center the background
+            const x = (this.ctx.canvas.width - scaledWidth) / 2;
+            const y = (this.ctx.canvas.height - scaledHeight) / 2;
+
             this.ctx.drawImage(
                 background,
                 camera.x, camera.y,
                 CONFIG.WORLD.WIDTH, CONFIG.WORLD.HEIGHT,
-                0, 0,
-                this.ctx.canvas.width, this.ctx.canvas.height
+                x, y,
+                scaledWidth, scaledHeight
             );
         }
     }

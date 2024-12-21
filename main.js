@@ -70,18 +70,39 @@ setupCanvas() {
         const isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT;
         
         if (isMobile) {
-            // Fill screen width
+            // Set canvas to window dimensions
             this.canvas.width = window.innerWidth;
-            // Calculate height to maintain aspect ratio
-            const aspectRatio = CONFIG.WORLD.WIDTH / CONFIG.WORLD.HEIGHT;
-            this.canvas.height = window.innerWidth / aspectRatio;
+            this.canvas.height = window.innerHeight;
             
-            // Fill available space
-            this.canvas.style.width = '100%';
-            this.canvas.style.height = 'auto';
-            this.canvas.style.position = 'fixed';
-            this.canvas.style.top = '0';
-            this.canvas.style.left = '0';
+            // Apply mobile-specific styles
+            this.canvas.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                z-index: 1;
+            `;
+
+            // Ensure body and html are also fullscreen
+            document.body.style.cssText = `
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                position: fixed;
+            `;
+
+            document.documentElement.style.cssText = `
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+            `;
         } else {
             this.canvas.width = CONFIG.CANVAS.DEFAULT_WIDTH;
             this.canvas.height = CONFIG.CANVAS.DEFAULT_HEIGHT;
@@ -93,7 +114,7 @@ setupCanvas() {
             this.canvas.style.transform = 'translate(-50%, -50%)';
         }
         
-        // Update camera dimensions to match world size, not canvas size
+        // Set camera dimensions to match world size
         if (this.camera) {
             this.camera.width = CONFIG.WORLD.WIDTH;
             this.camera.height = CONFIG.WORLD.HEIGHT;
