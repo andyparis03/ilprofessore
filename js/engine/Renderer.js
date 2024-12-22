@@ -10,6 +10,23 @@ export class Renderer {
         this.directions = { down: 0, left: 1, right: 2, up: 3 };
         
         this.screenMessages = {
+
+	        diegoWarning: {
+        lines: ['Il tuo amico Diego', 'ha bisogno di te!'],
+        startTime: 0,
+        duration: 1200,    // 1.2 seconds total
+        interval: 300,     // Flash 3 times (400ms each)
+        isActive: false
+    },
+	   diegoGameOver: {
+        lines: ['Il tuo amico Diego', 'ti ha aspettato', " invano, l'amicizia è",'rotta per sempre'],
+        startTime: 0,
+        duration: 2000,    // 1.2 seconds total
+        interval: 400,     // Flash 3 times (400ms each)
+        isActive: false,
+        nextMessage: 'finalGameOver'  // Chain to existing game over message
+    },
+
             gameOver: {
                 lines: ['Hai beccato', 'la Suina Mala... :('],
                 startTime: 0,

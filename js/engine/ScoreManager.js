@@ -5,9 +5,9 @@ export class ScoreManager {
     constructor(ctx) {
         this.ctx = ctx;
         this.scores = {
-            energy: 0,
-            love: 0,
-            friendship: 0
+            energy: 100,    // Starting at 100
+            love: 0,        // Starting at 0
+            friendship: 100  // Starting at 100
         };
         this.maxScore = 100;
         this.barWidth = 150;
@@ -20,9 +20,77 @@ export class ScoreManager {
         };
         this.barSpacing = 5;
         this.textPadding = 5;
+        this.lastCountdownTime = performance.now();
+        this.warningShown = false;
+        this.gameOverTriggered = false;
         
         // Initialize score animation system
         this.scoreAnimation = new ScoreAnimation();
+
+        // Start friendship countdown
+        this.startFriendshipCountdown();
+    }
+
+    startFriendshipCountdown() {
+        const countdownInterval = 1000; // 1 second
+        this.countdownInterval = setInterval(() => {
+            const gameInstance = window.gameInstance;
+            if (gameInstance?.gameState?.isGameOver) {
+                clearInterval(this.countdownInterval);
+                return;
+            }
+
+            if (this.scores.friendship > 0) {
+                this.scores.friendship--;
+
+                // Check for warning at 30 points
+                if (this.scores.friendship === 30 && !this.warningShown) {
+                    this.warningShown = true;
+                    const gameInstance = window.gameInstance;
+                    if (gameInstance?.renderer) {
+                        gameInstance.renderer.setScreenMessage('diegoWarning');
+                    }
+                    if (gameInstance?.audioManager) {
+                        gameInstance.audioManager.playSound('buzz');
+                    }
+                }
+
+                // Check for game over at 0 points
+                if (this.scores.friendship === 0 && !this.gameOverTriggered) {
+                    this.gameOverTriggered = true;
+                    const gameInstance = window.gameInstance;
+
+                    // Stop background music with fade out
+                    if (gameInstance.audioManager?.currentMusicSource) {
+                        const gainNode = gameInstance.audioManager.musicGainNode;
+                        const currentTime = gameInstance.audioManager.audioContext.currentTime;
+                        gainNode.gain.setValueAtTime(gainNode.gain.value, currentTime);
+                        gainNode.gain.linearRampToValueAtTime(0, currentTime + 1);
+                        
+                        setTimeout(() => {
+                            if (gameInstance.audioManager.currentMusicSource) {
+                                gameInstance.audioManager.currentMusicSource.stop();
+                            }
+                        }, 1000);
+                    }
+
+                    if (gameInstance?.renderer) {
+                        gameInstance.renderer.setScreenMessage('diegoGameOver');
+                    }
+                    if (gameInstance?.gameState) {
+                        // Set game state to game over
+                        gameInstance.gameState.isGameOver = true;
+                        setTimeout(() => {
+                            if (gameInstance.audioManager) {
+                                gameInstance.audioManager.playSound('suina_evil');
+                            }
+                            gameInstance.renderer.setScreenMessage('finalGameOver');
+                            gameInstance.renderer.showNewGameButton();
+                        }, 3000); // Wait for the message to flash 3 times
+                    }
+                }
+            }
+        }, countdownInterval);
     }
 
     increaseScore(type, amount) {
@@ -70,5 +138,11 @@ export class ScoreManager {
         this.scoreAnimation.update(this.ctx);
 
         this.ctx.restore();
+    }
+
+    cleanup() {
+        if (this.countdownInterval) {
+            clearInterval(this.countdownInterval);
+        }
     }
 }
