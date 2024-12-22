@@ -51,7 +51,7 @@ export class ScoreManager {
                         gameInstance.renderer.setScreenMessage('diegoWarning');
                     }
                     if (gameInstance?.audioManager) {
-                        gameInstance.audioManager.playSound('buzz');
+                        gameInstance.audioManager.playSound('dingdong');
                     }
                 }
 
@@ -59,6 +59,11 @@ export class ScoreManager {
                 if (this.scores.friendship === 0 && !this.gameOverTriggered) {
                     this.gameOverTriggered = true;
                     const gameInstance = window.gameInstance;
+
+                    if (gameInstance?.audioManager) {
+                        gameInstance.audioManager.playSound('buzz');
+                    }
+
 
                     // Stop background music with fade out
                     if (gameInstance.audioManager?.currentMusicSource) {

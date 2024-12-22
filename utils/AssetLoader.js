@@ -35,7 +35,7 @@ export class AssetLoader {
             const [
                 professoreidle,
                 professorewalking,
-		skullSprite,
+                skullSprite,
                 millyidle,
                 millyspritesheet,
                 millyinteract,
@@ -62,10 +62,11 @@ export class AssetLoader {
                 proffuck,
                 profpunch,
                 profsmack,
-		buzz,
+                buzz,
+                dingdong,         // Added dingdong sound
                 profstep,
                 proftheme,
-		skull,
+                skull,
                 suinafuck,
                 suinasound,
                 suinaevil,
@@ -77,7 +78,7 @@ export class AssetLoader {
             ] = await Promise.all([
                 this.loadImage('./assets/sprites/professore/professore-idle.png'),
                 this.loadImage('./assets/sprites/professore/professore-spritesheet.png'),
- 		this.loadImage('./assets/sprites/skull.png'),
+                this.loadImage('./assets/sprites/skull.png'),
                 this.loadImage('./assets/sprites/milly/milly-idle.png'),
                 this.loadImage('./assets/sprites/milly/milly-spritesheet.png'),
                 this.loadImage('./assets/sprites/milly/milly-interact.png'),
@@ -104,7 +105,8 @@ export class AssetLoader {
                 this.loadSound(audioContext, './assets/sounds/prof-fuck.mp3'),
                 this.loadSound(audioContext, './assets/sounds/prof-punch.mp3'),
                 this.loadSound(audioContext, './assets/sounds/prof-smack.mp3'),
-		this.loadSound(audioContext, './assets/sounds/buzz.mp3'), 
+                this.loadSound(audioContext, './assets/sounds/buzz.mp3'),
+                this.loadSound(audioContext, './assets/sounds/dingdong.mp3'),  // Added dingdong sound
                 this.loadSound(audioContext, './assets/sounds/prof-step.mp3'),
                 this.loadSound(audioContext, './assets/sounds/prof-theme.mp3'),
                 this.loadSound(audioContext, './assets/sounds/suina-fuck.mp3'),
@@ -138,7 +140,8 @@ export class AssetLoader {
                     proffuck,
                     profpunch,
                     profsmack,
-		    buzz,
+                    buzz,
+                    dingdong,         // Added dingdong sound
                     profstep,
                     proftheme,
                     suinafuck,
