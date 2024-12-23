@@ -14,18 +14,43 @@ export class Renderer {
 	        diegoWarning: {
         lines: ['Il tuo amico Diego', 'ha bisogno di te!'],
         startTime: 0,
-        duration: 1200,    // 1.2 seconds total
-        interval: 300,     // Flash 3 times (400ms each)
+        duration: 2000,    //
+        interval: 400,     // Flash 4 times (400ms each)
         isActive: false
     },
 	   diegoGameOver: {
         lines: ['Il tuo amico Diego', 'ti ha aspettato', " invano, l'amicizia è",'rotta per sempre'],
         startTime: 0,
-        duration: 2000,    // 1.2 seconds total
+        duration: 3000,    //
         interval: 400,     // Flash 3 times (400ms each)
         isActive: false,
         nextMessage: 'finalGameOver'  // Chain to existing game over message
     },
+
+    lowLove: {
+        lines: ['Troppo poco amore', 'professore'],
+        startTime: 0,
+        duration: 2000,
+        interval: 400,
+        isActive: false,
+        nextMessage: 'finalGameOver'
+    },
+    lowEnergy: {
+        lines: ['Fame, hai bisogno', 'di pizza!'],
+        startTime: 0,
+        duration: 2000,
+        interval: 400,
+        isActive: false
+    },
+    noEnergy: {
+        lines: ['Troppa poca pizza', 'professore'],
+        startTime: 0,
+        duration: 2000,
+        interval: 400,
+        isActive: false,
+        nextMessage: 'finalGameOver'
+    },
+
 
             gameOver: {
                 lines: ['Hai beccato', 'la Suina Mala... :('],
@@ -84,6 +109,23 @@ export class Renderer {
             );
         }
     }
+
+
+showLowLoveMessage() {
+    console.log('Showing Low Love message');
+    this.setScreenMessage('lowLove');
+}
+
+showLowEnergyWarning() {
+    console.log('Showing Low Energy warning');
+    this.setScreenMessage('lowEnergy');
+}
+
+showNoEnergyMessage() {
+    console.log('Showing No Energy message');
+    this.setScreenMessage('noEnergy');
+}
+
 
     createNewGameButton() {
         if (this.newGameButton.element) {

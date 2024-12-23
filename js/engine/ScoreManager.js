@@ -14,9 +14,9 @@ export class ScoreManager {
         this.barHeight = 10;
         this.padding = 10;
         this.colors = {
-            energy: '#ff4444',    // Red for Energy
-            love: '#ff69b4',      // Pink for Love
-            friendship: '#4CAF50'  // Green for Friendship
+    energy: '#FFA07A',    // Light Orange (Salmon) for Energy
+    love: '#ff69b4',      // Pink for Love (unchanged)
+    friendship: '#90EE90'  // Light Green for Friendship
         };
         this.barSpacing = 5;
         this.textPadding = 5;
@@ -30,6 +30,126 @@ export class ScoreManager {
         // Start friendship countdown
         this.startFriendshipCountdown();
     }
+
+    increaseScore(type, amount) {
+        if (this.scores.hasOwnProperty(type)) {
+            const oldScore = this.scores[type];
+            
+            // For love score increases, decrease energy by the same amount
+            if (type === 'love' && amount > 0) {
+                // Calculate actual love increase (considering max score limit)
+                const actualLoveIncrease = Math.min(this.maxScore, oldScore + amount) - oldScore;
+                
+                // Decrease energy by the same amount
+                this.scores.energy = Math.max(0, this.scores.energy - actualLoveIncrease);
+                
+                // Update love score and trigger animation only for love
+                this.scores[type] = Math.min(this.maxScore, oldScore + amount);
+                this.scoreAnimation.addAnimation(amount);
+            } else {
+                // For other scores, just update normally
+                this.scores[type] = Math.min(this.maxScore, oldScore + amount);
+            }
+        }
+    }
+
+
+checkScores() {
+    const gameInstance = window.gameInstance;
+    if (!gameInstance) return;
+
+    // Check Love score
+    if (this.scores.love <= 0 && !this.gameOverTriggered) {
+        this.gameOverTriggered = true;
+        this.triggerGameOver('love');
+    }
+
+    // Check Energy warnings and game over
+    if (this.scores.energy <= 30 && !this.energyWarningShown) {
+        this.energyWarningShown = true;
+        if (gameInstance.renderer) {
+            gameInstance.renderer.showLowEnergyWarning();
+        }
+        if (gameInstance.audioManager) {
+            gameInstance.audioManager.playSound('dingdong');
+        }
+    }
+
+    if (this.scores.energy <= 0 && !this.gameOverTriggered) {
+        this.gameOverTriggered = true;
+        this.triggerGameOver('energy');
+    }
+}
+
+triggerGameOver(type) {
+    const gameInstance = window.gameInstance;
+    if (!gameInstance) return;
+
+    // Play buzz sound
+    if (gameInstance.audioManager) {
+        gameInstance.audioManager.playSound('buzz');
+    }
+
+    // Show appropriate message
+    if (gameInstance.renderer) {
+        if (type === 'love') {
+            gameInstance.renderer.showLowLoveMessage();
+        } else if (type === 'energy') {
+            gameInstance.renderer.showNoEnergyMessage();
+        }
+    }
+
+    // Stop background music with fade out
+    if (gameInstance.audioManager?.currentMusicSource) {
+        const gainNode = gameInstance.audioManager.musicGainNode;
+        const currentTime = gameInstance.audioManager.audioContext.currentTime;
+        gainNode.gain.setValueAtTime(gainNode.gain.value, currentTime);
+        gainNode.gain.linearRampToValueAtTime(0, currentTime + 1);
+        
+        setTimeout(() => {
+            if (gameInstance.audioManager.currentMusicSource) {
+                gameInstance.audioManager.currentMusicSource.stop();
+            }
+        }, 1000);
+    }
+
+    // Set game over state and play final sound
+    if (gameInstance.gameState) {
+        gameInstance.gameState.isGameOver = true;
+        setTimeout(() => {
+            if (gameInstance.audioManager) {
+                gameInstance.audioManager.playSound('suina_evil');
+            }
+            gameInstance.renderer.setScreenMessage('finalGameOver');
+            gameInstance.renderer.showNewGameButton();
+        }, 2000);
+    }
+}
+
+// Update the increaseScore method to check scores after changes
+increaseScore(type, amount) {
+    if (this.scores.hasOwnProperty(type)) {
+        const oldScore = this.scores[type];
+        
+        if (type === 'love' && amount > 0) {
+            const actualLoveIncrease = Math.min(this.maxScore, oldScore + amount) - oldScore;
+            this.scores.energy = Math.max(0, this.scores.energy - actualLoveIncrease);
+            this.scores[type] = Math.min(this.maxScore, oldScore + amount);
+            this.scoreAnimation.addAnimation(amount);
+        } else {
+            this.scores[type] = Math.min(this.maxScore, oldScore + amount);
+        }
+        
+        // Check scores after any changes
+        this.checkScores();
+    }
+}
+
+
+
+
+
+
 
     startFriendshipCountdown() {
         const countdownInterval = 1000; // 1 second
@@ -64,7 +184,6 @@ export class ScoreManager {
                         gameInstance.audioManager.playSound('buzz');
                     }
 
-
                     // Stop background music with fade out
                     if (gameInstance.audioManager?.currentMusicSource) {
                         const gainNode = gameInstance.audioManager.musicGainNode;
@@ -83,7 +202,6 @@ export class ScoreManager {
                         gameInstance.renderer.setScreenMessage('diegoGameOver');
                     }
                     if (gameInstance?.gameState) {
-                        // Set game state to game over
                         gameInstance.gameState.isGameOver = true;
                         setTimeout(() => {
                             if (gameInstance.audioManager) {
@@ -91,23 +209,11 @@ export class ScoreManager {
                             }
                             gameInstance.renderer.setScreenMessage('finalGameOver');
                             gameInstance.renderer.showNewGameButton();
-                        }, 3000); // Wait for the message to flash 3 times
+                        }, 3000);
                     }
                 }
             }
         }, countdownInterval);
-    }
-
-    increaseScore(type, amount) {
-        if (this.scores.hasOwnProperty(type)) {
-            const oldScore = this.scores[type];
-            this.scores[type] = Math.min(this.maxScore, oldScore + amount);
-            
-            // If it's a love score increase, trigger animation
-            if (type === 'love' && amount > 0) {
-                this.scoreAnimation.addAnimation(amount);
-            }
-        }
     }
 
     draw() {
