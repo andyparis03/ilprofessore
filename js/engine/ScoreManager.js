@@ -33,7 +33,7 @@ export class ScoreManager {
         };
         
         this.flashConfig = {
-            totalFlashes: 3,
+            totalFlashes: 5,
             flashDuration: 400,  // Duration of each flash in ms
             flashInterval: 800   // Total time for one flash cycle (on+off)
         };
@@ -250,7 +250,7 @@ draw() {
                 
                 // Draw the empty part with flashing effect
                 if (emptyWidth > 0) {
-                    this.ctx.fillStyle = isFlashFrame ? '#FFFFFF' : 'rgba(0, 0, 0, 0.3)';
+                    this.ctx.fillStyle = isFlashFrame ? '#FF0000' : 'rgba(0, 0, 0, 0.3)';
                     this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
                 }
             } else {
