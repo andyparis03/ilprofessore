@@ -31,27 +31,28 @@ export class ScoreManager {
         this.startFriendshipCountdown();
     }
 
-    increaseScore(type, amount) {
-        if (this.scores.hasOwnProperty(type)) {
-            const oldScore = this.scores[type];
+increaseScore(type, amount) {
+    if (this.scores.hasOwnProperty(type)) {
+        const oldScore = this.scores[type];
+        
+        // For love score increases, decrease energy by double the amount
+        if (type === 'love' && amount > 0) {
+            // Calculate actual love increase (considering max score limit)
+            const actualLoveIncrease = Math.min(this.maxScore, oldScore + amount) - oldScore;
             
-            // For love score increases, decrease energy by the same amount
-            if (type === 'love' && amount > 0) {
-                // Calculate actual love increase (considering max score limit)
-                const actualLoveIncrease = Math.min(this.maxScore, oldScore + amount) - oldScore;
-                
-                // Decrease energy by the same amount
-                this.scores.energy = Math.max(0, this.scores.energy - actualLoveIncrease);
-                
-                // Update love score and trigger animation only for love
-                this.scores[type] = Math.min(this.maxScore, oldScore + amount);
-                this.scoreAnimation.addAnimation(amount);
-            } else {
-                // For other scores, just update normally
-                this.scores[type] = Math.min(this.maxScore, oldScore + amount);
-            }
+            // Decrease energy by double the amount
+            const energyDecrease = actualLoveIncrease * 2;
+            this.scores.energy = Math.max(0, this.scores.energy - energyDecrease);
+            
+            // Update love score and trigger animation only for love
+            this.scores[type] = Math.min(this.maxScore, oldScore + amount);
+            this.scoreAnimation.addAnimation(amount);
+        } else {
+            // For other scores, just update normally
+            this.scores[type] = Math.min(this.maxScore, oldScore + amount);
         }
     }
+}
 
 
 checkScores() {
