@@ -80,30 +80,46 @@ export class LevelManager {
         this.updateBackButtonVisibility();
     }
 
-    async loadLevel(levelNumber, player) {
-        const levelConfig = CONFIG.LEVELS[levelNumber];
-        if (!levelConfig) {
-            console.error(`Level ${levelNumber} configuration not found.`);
-            return;
-        }
 
-        if (this.isGameStopped()) {
-            console.warn('Level transition blocked - transition in progress or game over');
-            return;
-        }
 
-        try {
-            await this.startTransition(levelNumber);
-            const storedStates = this.preserveCharacterStates();
-            await this.clearCurrentLevel();
-            await this.setupNewLevel(levelNumber, player, storedStates);
-            await this.completeTransition();
-            console.log(`Loaded level ${levelNumber}`);
-        } catch (error) {
-            console.error('Error during level transition:', error);
-            this.handleTransitionError();
-        }
+async loadLevel(levelNumber, player) {
+    const levelConfig = CONFIG.LEVELS[levelNumber];
+    if (!levelConfig) {
+        console.error(`Level ${levelNumber} configuration not found.`);
+        return;
     }
+
+    if (this.isGameStopped()) {
+        console.warn('Level transition blocked - transition in progress or game over');
+        return;
+    }
+
+    try {
+        await this.startTransition(levelNumber);
+        const storedStates = this.preserveCharacterStates();
+        await this.clearCurrentLevel();
+        await this.setupNewLevel(levelNumber, player, storedStates);
+
+        // Play welcome sounds for specific levels
+        if (levelNumber === 4) {
+            const gameInstance = window.gameInstance;
+            if (gameInstance?.audioManager) {
+                gameInstance.audioManager.playSound('walter_welcome');
+            }
+        } else if (levelNumber === 5) {
+            const gameInstance = window.gameInstance;
+            if (gameInstance?.audioManager) {
+                gameInstance.audioManager.playSound('diego_sound');
+            }
+        }
+
+        await this.completeTransition();
+        console.log(`Loaded level ${levelNumber}`);
+    } catch (error) {
+        console.error('Error during level transition:', error);
+        this.handleTransitionError();
+    }
+}
 
     async startTransition(newLevelNumber) {
         this.transitionState = {
