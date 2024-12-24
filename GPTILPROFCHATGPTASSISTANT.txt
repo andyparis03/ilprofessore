@@ -2332,15 +2332,16 @@ export class ScoreManager {
         }
 
         // Check Energy warnings and game over
-        if (this.scores.energy <= 30 && !this.energyWarningShown) {
-            this.energyWarningShown = true;
-            if (gameInstance.renderer) {
-                gameInstance.renderer.showLowEnergyWarning();
-            }
-            if (gameInstance.audioManager) {
-                gameInstance.audioManager.playSound('dingdong');
-            }
-        }
+	if (this.scores.energy <= 30 && !this.energyWarningShown) {
+	    this.energyWarningShown = true;
+	    this.startBarFlash('energy');  // Add this line to trigger flash	
+	    if (gameInstance.renderer) {
+	        gameInstance.renderer.showLowEnergyWarning();
+	    }
+	    if (gameInstance.audioManager) {
+ 	       gameInstance.audioManager.playSound('dingdong');
+    }
+}
 
         if (this.scores.energy <= 0 && !this.gameOverTriggered) {
             console.log('Energy score triggered game over');
@@ -2403,15 +2404,16 @@ export class ScoreManager {
             if (this.scores.friendship > 0) {
                 this.scores.friendship--;
 
-                if (this.scores.friendship === 30 && !this.warningShown) {
-                    this.warningShown = true;
-                    if (gameInstance?.renderer) {
-                        gameInstance.renderer.setScreenMessage('diegoWarning');
-                    }
-                    if (gameInstance?.audioManager) {
-                        gameInstance.audioManager.playSound('dingdong');
-                    }
-                }
+	if (this.scores.friendship === 30 && !this.warningShown) {
+	    this.warningShown = true;
+	    this.startBarFlash('friendship');  // Add this line to trigger flash
+	    if (gameInstance?.renderer) {
+        	gameInstance.renderer.setScreenMessage('diegoWarning');
+    	}
+    	if (gameInstance?.audioManager) {
+        	gameInstance.audioManager.playSound('dingdong');
+    	}
+}
 
                 if (this.scores.friendship === 0 && !this.gameOverTriggered) {
                     console.log('Friendship score triggered game over');
@@ -2516,6 +2518,8 @@ draw() {
         });
     }
 }
+
+
 
 
 

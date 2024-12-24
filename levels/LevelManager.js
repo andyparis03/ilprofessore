@@ -414,28 +414,51 @@ update(player, worldBounds, input) {
         });
     }
 
-    checkLevelTransition(player) {
-        if (this.isGameStopped()) return false;
 
-        const currentLevelConfig = CONFIG.LEVELS[this.currentLevel];
-        if (!currentLevelConfig || !currentLevelConfig.transitions) {
-            return false;
-        }
 
-        for (const transition of Object.values(currentLevelConfig.transitions)) {
-            if (
-                player.x >= transition.x.min &&
-                player.x <= transition.x.max &&
-                player.y >= transition.y.min &&
-                player.y <= transition.y.max
-            ) {
-                this.loadLevel(transition.nextLevel, player);
-                return true;
-            }
-        }
+checkLevelTransition(player) {
+    if (this.isGameStopped()) return false;
 
+    const currentLevelConfig = CONFIG.LEVELS[this.currentLevel];
+    if (!currentLevelConfig || !currentLevelConfig.transitions) {
         return false;
     }
+
+    const gameInstance = window.gameInstance;
+    if (!gameInstance?.scoreManager) return false;
+
+    for (const [locationName, transition] of Object.entries(currentLevelConfig.transitions)) {
+        if (
+            player.x >= transition.x.min &&
+            player.x <= transition.x.max &&
+            player.y >= transition.y.min &&
+            player.y <= transition.y.max
+        ) {
+            // Check Gusto (Level 4) condition
+            if (locationName === 'GUSTO' && gameInstance.scoreManager.scores.energy > 30) {
+                if (gameInstance.renderer) {
+                    gameInstance.renderer.setScreenMessage('gustoClosed');
+                }
+                return false;
+            }
+
+            // Check Chester (Level 5) condition
+            if (locationName === 'CHESTER' && gameInstance.scoreManager.scores.friendship > 30) {
+                if (gameInstance.renderer) {
+                    gameInstance.renderer.setScreenMessage('chesterClosed');
+                }
+                return false;
+            }
+
+            this.loadLevel(transition.nextLevel, player);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 
     clearTimers() {
         for (const timer in this.characterTimers) {

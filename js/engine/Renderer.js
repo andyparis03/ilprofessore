@@ -11,6 +11,23 @@ export class Renderer {
         
         this.screenMessages = {
 
+
+        gustoClosed: {
+            lines: ['Gusto chiuso,', 'riprova più tardi'],
+            startTime: 0,
+            duration: 2000,
+            interval: 400,
+            isActive: false
+        },
+        chesterClosed: {
+            lines: ['Chester chiuso,', 'riprova più tardi'],
+            startTime: 0,
+            duration: 2000,
+            interval: 400,
+            isActive: false
+        },
+    
+
 	        diegoWarning: {
         lines: ['Il tuo amico Diego', 'ha bisogno di te!'],
         startTime: 0,
