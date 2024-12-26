@@ -127,8 +127,6 @@ export class ScoreManager {
 
 
 
-// ScoreManager.js
-// ... other code remains the same ...
 
 checkScores() {
     const gameInstance = window.gameInstance;
@@ -261,72 +259,81 @@ checkScores() {
         }
     }
 
-    draw() {
-        this.ctx.save();
 
-        Object.entries(this.scores).forEach(([type, score], index) => {
-            const x = this.ctx.canvas.width - this.barWidth - this.padding;
-            const y = this.padding + (index * (this.barHeight + this.barSpacing));
-            const flashState = this.flashStates[type];
 
-            // Draw label
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = 'bold 10px Arial';
-            this.ctx.textAlign = 'right';
-            this.ctx.fillText(type.toUpperCase(), x - this.textPadding, y + this.barHeight);
+draw() {
+    this.ctx.save();
 
-            // Simplified flash logic
-            let shouldShow = true;
-            let isFlashFrame = false;
+    // Draw love score at top
+    const loveScore = Math.round(this.scores.love);
+    this.ctx.fillStyle = '#FF0000'; // Red heart
+    this.ctx.font = 'bold 24px Arial';
+    this.ctx.textAlign = 'center';
+    const topPadding = 35;
+    const leftOffset = 100; // Shifted 80px left from 200
+    this.ctx.fillText('♥', leftOffset - 10, topPadding); // Heart symbol
+    this.ctx.fillStyle = '#FF0000'; // White text for number
+    this.ctx.fillText(loveScore, leftOffset + 10, topPadding); // Score number
+
+    // Draw score bars
+    Object.entries(this.scores).forEach(([type, score], index) => {
+        const x = this.ctx.canvas.width - this.barWidth - this.padding;
+        const y = this.padding + (index * (this.barHeight + this.barSpacing));
+        const flashState = this.flashStates[type];
+
+        // Draw label
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 10px Arial';
+        this.ctx.textAlign = 'right';
+        this.ctx.fillText(type.toUpperCase(), x - this.textPadding, y + this.barHeight);
+
+        // Handle flash states and bar drawing
+        let shouldShow = true;
+        let isFlashFrame = false;
+        if (flashState.isFlashing) {
+            const elapsed = performance.now() - flashState.lastFlashTime;
+            const currentFlashCycle = Math.floor(elapsed / this.flashConfig.flashInterval);
+            shouldShow = Math.floor((elapsed % this.flashConfig.flashInterval) / this.flashConfig.flashDuration) === 0;
+            isFlashFrame = shouldShow;
+
+            if (currentFlashCycle >= this.flashConfig.totalFlashes) {
+                flashState.isFlashing = false;
+                shouldShow = true;
+                isFlashFrame = false;
+            }
+        }
+
+        // Draw the bars
+        if (shouldShow) {
+            const fillWidth = (score / this.maxScore) * this.barWidth;
+            const emptyWidth = this.barWidth - fillWidth;
+            
             if (flashState.isFlashing) {
-                const elapsed = performance.now() - flashState.lastFlashTime;
-                const currentFlashCycle = Math.floor(elapsed / this.flashConfig.flashInterval);
-                shouldShow = Math.floor((elapsed % this.flashConfig.flashInterval) / this.flashConfig.flashDuration) === 0;
-                isFlashFrame = shouldShow;
-
-                // Check if we should stop flashing
-                if (currentFlashCycle >= this.flashConfig.totalFlashes) {
-                    flashState.isFlashing = false;
-                    shouldShow = true;
-                    isFlashFrame = false;
+                if (fillWidth > 0) {
+                    this.ctx.fillStyle = this.colors[type];
+                    this.ctx.fillRect(x, y, fillWidth, this.barHeight);
                 }
-            }
-
-            // Draw the bars
-            if (shouldShow) {
-                const fillWidth = (score / this.maxScore) * this.barWidth;
-                const emptyWidth = this.barWidth - fillWidth;
                 
-                if (flashState.isFlashing) {
-                    // Draw the colored part (if any)
-                    if (fillWidth > 0) {
-                        this.ctx.fillStyle = this.colors[type];
-                        this.ctx.fillRect(x, y, fillWidth, this.barHeight);
-                    }
-                    
-                    // Draw the empty part with flashing effect
-                    if (emptyWidth > 0) {
-                        this.ctx.fillStyle = isFlashFrame ? '#FF0000' : 'rgba(0, 0, 0, 0.3)';
-                        this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
-                    }
-                } else {
-                    // Normal drawing
-                    if (fillWidth > 0) {
-                        this.ctx.fillStyle = this.colors[type];
-                        this.ctx.fillRect(x, y, fillWidth, this.barHeight);
-                    }
-                    // Draw grey background for empty part
-                    if (emptyWidth > 0) {
-                        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-                        this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
-                    }
+                if (emptyWidth > 0) {
+                    this.ctx.fillStyle = isFlashFrame ? '#FF0000' : 'rgba(0, 0, 0, 0.3)';
+                    this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
+                }
+            } else {
+                if (fillWidth > 0) {
+                    this.ctx.fillStyle = this.colors[type];
+                    this.ctx.fillRect(x, y, fillWidth, this.barHeight);
+                }
+                if (emptyWidth > 0) {
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                    this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
                 }
             }
-        });
+        }
+    });
 
-        this.scoreAnimation.update(this.ctx);
-        this.ctx.restore();
-    }
+    this.scoreAnimation.update(this.ctx);
+    this.ctx.restore();
+}
 
     cleanup() {
         if (this.countdownInterval) {
