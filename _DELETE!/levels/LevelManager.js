@@ -283,7 +283,7 @@ case 4:
                break;
 
            case 5:
-               this.addCharacter('diego', 650, 300);
+               this.addCharacter('diego', 700, 400);
                break;
            default:
                console.warn(`No characters defined for level ${levelNumber}`);

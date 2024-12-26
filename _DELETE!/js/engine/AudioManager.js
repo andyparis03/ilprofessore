@@ -64,8 +64,8 @@ export class AudioManager {
         try {
             const soundsToLoad = [
                 ['buzz', './assets/sounds/buzz.mp3'],
-                ['dingdong', './assets/sounds/dingdong.mp3'],
-                ['drink', './assets/sounds/drink.mp3'],
+		['drink', './assets/sounds/drink.mp3'],
+		['dingdong', './assets/sounds/dingdong.mp3'],
                 ['prof-theme', './assets/sounds/prof-theme.mp3'],
                 ['professore_step', './assets/sounds/prof-step.mp3'],
                 ['professore_fuck', './assets/sounds/prof-fuck.mp3'],
