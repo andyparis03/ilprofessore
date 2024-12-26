@@ -72,7 +72,7 @@ export class Renderer {
             gameOver: {
                 lines: ['Hai scopato', 'la Suina Mala... :('],
                 startTime: 0,
-                duration: 2500,
+                duration: 3000,
                 interval: 400,
                 isActive: false,
                 nextMessage: 'finalGameOver'
