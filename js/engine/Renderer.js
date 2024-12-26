@@ -70,7 +70,7 @@ export class Renderer {
 
 
             gameOver: {
-                lines: ['Hai beccato', 'la Suina Mala... :('],
+                lines: ['Hai scopato', 'la Suina Mala... :('],
                 startTime: 0,
                 duration: 2000,
                 interval: 400,
