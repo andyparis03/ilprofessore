@@ -51,7 +51,7 @@ export class Diego extends BaseCharacter {
                 
                 if (gameInstance?.scoreManager) {
                     // Decrease energy
-                    gameInstance.scoreManager.increaseScore('energy', -30);
+                    gameInstance.scoreManager.increaseScore('energy', -20);
                     gameInstance.scoreManager.scoreAnimation.addAnimation(30, true);
                     
                     // Increase friendship
