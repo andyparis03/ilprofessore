@@ -125,38 +125,50 @@ export class ScoreManager {
         this.energyCountdownStarted = false;
     }
 
-    checkScores() {
-        const gameInstance = window.gameInstance;
-        if (!gameInstance) return;
 
-        // Check Love score
-        if (this.scores.love <= 0 && !this.gameOverTriggered) {
-            console.log('Love score triggered game over');
-            this.startBarFlash('love');
-            this.gameOverTriggered = true;
-            this.triggerGameOver('love');
-        }
 
-        // Check Energy warnings and game over
-        if (this.scores.energy <= 30 && !this.energyWarningShown) {
-            this.energyWarningShown = true;
-            this.startBarFlash('energy');
-            if (gameInstance.renderer) {
-                gameInstance.renderer.showLowEnergyWarning();
-            }
-            if (gameInstance.audioManager) {
-                gameInstance.audioManager.playSound('dingdong');
-            }
-            this.startEnergyCountdown();
-        }
+// ScoreManager.js
+// ... other code remains the same ...
 
-        if (this.scores.energy <= 0 && !this.gameOverTriggered) {
-            console.log('Energy score triggered game over');
-            this.startBarFlash('energy');
-            this.gameOverTriggered = true;
-            this.triggerGameOver('energy');
-        }
+checkScores() {
+    const gameInstance = window.gameInstance;
+    if (!gameInstance) return;
+
+    // Check if we're in Level 5 with Diego
+    const isLevel5WithDiego = gameInstance.levelManager?.currentLevel === 5 && 
+        gameInstance.levelManager.characters.some(c => c.type === 'diego');
+
+    // Check Love score only when not in Diego's level
+    if (!isLevel5WithDiego && this.scores.love <= 0 && !this.gameOverTriggered) {
+        console.log('Love score triggered game over');
+        this.startBarFlash('love');
+        this.gameOverTriggered = true;
+        this.triggerGameOver('love');
     }
+
+    // Check Energy warnings and game over
+    if (this.scores.energy <= 30 && !this.energyWarningShown) {
+        this.energyWarningShown = true;
+        this.startBarFlash('energy');
+        if (gameInstance.renderer) {
+            gameInstance.renderer.showLowEnergyWarning();
+        }
+        if (gameInstance.audioManager) {
+            gameInstance.audioManager.playSound('dingdong');
+        }
+        this.startEnergyCountdown();
+    }
+
+    if (this.scores.energy <= 0 && !this.gameOverTriggered) {
+        console.log('Energy score triggered game over');
+        this.startBarFlash('energy');
+        this.gameOverTriggered = true;
+        this.triggerGameOver('energy');
+    }
+}
+
+
+
 
     startFriendshipCountdown() {
         const countdownInterval = 1000;

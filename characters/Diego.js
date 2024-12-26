@@ -5,7 +5,7 @@ import { CONFIG } from '../config.js';
 export class Diego extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         // Using fast speed multiplier similar to Walter
-        super(x, y, width, height, sprites, type, 3.5);
+        super(x, y, width, height, sprites, type, 1.1);
         
         const now = performance.now();
         

@@ -9,19 +9,51 @@ export class ScoreAnimation {
 
     addAnimation(score, isNegative = false) {
         const canvas = document.getElementById('gameCanvas');
-        const centerX = Math.round(canvas.width / 2);
-        const centerY = Math.round(canvas.height / 2);
+        const isLevel5 = window.gameInstance?.levelManager?.currentLevel === 5;
         
-        this.animations.push({
-            score: `${isNegative ? '-' : '+'}${score}`,
-            x: centerX,
-            y: centerY,
-            startTime: performance.now(),
-            duration: 2000,
-            startFontSize: 72,
-            endFontSize: 24,
-            opacity: 1
-        });
+        // Only apply special animation in Level 5
+        if (isLevel5 && window.gameInstance?.levelManager?.characters.some(c => c.type === 'diego')) {
+            if (isNegative) {
+                // Energy loss animation (left side)
+                this.animations.push({
+                    score: `-${score}`,
+                    x: Math.round(canvas.width / 2 - 50), // Offset left
+                    y: Math.round(canvas.height / 2),
+                    startTime: performance.now(),
+                    duration: 2000,
+                    startFontSize: 72,
+                    endFontSize: 24,
+                    opacity: 1,
+                    color: '#FF0000' // Light Orange for Energy
+                });
+            } else {
+                // Friendship gain animation (right side)
+                this.animations.push({
+                    score: `+${score}`,
+                    x: Math.round(canvas.width / 2 + 50), // Offset right
+                    y: Math.round(canvas.height / 2),
+                    startTime: performance.now(),
+                    duration: 2000,
+                    startFontSize: 24,
+                    endFontSize: 72,
+                    opacity: 1,
+                    color: '#90EE90' // Light Green for Friendship
+                });
+            }
+        } else {
+            // Default animation for other scenarios
+            this.animations.push({
+                score: `${isNegative ? '-' : '+'}${score}`,
+                x: Math.round(canvas.width / 2),
+                y: Math.round(canvas.height / 2),
+                startTime: performance.now(),
+                duration: 2000,
+                startFontSize: 72,
+                endFontSize: 24,
+                opacity: 1,
+                color: isNegative ? '#FFA07A' : '#90EE90'
+            });
+        }
     }
 
     update(ctx) {
@@ -36,7 +68,9 @@ export class ScoreAnimation {
             const easeOutCubic = 1 - Math.pow(1 - progress, 3);
 
             // Calculate current font size
-            const fontSize = Math.round(anim.startFontSize + (anim.endFontSize - anim.startFontSize) * easeOutCubic);
+            const fontSize = Math.round(
+                anim.startFontSize + (anim.endFontSize - anim.startFontSize) * easeOutCubic
+            );
             
             // Calculate opacity (fade out in the last 30% of animation)
             anim.opacity = progress > 0.7 ? 1 - ((progress - 0.7) / 0.3) : 1;
@@ -55,8 +89,8 @@ export class ScoreAnimation {
             ctx.lineWidth = 3;
             ctx.strokeText(anim.score, anim.x, anim.y - yOffset);
 
-            // Draw text fill
-            ctx.fillStyle = `rgba(255, 192, 203, ${anim.opacity})`;
+            // Draw text fill with specified color
+            ctx.fillStyle = `rgba(${this.hexToRgb(anim.color)}, ${anim.opacity})`;
             ctx.fillText(anim.score, anim.x, anim.y - yOffset);
 
             ctx.restore();
@@ -66,6 +100,14 @@ export class ScoreAnimation {
             }
         }
     }
+
+    hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? 
+            `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
+            '255, 255, 255';
+    }
+
 
 
     animateScoreReset(scoreManager, onComplete) {
