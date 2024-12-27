@@ -100,6 +100,20 @@ export class LevelManager {
             return;
         }
 
+        // Handle friendship system when leaving level 5
+        if (levelNumber !== 5 && this.friendshipInterval) {
+            clearInterval(this.friendshipInterval);
+            this.friendshipInterval = null;
+            
+            // Restart countdown only when leaving level 5
+            if (this.currentLevel === 5) {
+                const gameInstance = window.gameInstance;
+                if (gameInstance?.scoreManager) {
+                    gameInstance.scoreManager.startFriendshipCountdown();
+                }
+            }
+        }
+
         console.log('Loading level:', {
             level: levelNumber,
             worldBounds: {
@@ -141,7 +155,6 @@ export class LevelManager {
             clearTimeout(this.transitionState.timeout);
         }
 
-        // Preserve current scores before transition
         if (gameInstance?.scoreManager) {
             this.preservedScores = { ...gameInstance.scoreManager.scores };
         }
@@ -186,7 +199,6 @@ export class LevelManager {
             this.player = player;
         }
 
-        // Restore preserved scores
         const gameInstance = window.gameInstance;
         if (gameInstance?.scoreManager && this.preservedScores) {
             console.log('Restoring scores:', this.preservedScores);
@@ -246,10 +258,9 @@ export class LevelManager {
 
                 const gameInstance = window.gameInstance;
                 if (gameInstance?.scoreManager) {
-                    // Wait a frame before enabling score checks to ensure everything is ready
                     setTimeout(() => {
                         gameInstance.scoreManager.setTransitionState(false);
-                    }, 0);
+                    }, 100);
                 }
 
                 this.transitionState = {
@@ -290,6 +301,27 @@ export class LevelManager {
         }
     }
 
+    startFriendshipIncrease() {
+        if (this.friendshipInterval) {
+            clearInterval(this.friendshipInterval);
+        }
+
+        const gameInstance = window.gameInstance;
+        // Stop the countdown first
+        if (gameInstance?.scoreManager) {
+            if (gameInstance.scoreManager.countdownInterval) {
+                clearInterval(gameInstance.scoreManager.countdownInterval);
+                gameInstance.scoreManager.countdownInterval = null;
+            }
+        }
+
+        this.friendshipInterval = setInterval(() => {
+            if (gameInstance?.scoreManager && !gameInstance.gameState?.isGameOver) {
+                gameInstance.scoreManager.increaseScore('friendship', 3);
+            }
+        }, 1000);
+    }
+
     loadCharactersForLevel(levelNumber, storedStates) {
         switch (levelNumber) {
             case 1:
@@ -312,36 +344,18 @@ export class LevelManager {
                 this.addCharacter('walter', 150, 250);
                 break;
             case 5:
-                // Play diego_sound when entering level 5
                 const game = window.gameInstance;
                 if (game?.audioManager) {
                     game.audioManager.playSound('diego_sound');
-    		    game.audioManager.playSound('recharge');
                 }
                 
-                // Add Diego character
                 this.addCharacter('diego', 700, 400);
-
-                // Start friendship increase interval
                 this.startFriendshipIncrease();
                 break;
             default:
                 console.warn(`No characters defined for level ${levelNumber}`);
                 break;
         }
-    }
-
-    startFriendshipIncrease() {
-        if (this.friendshipInterval) {
-            clearInterval(this.friendshipInterval);
-        }
-
-        this.friendshipInterval = setInterval(() => {
-            const gameInstance = window.gameInstance;
-            if (gameInstance?.scoreManager && !gameInstance.gameState?.isGameOver) {
-                gameInstance.scoreManager.increaseScore('friendship', 3);
-            }
-        }, 1000);
     }
 
     spawnNextRandomCharacter() {

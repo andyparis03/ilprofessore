@@ -77,7 +77,7 @@ export class ScoreManager {
             
             if (type === 'love' && amount > 0) {
                 const actualLoveIncrease = Math.min(this.maxScore, oldScore + amount) - oldScore;
-                const energyDecrease = actualLoveIncrease * 2;
+                const energyDecrease = actualLoveIncrease;
                 
                 const newEnergy = Math.max(0, this.scores.energy - energyDecrease);
                 if (newEnergy === 0 && this.scores.energy > 0) {

@@ -113,7 +113,7 @@ handleInteraction(input, player) {
                 }
                 gameInstance.scoreManager.increaseScore('love', -5);
                 gameInstance.scoreManager.scoreAnimation.addAnimation(5, true);
-		gameInstance.scoreManager.increaseScore('energy', -20);
+		gameInstance.scoreManager.increaseScore('energy', -10);
             }
         }
 
