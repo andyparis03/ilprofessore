@@ -4,12 +4,11 @@ import { CONFIG } from '../config.js';
 
 export class Diego extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
-        // Using fast speed multiplier similar to Walter
         super(x, y, width, height, sprites, type, 1.1);
         
         const now = performance.now();
         
-        // Initialize timers and movement variables (following Walter's pattern)
+        // Initialize timers and movement variables
         this.moveTimer = now;
         this.lastUpdateTime = now;
         this.frameTime = now;
@@ -26,11 +25,20 @@ export class Diego extends BaseCharacter {
         this.isIdle = false;
         this.direction = 'down';
         
+        // Interaction states
         this.isColliding = false;
         this.soundPlayed = false;
         this.isVisible = true;
         this.energyTaken = false;
         this.lastEnergyTime = now;
+        
+        // Movement properties
+        this.stuckTimer = 0;
+        this.directionChangeCount = 0;
+        this.cornerAvoidanceRadius = 100;
+        this.zigzagInterval = 400;
+        this.zigzagDuration = 200;
+        this.cooldownDuration = 5000;
     }
 
     updateBehavior(player, worldBounds, deltaTime, input) {
@@ -43,20 +51,17 @@ export class Diego extends BaseCharacter {
         if (isCollidingNow && !this.isColliding) {
             const gameInstance = window.gameInstance;
             
-            // Check cooldown (5 seconds like Walter)
-            if (!this.energyTaken || (currentTime - this.lastEnergyTime > 5000)) {
+            // Check cooldown (5 seconds)
+            if (!this.energyTaken || (currentTime - this.lastEnergyTime > this.cooldownDuration)) {
+                // Play drink sound
                 if (gameInstance?.audioManager) {
                     gameInstance.audioManager.playSound('drink');
                 }
                 
+                // Decrease energy with animation
                 if (gameInstance?.scoreManager) {
-                    // Decrease energy
                     gameInstance.scoreManager.increaseScore('energy', -20);
-                    gameInstance.scoreManager.scoreAnimation.addAnimation(30, true);
-                    
-                    // Increase friendship
-                    gameInstance.scoreManager.increaseScore('friendship', 30);
-                    gameInstance.scoreManager.scoreAnimation.addAnimation(30);
+                    gameInstance.scoreManager.scoreAnimation.addAnimation(20, true);
                 }
                 
                 this.energyTaken = true;
@@ -93,17 +98,20 @@ export class Diego extends BaseCharacter {
         // Base chase angle
         let moveAngle = angle;
 
-        // Add unpredictable zigzag movement (similar to Walter's pattern)
+        // Add unpredictable zigzag movement
         const timeSinceLastZigzag = currentTime - this.lastZigzag;
-        const shouldZigzag = timeSinceLastZigzag > 400 && Math.random() < 0.5;
+        const shouldZigzag = timeSinceLastZigzag > this.zigzagInterval && Math.random() < 0.5;
 
         if (shouldZigzag) {
             this.lastZigzag = currentTime;
             this.zigzagDirection *= -1;
             moveAngle += (Math.PI / 4) * this.zigzagDirection;
-        } else if (timeSinceLastZigzag < 200) {
+        } else if (timeSinceLastZigzag < this.zigzagDuration) {
             moveAngle += (Math.PI / 4) * this.zigzagDirection;
         }
+
+        // Apply corner avoidance
+        moveAngle = this.adjustForCorners(moveAngle, worldBounds);
 
         // Calculate new position
         const newX = this.x + Math.cos(moveAngle) * adjustedSpeed;
@@ -118,10 +126,44 @@ export class Diego extends BaseCharacter {
         const actualDY = this.y - this.lastY;
         if (Math.abs(actualDX) > 0.5 || Math.abs(actualDY) > 0.5) {
             this.updateDirection(actualDX, actualDY);
+            this.stuckTimer = 0;
+        } else {
+            this.stuckTimer += deltaTime;
+            if (this.stuckTimer > 1000) {
+                this.randomizeDirection();
+                this.stuckTimer = 0;
+            }
         }
 
         this.lastX = this.x;
         this.lastY = this.y;
+    }
+
+    adjustForCorners(angle, worldBounds) {
+        const nearLeftWall = this.x < this.cornerAvoidanceRadius;
+        const nearRightWall = this.x > worldBounds.width - this.cornerAvoidanceRadius;
+        const nearTopWall = this.y < this.cornerAvoidanceRadius;
+        const nearBottomWall = this.y > worldBounds.height - this.cornerAvoidanceRadius;
+
+        if (nearLeftWall && nearTopWall) {
+            return Math.PI / 4; // 45 degrees
+        } else if (nearRightWall && nearTopWall) {
+            return (3 * Math.PI) / 4; // 135 degrees
+        } else if (nearLeftWall && nearBottomWall) {
+            return -Math.PI / 4; // -45 degrees
+        } else if (nearRightWall && nearBottomWall) {
+            return (-3 * Math.PI) / 4; // -135 degrees
+        } else if (nearLeftWall) {
+            return 0;
+        } else if (nearRightWall) {
+            return Math.PI;
+        } else if (nearTopWall) {
+            return Math.PI / 2;
+        } else if (nearBottomWall) {
+            return -Math.PI / 2;
+        }
+
+        return angle;
     }
 
     updateDirection(dx, dy) {
@@ -132,11 +174,33 @@ export class Diego extends BaseCharacter {
         }
     }
 
+    randomizeDirection() {
+        const directions = ['up', 'down', 'left', 'right'];
+        this.direction = directions[Math.floor(Math.random() * directions.length)];
+    }
+
     cleanup() {
         this.isColliding = false;
         this.soundPlayed = false;
         this.energyTaken = false;
         this.lastEnergyTime = performance.now();
+        this.stuckTimer = 0;
+        this.directionChangeCount = 0;
         super.cleanup();
+    }
+
+    pauseUpdates() {
+        super.pauseUpdates();
+        this.lastUpdateTime = performance.now();
+        this.frameTime = performance.now();
+    }
+
+    resumeUpdates() {
+        super.resumeUpdates();
+        const now = performance.now();
+        this.lastUpdateTime = now;
+        this.frameTime = now;
+        this.lastZigzag = now;
+        this.lastEnergyTime = now;
     }
 }

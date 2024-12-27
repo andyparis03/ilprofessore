@@ -1,3 +1,17 @@
+Il Professore - Instructions
+Il Professore e l’Amore: Aiuta il Professore a raggiungere l’obiettivo finale: accumulare 100 punti amore per vincere il gioco! Ogni interazione di successo aumenta il punteggio amore (+10 punti).
+Il Professore e i Nemici:
+Suina Mala: Evitala a tutti i costi o perderai energia (-10 punti energia).
+Walter e Diego: Sono amici preziosi! Interagisci con loro per ottenere vantaggi (energia o amore).
+Il Professore e le Risorse:
+Energia: Si consuma costantemente. Puoi ricaricarla mangiando pizza (+20 energia).
+Amicizia: Non abbandonare Diego! Perderai punti amicizia se non lo aiuti (-10 amicizia al minuto).
+Il Professore e le Azioni:
+Bacio: Usa il tasto "B" per aumentare i punti amore (+10 punti).
+Fuck: Usa il tasto "F" per affrontare nemici difficili o evitare penalità.
+Vittoria: Raggiungi 100 punti amore e il Professore sarà trionfante nel suo viaggio romantico!
+Buona fortuna, Professore!
+
 
 
 >>>>>tell me if you find bugs or discrepancies or inconsistency <<<<<<
@@ -2378,38 +2392,48 @@ export class ScoreManager {
         this.energyCountdownStarted = false;
     }
 
-    checkScores() {
-        const gameInstance = window.gameInstance;
-        if (!gameInstance) return;
 
-        // Check Love score
-        if (this.scores.love <= 0 && !this.gameOverTriggered) {
-            console.log('Love score triggered game over');
-            this.startBarFlash('love');
-            this.gameOverTriggered = true;
-            this.triggerGameOver('love');
-        }
 
-        // Check Energy warnings and game over
-        if (this.scores.energy <= 30 && !this.energyWarningShown) {
-            this.energyWarningShown = true;
-            this.startBarFlash('energy');
-            if (gameInstance.renderer) {
-                gameInstance.renderer.showLowEnergyWarning();
-            }
-            if (gameInstance.audioManager) {
-                gameInstance.audioManager.playSound('dingdong');
-            }
-            this.startEnergyCountdown();
-        }
 
-        if (this.scores.energy <= 0 && !this.gameOverTriggered) {
-            console.log('Energy score triggered game over');
-            this.startBarFlash('energy');
-            this.gameOverTriggered = true;
-            this.triggerGameOver('energy');
-        }
+checkScores() {
+    const gameInstance = window.gameInstance;
+    if (!gameInstance) return;
+
+    // Check if we're in Level 5 with Diego
+    const isLevel5WithDiego = gameInstance.levelManager?.currentLevel === 5 && 
+        gameInstance.levelManager.characters.some(c => c.type === 'diego');
+
+    // Check Love score only when not in Diego's level
+    if (!isLevel5WithDiego && this.scores.love <= 0 && !this.gameOverTriggered) {
+        console.log('Love score triggered game over');
+        this.startBarFlash('love');
+        this.gameOverTriggered = true;
+        this.triggerGameOver('love');
     }
+
+    // Check Energy warnings and game over
+    if (this.scores.energy <= 30 && !this.energyWarningShown) {
+        this.energyWarningShown = true;
+        this.startBarFlash('energy');
+        if (gameInstance.renderer) {
+            gameInstance.renderer.showLowEnergyWarning();
+        }
+        if (gameInstance.audioManager) {
+            gameInstance.audioManager.playSound('dingdong');
+        }
+        this.startEnergyCountdown();
+    }
+
+    if (this.scores.energy <= 0 && !this.gameOverTriggered) {
+        console.log('Energy score triggered game over');
+        this.startBarFlash('energy');
+        this.gameOverTriggered = true;
+        this.triggerGameOver('energy');
+    }
+}
+
+
+
 
     startFriendshipCountdown() {
         const countdownInterval = 1000;
@@ -2502,72 +2526,81 @@ export class ScoreManager {
         }
     }
 
-    draw() {
-        this.ctx.save();
 
-        Object.entries(this.scores).forEach(([type, score], index) => {
-            const x = this.ctx.canvas.width - this.barWidth - this.padding;
-            const y = this.padding + (index * (this.barHeight + this.barSpacing));
-            const flashState = this.flashStates[type];
 
-            // Draw label
-            this.ctx.fillStyle = '#ffffff';
-            this.ctx.font = 'bold 10px Arial';
-            this.ctx.textAlign = 'right';
-            this.ctx.fillText(type.toUpperCase(), x - this.textPadding, y + this.barHeight);
+draw() {
+    this.ctx.save();
 
-            // Simplified flash logic
-            let shouldShow = true;
-            let isFlashFrame = false;
+    // Draw love score at top
+    const loveScore = Math.round(this.scores.love);
+    this.ctx.fillStyle = '#FF0000'; // Red heart
+    this.ctx.font = 'bold 24px Arial';
+    this.ctx.textAlign = 'center';
+    const topPadding = 35;
+    const leftOffset = 90; // Shifted 80px left from 200
+    this.ctx.fillText('♥', leftOffset - 12, topPadding); // Heart symbol
+    this.ctx.fillStyle = '#FF0000'; // White text for number
+    this.ctx.fillText(loveScore, leftOffset + 12, topPadding); // Score number
+
+    // Draw score bars
+    Object.entries(this.scores).forEach(([type, score], index) => {
+        const x = this.ctx.canvas.width - this.barWidth - this.padding;
+        const y = this.padding + (index * (this.barHeight + this.barSpacing));
+        const flashState = this.flashStates[type];
+
+        // Draw label
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 10px Arial';
+        this.ctx.textAlign = 'right';
+        this.ctx.fillText(type.toUpperCase(), x - this.textPadding, y + this.barHeight);
+
+        // Handle flash states and bar drawing
+        let shouldShow = true;
+        let isFlashFrame = false;
+        if (flashState.isFlashing) {
+            const elapsed = performance.now() - flashState.lastFlashTime;
+            const currentFlashCycle = Math.floor(elapsed / this.flashConfig.flashInterval);
+            shouldShow = Math.floor((elapsed % this.flashConfig.flashInterval) / this.flashConfig.flashDuration) === 0;
+            isFlashFrame = shouldShow;
+
+            if (currentFlashCycle >= this.flashConfig.totalFlashes) {
+                flashState.isFlashing = false;
+                shouldShow = true;
+                isFlashFrame = false;
+            }
+        }
+
+        // Draw the bars
+        if (shouldShow) {
+            const fillWidth = (score / this.maxScore) * this.barWidth;
+            const emptyWidth = this.barWidth - fillWidth;
+            
             if (flashState.isFlashing) {
-                const elapsed = performance.now() - flashState.lastFlashTime;
-                const currentFlashCycle = Math.floor(elapsed / this.flashConfig.flashInterval);
-                shouldShow = Math.floor((elapsed % this.flashConfig.flashInterval) / this.flashConfig.flashDuration) === 0;
-                isFlashFrame = shouldShow;
-
-                // Check if we should stop flashing
-                if (currentFlashCycle >= this.flashConfig.totalFlashes) {
-                    flashState.isFlashing = false;
-                    shouldShow = true;
-                    isFlashFrame = false;
+                if (fillWidth > 0) {
+                    this.ctx.fillStyle = this.colors[type];
+                    this.ctx.fillRect(x, y, fillWidth, this.barHeight);
                 }
-            }
-
-            // Draw the bars
-            if (shouldShow) {
-                const fillWidth = (score / this.maxScore) * this.barWidth;
-                const emptyWidth = this.barWidth - fillWidth;
                 
-                if (flashState.isFlashing) {
-                    // Draw the colored part (if any)
-                    if (fillWidth > 0) {
-                        this.ctx.fillStyle = this.colors[type];
-                        this.ctx.fillRect(x, y, fillWidth, this.barHeight);
-                    }
-                    
-                    // Draw the empty part with flashing effect
-                    if (emptyWidth > 0) {
-                        this.ctx.fillStyle = isFlashFrame ? '#FF0000' : 'rgba(0, 0, 0, 0.3)';
-                        this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
-                    }
-                } else {
-                    // Normal drawing
-                    if (fillWidth > 0) {
-                        this.ctx.fillStyle = this.colors[type];
-                        this.ctx.fillRect(x, y, fillWidth, this.barHeight);
-                    }
-                    // Draw grey background for empty part
-                    if (emptyWidth > 0) {
-                        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-                        this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
-                    }
+                if (emptyWidth > 0) {
+                    this.ctx.fillStyle = isFlashFrame ? '#FF0000' : 'rgba(0, 0, 0, 0.3)';
+                    this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
+                }
+            } else {
+                if (fillWidth > 0) {
+                    this.ctx.fillStyle = this.colors[type];
+                    this.ctx.fillRect(x, y, fillWidth, this.barHeight);
+                }
+                if (emptyWidth > 0) {
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                    this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
                 }
             }
-        });
+        }
+    });
 
-        this.scoreAnimation.update(this.ctx);
-        this.ctx.restore();
-    }
+    this.scoreAnimation.update(this.ctx);
+    this.ctx.restore();
+}
 
     cleanup() {
         if (this.countdownInterval) {
@@ -2579,7 +2612,6 @@ export class ScoreManager {
         });
     }
 }
-
 
 
 
@@ -4183,7 +4215,7 @@ import { CONFIG } from '../config.js';
 export class Diego extends BaseCharacter {
     constructor(x, y, width, height, sprites, type) {
         // Using fast speed multiplier similar to Walter
-        super(x, y, width, height, sprites, type, 3.5);
+        super(x, y, width, height, sprites, type, 1.1);
         
         const now = performance.now();
         
@@ -4229,7 +4261,7 @@ export class Diego extends BaseCharacter {
                 
                 if (gameInstance?.scoreManager) {
                     // Decrease energy
-                    gameInstance.scoreManager.increaseScore('energy', -30);
+                    gameInstance.scoreManager.increaseScore('energy', -20);
                     gameInstance.scoreManager.scoreAnimation.addAnimation(30, true);
                     
                     // Increase friendship
@@ -4318,9 +4350,6 @@ export class Diego extends BaseCharacter {
         super.cleanup();
     }
 }
-
-
-
 
 
 

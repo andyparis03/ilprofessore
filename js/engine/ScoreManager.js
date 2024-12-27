@@ -26,6 +26,8 @@ export class ScoreManager {
         this.gameOverTriggered = false;
         this.energyCountdownStarted = false;
         this.energyCountdownInterval = null;
+        this.isInTransition = false;
+        this.transitionScores = null;
 
         // Flash states for score bars
         this.flashStates = {
@@ -36,15 +38,28 @@ export class ScoreManager {
         
         this.flashConfig = {
             totalFlashes: 3,
-            flashDuration: 400,  // Duration of each flash in ms
-            flashInterval: 800   // Total time for one flash cycle (on+off)
+            flashDuration: 400,
+            flashInterval: 800
         };
         
-        // Initialize score animation system
         this.scoreAnimation = new ScoreAnimation();
-
-        // Start friendship countdown
         this.startFriendshipCountdown();
+    }
+
+    setTransitionState(isInTransition) {
+        console.log('Setting transition state:', isInTransition);
+        this.isInTransition = isInTransition;
+        if (isInTransition) {
+            this.transitionScores = { ...this.scores };
+        }
+    }
+
+    restoreTransitionScores() {
+        if (this.transitionScores) {
+            console.log('Restoring transition scores');
+            this.scores = { ...this.transitionScores };
+            this.transitionScores = null;
+        }
     }
 
     startBarFlash(type) {
@@ -79,7 +94,6 @@ export class ScoreManager {
                 }
                 this.scores[type] = newScore;
                 
-                // If increasing energy and we're in countdown, stop it
                 if (type === 'energy' && amount > 0 && this.scores.energy > 30) {
                     this.stopEnergyCountdown();
                     this.energyWarningShown = false;
@@ -94,7 +108,7 @@ export class ScoreManager {
         if (this.energyCountdownStarted) return;
         
         this.energyCountdownStarted = true;
-        const countdownInterval = 1000; // 1 second
+        const countdownInterval = 1000;
 
         this.energyCountdownInterval = setInterval(() => {
             const gameInstance = window.gameInstance;
@@ -125,48 +139,42 @@ export class ScoreManager {
         this.energyCountdownStarted = false;
     }
 
+    checkScores() {
+        const gameInstance = window.gameInstance;
+        if (!gameInstance || this.isInTransition) return;
 
+        // Check if we're in Level 5 with Diego
+        const isLevel5WithDiego = gameInstance.levelManager?.currentLevel === 5 && 
+            gameInstance.levelManager.characters.some(c => c.type === 'diego');
 
-
-checkScores() {
-    const gameInstance = window.gameInstance;
-    if (!gameInstance) return;
-
-    // Check if we're in Level 5 with Diego
-    const isLevel5WithDiego = gameInstance.levelManager?.currentLevel === 5 && 
-        gameInstance.levelManager.characters.some(c => c.type === 'diego');
-
-    // Check Love score only when not in Diego's level
-    if (!isLevel5WithDiego && this.scores.love <= 0 && !this.gameOverTriggered) {
-        console.log('Love score triggered game over');
-        this.startBarFlash('love');
-        this.gameOverTriggered = true;
-        this.triggerGameOver('love');
-    }
-
-    // Check Energy warnings and game over
-    if (this.scores.energy <= 30 && !this.energyWarningShown) {
-        this.energyWarningShown = true;
-        this.startBarFlash('energy');
-        if (gameInstance.renderer) {
-            gameInstance.renderer.showLowEnergyWarning();
+        // Check Love score only when not in Diego's level and not during transitions
+        if (!isLevel5WithDiego && this.scores.love <= 0 && !this.gameOverTriggered) {
+            console.log('Love score triggered game over');
+            this.startBarFlash('love');
+            this.gameOverTriggered = true;
+            this.triggerGameOver('love');
         }
-        if (gameInstance.audioManager) {
-            gameInstance.audioManager.playSound('dingdong');
+
+        // Check Energy warnings and game over
+        if (this.scores.energy <= 30 && !this.energyWarningShown) {
+            this.energyWarningShown = true;
+            this.startBarFlash('energy');
+            if (gameInstance.renderer) {
+                gameInstance.renderer.showLowEnergyWarning();
+            }
+            if (gameInstance.audioManager) {
+                gameInstance.audioManager.playSound('dingdong');
+            }
+            this.startEnergyCountdown();
         }
-        this.startEnergyCountdown();
+
+        if (this.scores.energy <= 0 && !this.gameOverTriggered) {
+            console.log('Energy score triggered game over');
+            this.startBarFlash('energy');
+            this.gameOverTriggered = true;
+            this.triggerGameOver('energy');
+        }
     }
-
-    if (this.scores.energy <= 0 && !this.gameOverTriggered) {
-        console.log('Energy score triggered game over');
-        this.startBarFlash('energy');
-        this.gameOverTriggered = true;
-        this.triggerGameOver('energy');
-    }
-}
-
-
-
 
     startFriendshipCountdown() {
         const countdownInterval = 1000;
@@ -259,81 +267,92 @@ checkScores() {
         }
     }
 
+    draw() {
+        this.ctx.save();
 
+        // Draw love score at top
+        const loveScore = Math.round(this.scores.love);
+        this.ctx.fillStyle = '#FF0000'; // Red heart
+        this.ctx.font = 'bold 24px Arial';
+        this.ctx.textAlign = 'center';
+        const topPadding = 35;
+        const leftOffset = 90;
+        this.ctx.fillText('♥', leftOffset - 12, topPadding); // Heart symbol
+        this.ctx.fillStyle = '#FF0000';
+        this.ctx.fillText(loveScore, leftOffset + 12, topPadding);
 
-draw() {
-    this.ctx.save();
+        // Draw score bars
+        Object.entries(this.scores).forEach(([type, score], index) => {
+            const x = this.ctx.canvas.width - this.barWidth - this.padding;
+            const y = this.padding + (index * (this.barHeight + this.barSpacing));
+            const flashState = this.flashStates[type];
 
-    // Draw love score at top
-    const loveScore = Math.round(this.scores.love);
-    this.ctx.fillStyle = '#FF0000'; // Red heart
-    this.ctx.font = 'bold 24px Arial';
-    this.ctx.textAlign = 'center';
-    const topPadding = 35;
-    const leftOffset = 100; // Shifted 80px left from 200
-    this.ctx.fillText('♥', leftOffset - 10, topPadding); // Heart symbol
-    this.ctx.fillStyle = '#FF0000'; // White text for number
-    this.ctx.fillText(loveScore, leftOffset + 10, topPadding); // Score number
+            // Draw label
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = 'bold 10px Arial';
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText(type.toUpperCase(), x - this.textPadding, y + this.barHeight);
 
-    // Draw score bars
-    Object.entries(this.scores).forEach(([type, score], index) => {
-        const x = this.ctx.canvas.width - this.barWidth - this.padding;
-        const y = this.padding + (index * (this.barHeight + this.barSpacing));
-        const flashState = this.flashStates[type];
-
-        // Draw label
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 10px Arial';
-        this.ctx.textAlign = 'right';
-        this.ctx.fillText(type.toUpperCase(), x - this.textPadding, y + this.barHeight);
-
-        // Handle flash states and bar drawing
-        let shouldShow = true;
-        let isFlashFrame = false;
-        if (flashState.isFlashing) {
-            const elapsed = performance.now() - flashState.lastFlashTime;
-            const currentFlashCycle = Math.floor(elapsed / this.flashConfig.flashInterval);
-            shouldShow = Math.floor((elapsed % this.flashConfig.flashInterval) / this.flashConfig.flashDuration) === 0;
-            isFlashFrame = shouldShow;
-
-            if (currentFlashCycle >= this.flashConfig.totalFlashes) {
-                flashState.isFlashing = false;
-                shouldShow = true;
-                isFlashFrame = false;
-            }
-        }
-
-        // Draw the bars
-        if (shouldShow) {
-            const fillWidth = (score / this.maxScore) * this.barWidth;
-            const emptyWidth = this.barWidth - fillWidth;
-            
+            // Handle flash states and bar drawing
+            let shouldShow = true;
+            let isFlashFrame = false;
             if (flashState.isFlashing) {
-                if (fillWidth > 0) {
-                    this.ctx.fillStyle = this.colors[type];
-                    this.ctx.fillRect(x, y, fillWidth, this.barHeight);
-                }
-                
-                if (emptyWidth > 0) {
-                    this.ctx.fillStyle = isFlashFrame ? '#FF0000' : 'rgba(0, 0, 0, 0.3)';
-                    this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
-                }
-            } else {
-                if (fillWidth > 0) {
-                    this.ctx.fillStyle = this.colors[type];
-                    this.ctx.fillRect(x, y, fillWidth, this.barHeight);
-                }
-                if (emptyWidth > 0) {
-                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-                    this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
+                const elapsed = performance.now() - flashState.lastFlashTime;
+                const currentFlashCycle = Math.floor(elapsed / this.flashConfig.flashInterval);
+                shouldShow = Math.floor((elapsed % this.flashConfig.flashInterval) / this.flashConfig.flashDuration) === 0;
+                isFlashFrame = shouldShow;
+
+                if (currentFlashCycle >= this.flashConfig.totalFlashes) {
+                    flashState.isFlashing = false;
+                    shouldShow = true;
+                    isFlashFrame = false;
                 }
             }
-        }
-    });
 
-    this.scoreAnimation.update(this.ctx);
-    this.ctx.restore();
-}
+            // Draw the bars
+            if (shouldShow) {
+                const scoreValue = Math.round(score);
+                const fillWidth = (score / this.maxScore) * this.barWidth;
+                const emptyWidth = this.barWidth - fillWidth;
+                
+                if (flashState.isFlashing) {
+                    if (fillWidth > 0) {
+                        this.ctx.fillStyle = this.colors[type];
+                        this.ctx.fillRect(x, y, fillWidth, this.barHeight);
+                        
+                        // Draw score number inside the filled portion
+                        this.ctx.fillStyle = '#000000';
+                        this.ctx.font = 'bold 8px Arial';
+                        this.ctx.textAlign = 'left';
+                        this.ctx.fillText(scoreValue, x + 2, y + this.barHeight - 2);
+                    }
+                    
+                    if (emptyWidth > 0) {
+                        this.ctx.fillStyle = isFlashFrame ? '#FF0000' : 'rgba(0, 0, 0, 0.3)';
+                        this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
+                    }
+                } else {
+                    if (fillWidth > 0) {
+                        this.ctx.fillStyle = this.colors[type];
+                        this.ctx.fillRect(x, y, fillWidth, this.barHeight);
+                        
+                        // Draw score number inside the filled portion
+                        this.ctx.fillStyle = '#000000';
+                        this.ctx.font = 'bold 8px Arial';
+                        this.ctx.textAlign = 'left';
+                        this.ctx.fillText(scoreValue, x + 2, y + this.barHeight - 2);
+                    }
+                    if (emptyWidth > 0) {
+                        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                        this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
+                    }
+                }
+            }
+        });
+
+        this.scoreAnimation.update(this.ctx);
+        this.ctx.restore();
+    }
 
     cleanup() {
         if (this.countdownInterval) {
