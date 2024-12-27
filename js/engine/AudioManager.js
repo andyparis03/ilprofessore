@@ -63,6 +63,7 @@ export class AudioManager {
         console.log('Loading sounds...');
         try {
             const soundsToLoad = [
+		['recharge', './assets/sounds/recharge.mp3'],
                 ['buzz', './assets/sounds/buzz.mp3'],
                 ['dingdong', './assets/sounds/dingdong.mp3'],
                 ['drink', './assets/sounds/drink.mp3'],

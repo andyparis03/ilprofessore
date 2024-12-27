@@ -316,6 +316,7 @@ export class LevelManager {
                 const game = window.gameInstance;
                 if (game?.audioManager) {
                     game.audioManager.playSound('diego_sound');
+    		    game.audioManager.playSound('recharge');
                 }
                 
                 // Add Diego character
@@ -338,7 +339,7 @@ export class LevelManager {
         this.friendshipInterval = setInterval(() => {
             const gameInstance = window.gameInstance;
             if (gameInstance?.scoreManager && !gameInstance.gameState?.isGameOver) {
-                gameInstance.scoreManager.increaseScore('friendship', 1);
+                gameInstance.scoreManager.increaseScore('friendship', 3);
             }
         }, 1000);
     }

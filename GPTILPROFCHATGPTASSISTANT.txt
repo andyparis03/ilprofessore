@@ -58,6 +58,7 @@ Ilprofessore
 │   │       level1.json
 │   │
 │   ├───sounds
+│   │       recharge.mp3
 │   │       diego-sound.mp3
 │   │       drink.mp3
 │   │       dingdong.mp3

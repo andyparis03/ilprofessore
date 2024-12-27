@@ -74,7 +74,8 @@ export class AssetLoader {
                 waltersound,
                 walterwelcome,
                 diegosound,
-                millysound
+                millysound,
+		recharge
             ] = await Promise.all([
                 this.loadImage('./assets/sprites/professore/professore-idle.png'),
                 this.loadImage('./assets/sprites/professore/professore-spritesheet.png'),
@@ -117,7 +118,8 @@ export class AssetLoader {
                 this.loadSound(audioContext, './assets/sounds/walter-sound.mp3'),
                 this.loadSound(audioContext, './assets/sounds/walter-welcome.mp3'),
                 this.loadSound(audioContext, './assets/sounds/diego-sound.mp3'),
-                this.loadSound(audioContext, './assets/sounds/milly-sound.mp3')
+                this.loadSound(audioContext, './assets/sounds/milly-sound.mp3'),
+		this.loadSound(audioContext, './assets/sounds/recharge.mp3')
             ]);
 
             return {
@@ -153,7 +155,8 @@ export class AssetLoader {
                     waltersound,
                     walterwelcome,
                     diegosound,
-                    millysound
+                    millysound,
+		    recharge
                 },
                 audioContext
             };

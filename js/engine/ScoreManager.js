@@ -176,55 +176,65 @@ export class ScoreManager {
         }
     }
 
-    startFriendshipCountdown() {
-        const countdownInterval = 1000;
-        this.countdownInterval = setInterval(() => {
-            const gameInstance = window.gameInstance;
-            if (gameInstance?.gameState?.isGameOver) {
-                clearInterval(this.countdownInterval);
-                return;
-            }
 
-            if (this.scores.friendship > 0) {
-                this.scores.friendship--;
 
-                if (this.scores.friendship === 30 && !this.warningShown) {
-                    this.warningShown = true;
-                    this.startBarFlash('friendship');
-                    if (gameInstance?.renderer) {
-                        gameInstance.renderer.setScreenMessage('diegoWarning');
-                    }
-                    if (gameInstance?.audioManager) {
-                        gameInstance.audioManager.playSound('dingdong');
-                    }
+startFriendshipCountdown() {
+    const countdownInterval = 1000;
+    this.countdownInterval = setInterval(() => {
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.gameState?.isGameOver) {
+            clearInterval(this.countdownInterval);
+            return;
+        }
+
+        // Don't decrease friendship in level 5
+        if (gameInstance?.levelManager?.currentLevel === 5) {
+            return;
+        }
+
+        if (this.scores.friendship > 0) {
+            this.scores.friendship--;
+
+            if (this.scores.friendship === 30 && !this.warningShown) {
+                this.warningShown = true;
+                this.startBarFlash('friendship');
+                if (gameInstance?.renderer) {
+                    gameInstance.renderer.setScreenMessage('diegoWarning');
                 }
-
-                if (this.scores.friendship === 0 && !this.gameOverTriggered) {
-                    console.log('Friendship score triggered game over');
-                    this.gameOverTriggered = true;
-                    this.startBarFlash('friendship');
-
-                    if (gameInstance?.audioManager) {
-                        gameInstance.audioManager.playSound('buzz');
-                    }
-
-                    if (gameInstance?.renderer) {
-                        gameInstance.renderer.setScreenMessage('diegoGameOver');
-                    }
-                    if (gameInstance?.gameState) {
-                        gameInstance.gameState.isGameOver = true;
-                        setTimeout(() => {
-                            if (gameInstance.audioManager) {
-                                gameInstance.audioManager.playSound('suina_evil');
-                            }
-                            gameInstance.renderer.setScreenMessage('finalGameOver');
-                            gameInstance.renderer.showNewGameButton();
-                        }, 3000);
-                    }
+                if (gameInstance?.audioManager) {
+                    gameInstance.audioManager.playSound('dingdong');
                 }
             }
-        }, countdownInterval);
-    }
+
+            if (this.scores.friendship === 0 && !this.gameOverTriggered) {
+                console.log('Friendship score triggered game over');
+                this.gameOverTriggered = true;
+                this.startBarFlash('friendship');
+
+                if (gameInstance?.audioManager) {
+                    gameInstance.audioManager.playSound('buzz');
+                }
+
+                if (gameInstance?.renderer) {
+                    gameInstance.renderer.setScreenMessage('diegoGameOver');
+                }
+                if (gameInstance?.gameState) {
+                    gameInstance.gameState.isGameOver = true;
+                    setTimeout(() => {
+                        if (gameInstance.audioManager) {
+                            gameInstance.audioManager.playSound('suina_evil');
+                        }
+                        gameInstance.renderer.setScreenMessage('finalGameOver');
+                        gameInstance.renderer.showNewGameButton();
+                    }, 3000);
+                }
+            }
+        }
+    }, countdownInterval);
+}
+
+
+
 
     triggerGameOver(type) {
         const gameInstance = window.gameInstance;
