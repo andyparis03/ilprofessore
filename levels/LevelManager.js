@@ -1,3 +1,4 @@
+
 // LevelManager.js
 import { CONFIG } from '../config.js';
 import { CharacterRegistry } from '../utils/CharacterRegistry.js';
@@ -317,7 +318,7 @@ export class LevelManager {
 
         this.friendshipInterval = setInterval(() => {
             if (gameInstance?.scoreManager && !gameInstance.gameState?.isGameOver) {
-                gameInstance.scoreManager.increaseScore('friendship', 3);
+                gameInstance.scoreManager.increaseScore('friendship', 10);
             }
         }, 1000);
     }
