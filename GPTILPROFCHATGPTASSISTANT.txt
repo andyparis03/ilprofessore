@@ -573,6 +573,7 @@ export const CONFIG = {
 
 assetLoader.js:
 // AssetLoader.js
+// AssetLoader.js
 export class AssetLoader {
     static async loadImage(src, fallbackSrc = null) {
         const img = new Image();
@@ -648,7 +649,8 @@ export class AssetLoader {
                 waltersound,
                 walterwelcome,
                 diegosound,
-                millysound
+                millysound,
+		recharge
             ] = await Promise.all([
                 this.loadImage('./assets/sprites/professore/professore-idle.png'),
                 this.loadImage('./assets/sprites/professore/professore-spritesheet.png'),
@@ -691,7 +693,8 @@ export class AssetLoader {
                 this.loadSound(audioContext, './assets/sounds/walter-sound.mp3'),
                 this.loadSound(audioContext, './assets/sounds/walter-welcome.mp3'),
                 this.loadSound(audioContext, './assets/sounds/diego-sound.mp3'),
-                this.loadSound(audioContext, './assets/sounds/milly-sound.mp3')
+                this.loadSound(audioContext, './assets/sounds/milly-sound.mp3'),
+		this.loadSound(audioContext, './assets/sounds/recharge.mp3')
             ]);
 
             return {
@@ -727,7 +730,8 @@ export class AssetLoader {
                     waltersound,
                     walterwelcome,
                     diegosound,
-                    millysound
+                    millysound,
+		    recharge
                 },
                 audioContext
             };
@@ -980,449 +984,497 @@ import { Diego } from '../characters/Diego.js';
 import { Milly } from '../characters/Milly.js';
 
 export class LevelManager {
-   constructor(assets, gameState = null) {
-       this.assets = assets;
-       this.gameState = gameState;
-       this.registry = new CharacterRegistry();
-       this.currentLevel = 1;
-       this.characters = [];
-       this.characterTimers = {};
-       this.player = null;
-       this.transitionState = {
-           inProgress: false,
-           timeout: null,
-           startTime: null,
-           duration: 500,
-           previousLevel: null,
-           targetLevel: null
-       };
-
-       this.registerCharacters();
-       this.setupBackButton();
-
-       console.log('LevelManager Constructor:', {
-           worldBounds: {
-               width: CONFIG.WORLD.WIDTH,
-               height: CONFIG.WORLD.HEIGHT
-           }
-       });
-   }
-
-   isGameStopped() {
-       return this.transitionState.inProgress || (this.gameState?.isGameOver ?? false);
-   }
-
-   registerCharacters() {
-       this.registry.registerCharacter('suina1', Suina1);
-       this.registry.registerCharacter('suina2', Suina2);
-       this.registry.registerCharacter('suinaevil', SuinaEvil);
-       this.registry.registerCharacter('walter', Walter);
-       this.registry.registerCharacter('diego', Diego);
-       this.registry.registerCharacter('milly', Milly);
-   }
-
-   setupBackButton() {
-       const backButton = document.getElementById('back-button');
-       if (!backButton) return;
-
-       backButton.addEventListener('click', (e) => {
-           e.preventDefault();
-           e.stopPropagation();
-           if (this.currentLevel !== 1) {
-               this.transitionToLevel1();
-           }
-       });
-
-       this.updateBackButtonVisibility();
-   }
-
-   updateBackButtonVisibility() {
-       const backButton = document.getElementById('back-button');
-       if (backButton) {
-           backButton.style.display = this.currentLevel === 1 ? 'none' : 'block';
-       }
-   }
-
-   async transitionToLevel1() {
-       if (this.isGameStopped()) return;
-       
-       this.clearTimers();
-       
-       if (this.player) {
-           this.player.x = CONFIG.WORLD.WIDTH / 2;
-           this.player.y = CONFIG.WORLD.HEIGHT / 2;
-       }
-
-       await this.loadLevel(1, this.player);
-       this.updateBackButtonVisibility();
-   }
-
-   async loadLevel(levelNumber, player) {
-       const levelConfig = CONFIG.LEVELS[levelNumber];
-       if (!levelConfig) {
-           console.error(`Level ${levelNumber} configuration not found.`);
-           return;
-       }
-
-       if (this.isGameStopped()) {
-           console.warn('Level transition blocked - transition in progress or game over');
-           return;
-       }
-
-       console.log('Loading level:', {
-           level: levelNumber,
-           worldBounds: {
-               width: CONFIG.WORLD.WIDTH,
-               height: CONFIG.WORLD.HEIGHT
-           }
-       });
-
-       try {
-           await this.startTransition(levelNumber);
-           const storedStates = this.preserveCharacterStates();
-           await this.clearCurrentLevel();
-           await this.setupNewLevel(levelNumber, player, storedStates);
-           await this.completeTransition();
-           console.log(`Loaded level ${levelNumber}`);
-       } catch (error) {
-           console.error('Error during level transition:', error);
-           this.handleTransitionError();
-       }
-   }
-
-   async startTransition(newLevelNumber) {
-       this.transitionState = {
-           inProgress: true,
-           startTime: performance.now(),
-           previousLevel: this.currentLevel,
-           targetLevel: newLevelNumber,
-           duration: 500,
-           timeout: null
-       };
-
-       if (this.transitionState.timeout) {
-           clearTimeout(this.transitionState.timeout);
-       }
-
-       this.characters.forEach(char => {
-           if (char && typeof char.pauseUpdates === 'function') {
-               char.pauseUpdates();
-           }
-       });
-   }
-
-   preserveCharacterStates() {
-       const storedStates = new Map();
-       this.characters.forEach(char => {
-           if (char && char.type) {
-               const state = this.registry.preserveState(char);
-               if (state) {
-                   storedStates.set(char.type, state);
-               }
-           }
-       });
-       return storedStates;
-   }
-
-   async clearCurrentLevel() {
-       this.clearTimers();
-       
-       this.characters.forEach(char => {
-           if (char && typeof char.cleanup === 'function') {
-               char.cleanup();
-           }
-       });
-
-       this.characters = [];
-       this.characterTimers = {};
-   }
-
-   async setupNewLevel(levelNumber, player, storedStates) {
-       this.currentLevel = levelNumber;
-       
-       if (this.player !== player) {
-           this.player = player;
-       }
-
-       await this.loadCharactersForLevel(levelNumber, storedStates);
-       this.updateBackButtonVisibility();
-       this.resetPlayerState();
-
-       this.characters.forEach(char => {
-           if (char && char.resumeUpdates) {
-               char.resumeUpdates();
-           }
-       });
-
-       console.log('Level setup complete, characters:', this.characters.map(char => ({
-           type: char.type,
-           isPaused: char.isPaused,
-           isIdle: char.isIdle
-       })));
-   }
-
-   resetPlayerState() {
-       if (!this.player) return;
-
-       const now = performance.now();
-       this.player.lastUpdateTime = now;
-       this.player.lastAnimationUpdate = now;
-       this.player.frameTime = now;
-       this.player.updateSpeedMultiplier();
-       
-       this.player.velocity = { x: 0, y: 0 };
-       this.player.movementBuffer = { x: 0, y: 0 };
-
-       if (!this.isGameStopped()) {
-           this.player.x = CONFIG.WORLD.WIDTH / 2;
-           this.player.y = CONFIG.WORLD.HEIGHT / 2;
-       }
-
-       this.player.frame = this.player.frame % this.player.totalFrames;
-   }
-
-   async completeTransition() {
-       return new Promise((resolve) => {
-           const remainingTime = Math.max(0, 
-               this.transitionState.duration - (performance.now() - this.transitionState.startTime));
-
-           this.transitionState.timeout = setTimeout(() => {
-               this.characters.forEach(char => {
-                   if (char && char.resumeUpdates) {
-                       console.log('Resuming character:', char.type);
-                       char.resumeUpdates();
-                   }
-               });
-
-               this.transitionState = {
-                   inProgress: false,
-                   timeout: null,
-                   startTime: null,
-                   previousLevel: null,
-                   targetLevel: null,
-                   duration: 500
-               };
-
-               resolve();
-           }, remainingTime);
-       });
-   }
-
-   handleTransitionError() {
-       this.transitionState = {
-           inProgress: false,
-           timeout: null,
-           startTime: null,
-           previousLevel: null,
-           targetLevel: null,
-           duration: 500
-       };
-
-       if (!this.isGameStopped()) {
-           this.characters.forEach(char => {
-               if (char && typeof char.resumeUpdates === 'function') {
-                   char.resumeUpdates();
-               }
-           });
-       }
-   }
-
-   loadCharactersForLevel(levelNumber, storedStates) {
-       switch (levelNumber) {
-           case 1:
-               this.addRandomCharacter('milly', 10000);
-               break;
-           case 2:
-           case 3:
-               if (this.characters.length === 0) {
-                   this.addCharacter('suina1', 
-                       Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH), 
-                       Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT), 
-                       storedStates);
-               }
-               break;
-
-
-
-case 4:
-               // Play welcome sound when transitioning to level 4
-               const gameInstance = window.gameInstance;
-               if (gameInstance?.audioManager) {
-                   gameInstance.audioManager.playSound('walter_welcome');
-               }
-               this.addCharacter('walter', 150, 250);
-               break;
-
-           case 5:
-               this.addCharacter('diego', 700, 400);
-               break;
-           default:
-               console.warn(`No characters defined for level ${levelNumber}`);
-               break;
-       }
-   }
-
-   spawnNextRandomCharacter() {
-       console.log("Spawning next random character...");
-       if (this.currentLevel !== 2 && this.currentLevel !== 3) {
-           console.log("Not in level 2 or 3, skipping spawn");
-           return;
-       }
-
-       const characterTypes = ['suina1', 'suina2', 'suinaevil'];
-       const characterType = characterTypes[Math.floor(Math.random() * characterTypes.length)];
-       
-       console.log(`Selected character type: ${characterType}`);
-       
-       const x = Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH);
-       const y = Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT);
-       
-       this.addCharacter(characterType, x, y);
-   }
-
-   handleCharacterDisappear(character) {
-       console.log(`Handling disappearance of character: ${character.type}`);
-       
-       this.characters = this.characters.filter(c => c !== character);
-
-       if ((character.type === 'suina1' || character.type === 'suina2' || character.type === 'suinaevil') && 
-           (this.currentLevel === 2 || this.currentLevel === 3)) {
-           
-           console.log("Triggering next random character spawn");
-           this.spawnNextRandomCharacter();
-       }
-   }
-
-   addCharacter(type, x, y, storedStates = null) {
-       console.log('Adding character:', { type, x, y });
-       const CharacterClass = this.registry.getCharacterClass(type);
-       const sprites = this.assets.sprites[type];
-
-       if (!CharacterClass || !sprites) {
-           console.error(`Invalid character type or missing sprites: ${type}`);
-           return;
-       }
-
-       const character = new CharacterClass(x, y, CONFIG.PLAYER.WIDTH, CONFIG.PLAYER.HEIGHT, sprites, type.toLowerCase());
-
-       if (storedStates) {
-           const storedState = storedStates.get(type.toLowerCase());
-           if (storedState) {
-               Object.assign(character, storedState);
-           }
-       }
-
-       character.isIdle = false;
-       character.isPaused = false;
-       character.levelManager = this;
-
-       console.log('Character created:', {
-           type: character.type,
-           isPaused: character.isPaused,
-           isIdle: character.isIdle
-       });
-
-       this.characters.push(character);
-       return character;
-   }
-
-   addRandomCharacter(type, interval) {
-       const spawnRandomly = () => {
-           if (this.currentLevel !== 1) return;
-           const x = Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH);
-           const y = Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT);
-           this.addCharacter(type, x, y);
-       };
-
-       this.characterTimers[type] = setInterval(spawnRandomly, interval);
-   }
-
-   update(player, worldBounds, input) {
-       console.log('LevelManager Update:', {
-           isGameStopped: this.isGameStopped(),
-           characterCount: this.characters.length,
-           characters: this.characters.map(char => ({
-               type: char.type,
-               position: { x: char.x, y: char.y },
-               isPaused: char.isPaused,
-               isCaught: char.isCaught
-           }))
-       });
-
-       if (this.isGameStopped()) {
-           console.log('LevelManager Update blocked by isGameStopped');
-           return;
-       }
-
-       this.characters = this.characters.filter(character => character && character.type);
-
-       console.log('Updating characters:', this.characters.length);
-
-       this.characters.forEach((character) => {
-           console.log('Updating character:', {
-               type: character.type,
-               isPaused: character.isPaused,
-               isCaught: character.isCaught,
-               isVisible: character.isVisible
-           });
-
-           if (!character.isCaught && !character.isPaused) {
-               character.update(player, {
-                   width: CONFIG.WORLD.WIDTH,
-                   height: CONFIG.WORLD.HEIGHT
-               }, input);
-           } else {
-               console.log('Character update skipped:', {
-                   type: character.type,
-                   isCaught: character.isCaught,
-                   isPaused: character.isPaused
-               });
-           }
-       });
-   }
-
-   checkLevelTransition(player) {
-       if (this.isGameStopped()) return false;
-
-       const currentLevelConfig = CONFIG.LEVELS[this.currentLevel];
-       if (!currentLevelConfig || !currentLevelConfig.transitions) {
-           return false;
-       }
-
-       const gameInstance = window.gameInstance;
-       if (!gameInstance?.scoreManager) return false;
-
-       for (const [locationName, transition] of Object.entries(currentLevelConfig.transitions)) {
-           if (
-               player.x >= transition.x.min &&
-               player.x <= transition.x.max &&
-               player.y >= transition.y.min &&
-               player.y <= transition.y.max
-           ) {
-
-
-//               if (locationName === 'GUSTO' /*&& //gameInstance.scoreManager.scores.energy > 30*/) {
-//                   if (gameInstance.renderer) {
-//                       gameInstance.renderer.setScreenMessage//('gustoClosed');
-//                   }
-//                   return false;
-//               }
-
-
-//               if (locationName === 'CHESTER' && gameInstance.scoreManager.scores.friendship > 30) {
-//                   if (gameInstance.renderer) {
-//                       gameInstance.renderer.setScreenMessage('chesterClosed');
-//                   }
-//                   return false;
-//               }
-
-               this.loadLevel(transition.nextLevel, player);
-               return true;
-           }
-       }
-
-       return false;
-   }
+    constructor(assets, gameState = null) {
+        this.assets = assets;
+        this.gameState = gameState;
+        this.registry = new CharacterRegistry();
+        this.currentLevel = 1;
+        this.characters = [];
+        this.characterTimers = {};
+        this.friendshipInterval = null;
+        this.player = null;
+        this.preservedScores = null;
+        this.transitionState = {
+            inProgress: false,
+            timeout: null,
+            startTime: null,
+            duration: 500,
+            previousLevel: null,
+            targetLevel: null
+        };
+
+        this.registerCharacters();
+        this.setupBackButton();
+
+        console.log('LevelManager Constructor:', {
+            worldBounds: {
+                width: CONFIG.WORLD.WIDTH,
+                height: CONFIG.WORLD.HEIGHT
+            }
+        });
+    }
+
+    isGameStopped() {
+        return this.transitionState.inProgress || (this.gameState?.isGameOver ?? false);
+    }
+
+    registerCharacters() {
+        this.registry.registerCharacter('suina1', Suina1);
+        this.registry.registerCharacter('suina2', Suina2);
+        this.registry.registerCharacter('suinaevil', SuinaEvil);
+        this.registry.registerCharacter('walter', Walter);
+        this.registry.registerCharacter('diego', Diego);
+        this.registry.registerCharacter('milly', Milly);
+    }
+
+    setupBackButton() {
+        const backButton = document.getElementById('back-button');
+        if (!backButton) return;
+
+        backButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (this.currentLevel !== 1) {
+                this.transitionToLevel1();
+            }
+        });
+
+        this.updateBackButtonVisibility();
+    }
+
+    updateBackButtonVisibility() {
+        const backButton = document.getElementById('back-button');
+        if (backButton) {
+            backButton.style.display = this.currentLevel === 1 ? 'none' : 'block';
+        }
+    }
+
+    async transitionToLevel1() {
+        if (this.isGameStopped()) return;
+        
+        this.clearTimers();
+        
+        if (this.player) {
+            this.player.x = CONFIG.WORLD.WIDTH / 2;
+            this.player.y = CONFIG.WORLD.HEIGHT / 2;
+        }
+
+        await this.loadLevel(1, this.player);
+        this.updateBackButtonVisibility();
+    }
+
+    async loadLevel(levelNumber, player) {
+        const levelConfig = CONFIG.LEVELS[levelNumber];
+        if (!levelConfig) {
+            console.error(`Level ${levelNumber} configuration not found.`);
+            return;
+        }
+
+        if (this.isGameStopped()) {
+            console.warn('Level transition blocked - transition in progress or game over');
+            return;
+        }
+
+        // Handle friendship system when leaving level 5
+        if (levelNumber !== 5 && this.friendshipInterval) {
+            clearInterval(this.friendshipInterval);
+            this.friendshipInterval = null;
+            
+            // Restart countdown only when leaving level 5
+            if (this.currentLevel === 5) {
+                const gameInstance = window.gameInstance;
+                if (gameInstance?.scoreManager) {
+                    gameInstance.scoreManager.startFriendshipCountdown();
+                }
+            }
+        }
+
+        console.log('Loading level:', {
+            level: levelNumber,
+            worldBounds: {
+                width: CONFIG.WORLD.WIDTH,
+                height: CONFIG.WORLD.HEIGHT
+            }
+        });
+
+        try {
+            await this.startTransition(levelNumber);
+            const storedStates = this.preserveCharacterStates();
+            await this.clearCurrentLevel();
+            await this.setupNewLevel(levelNumber, player, storedStates);
+            await this.completeTransition();
+            console.log(`Loaded level ${levelNumber}`);
+        } catch (error) {
+            console.error('Error during level transition:', error);
+            this.handleTransitionError();
+        }
+    }
+
+    async startTransition(newLevelNumber) {
+        console.log('Starting level transition:', newLevelNumber);
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.scoreManager) {
+            gameInstance.scoreManager.setTransitionState(true);
+        }
+
+        this.transitionState = {
+            inProgress: true,
+            startTime: performance.now(),
+            previousLevel: this.currentLevel,
+            targetLevel: newLevelNumber,
+            duration: 500,
+            timeout: null
+        };
+
+        if (this.transitionState.timeout) {
+            clearTimeout(this.transitionState.timeout);
+        }
+
+        if (gameInstance?.scoreManager) {
+            this.preservedScores = { ...gameInstance.scoreManager.scores };
+        }
+
+        this.characters.forEach(char => {
+            if (char && typeof char.pauseUpdates === 'function') {
+                char.pauseUpdates();
+            }
+        });
+    }
+
+    preserveCharacterStates() {
+        const storedStates = new Map();
+        this.characters.forEach(char => {
+            if (char && char.type) {
+                const state = this.registry.preserveState(char);
+                if (state) {
+                    storedStates.set(char.type, state);
+                }
+            }
+        });
+        return storedStates;
+    }
+
+    async clearCurrentLevel() {
+        this.clearTimers();
+        
+        this.characters.forEach(char => {
+            if (char && typeof char.cleanup === 'function') {
+                char.cleanup();
+            }
+        });
+
+        this.characters = [];
+        this.characterTimers = {};
+    }
+
+    async setupNewLevel(levelNumber, player, storedStates) {
+        this.currentLevel = levelNumber;
+        
+        if (this.player !== player) {
+            this.player = player;
+        }
+
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.scoreManager && this.preservedScores) {
+            console.log('Restoring scores:', this.preservedScores);
+            gameInstance.scoreManager.scores = { ...this.preservedScores };
+            this.preservedScores = null;
+        }
+
+        await this.loadCharactersForLevel(levelNumber, storedStates);
+        this.updateBackButtonVisibility();
+        this.resetPlayerState();
+
+        this.characters.forEach(char => {
+            if (char && char.resumeUpdates) {
+                char.resumeUpdates();
+            }
+        });
+
+        console.log('Level setup complete, characters:', this.characters.map(char => ({
+            type: char.type,
+            isPaused: char.isPaused,
+            isIdle: char.isIdle
+        })));
+    }
+
+    resetPlayerState() {
+        if (!this.player) return;
+
+        const now = performance.now();
+        this.player.lastUpdateTime = now;
+        this.player.lastAnimationUpdate = now;
+        this.player.frameTime = now;
+        this.player.updateSpeedMultiplier();
+        
+        this.player.velocity = { x: 0, y: 0 };
+        this.player.movementBuffer = { x: 0, y: 0 };
+
+        if (!this.isGameStopped()) {
+            this.player.x = CONFIG.WORLD.WIDTH / 2;
+            this.player.y = CONFIG.WORLD.HEIGHT / 2;
+        }
+
+        this.player.frame = this.player.frame % this.player.totalFrames;
+    }
+
+    async completeTransition() {
+        return new Promise((resolve) => {
+            const remainingTime = Math.max(0, 
+                this.transitionState.duration - (performance.now() - this.transitionState.startTime));
+
+            this.transitionState.timeout = setTimeout(() => {
+                this.characters.forEach(char => {
+                    if (char && char.resumeUpdates) {
+                        console.log('Resuming character:', char.type);
+                        char.resumeUpdates();
+                    }
+                });
+
+                const gameInstance = window.gameInstance;
+                if (gameInstance?.scoreManager) {
+                    setTimeout(() => {
+                        gameInstance.scoreManager.setTransitionState(false);
+                    }, 100);
+                }
+
+                this.transitionState = {
+                    inProgress: false,
+                    timeout: null,
+                    startTime: null,
+                    previousLevel: null,
+                    targetLevel: null,
+                    duration: 500
+                };
+
+                resolve();
+            }, remainingTime);
+        });
+    }
+
+    handleTransitionError() {
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.scoreManager) {
+            gameInstance.scoreManager.setTransitionState(false);
+        }
+
+        this.transitionState = {
+            inProgress: false,
+            timeout: null,
+            startTime: null,
+            previousLevel: null,
+            targetLevel: null,
+            duration: 500
+        };
+
+        if (!this.isGameStopped()) {
+            this.characters.forEach(char => {
+                if (char && typeof char.resumeUpdates === 'function') {
+                    char.resumeUpdates();
+                }
+            });
+        }
+    }
+
+    startFriendshipIncrease() {
+        if (this.friendshipInterval) {
+            clearInterval(this.friendshipInterval);
+        }
+
+        const gameInstance = window.gameInstance;
+        // Stop the countdown first
+        if (gameInstance?.scoreManager) {
+            if (gameInstance.scoreManager.countdownInterval) {
+                clearInterval(gameInstance.scoreManager.countdownInterval);
+                gameInstance.scoreManager.countdownInterval = null;
+            }
+        }
+
+        this.friendshipInterval = setInterval(() => {
+            if (gameInstance?.scoreManager && !gameInstance.gameState?.isGameOver) {
+                gameInstance.scoreManager.increaseScore('friendship', 3);
+            }
+        }, 1000);
+    }
+
+    loadCharactersForLevel(levelNumber, storedStates) {
+        switch (levelNumber) {
+            case 1:
+                this.addRandomCharacter('milly', 10000);
+                break;
+            case 2:
+            case 3:
+                if (this.characters.length === 0) {
+                    this.addCharacter('suina1', 
+                        Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH), 
+                        Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT), 
+                        storedStates);
+                }
+                break;
+            case 4:
+                const gameInstance = window.gameInstance;
+                if (gameInstance?.audioManager) {
+                    gameInstance.audioManager.playSound('walter_welcome');
+                }
+                this.addCharacter('walter', 150, 250);
+                break;
+            case 5:
+                const game = window.gameInstance;
+                if (game?.audioManager) {
+                    game.audioManager.playSound('diego_sound');
+                }
+                
+                this.addCharacter('diego', 700, 400);
+                this.startFriendshipIncrease();
+                break;
+            default:
+                console.warn(`No characters defined for level ${levelNumber}`);
+                break;
+        }
+    }
+
+    spawnNextRandomCharacter() {
+        console.log("Spawning next random character...");
+        if (this.currentLevel !== 2 && this.currentLevel !== 3) {
+            console.log("Not in level 2 or 3, skipping spawn");
+            return;
+        }
+
+        const characterTypes = ['suina1', 'suina2', 'suinaevil'];
+        const characterType = characterTypes[Math.floor(Math.random() * characterTypes.length)];
+        
+        console.log(`Selected character type: ${characterType}`);
+        
+        const x = Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH);
+        const y = Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT);
+        
+        this.addCharacter(characterType, x, y);
+    }
+
+    handleCharacterDisappear(character) {
+        console.log(`Handling disappearance of character: ${character.type}`);
+        
+        this.characters = this.characters.filter(c => c !== character);
+
+        if ((character.type === 'suina1' || character.type === 'suina2' || character.type === 'suinaevil') && 
+            (this.currentLevel === 2 || this.currentLevel === 3)) {
+            
+            console.log("Triggering next random character spawn");
+            this.spawnNextRandomCharacter();
+        }
+    }
+
+    addCharacter(type, x, y, storedStates = null) {
+        console.log('Adding character:', { type, x, y });
+        const CharacterClass = this.registry.getCharacterClass(type);
+        const sprites = this.assets.sprites[type];
+
+        if (!CharacterClass || !sprites) {
+            console.error(`Invalid character type or missing sprites: ${type}`);
+            return;
+        }
+
+        const character = new CharacterClass(x, y, CONFIG.PLAYER.WIDTH, CONFIG.PLAYER.HEIGHT, sprites, type.toLowerCase());
+
+        if (storedStates) {
+            const storedState = storedStates.get(type.toLowerCase());
+            if (storedState) {
+                Object.assign(character, storedState);
+            }
+        }
+
+        character.isIdle = false;
+        character.isPaused = false;
+        character.levelManager = this;
+
+        console.log('Character created:', {
+            type: character.type,
+            isPaused: character.isPaused,
+            isIdle: character.isIdle
+        });
+
+        this.characters.push(character);
+        return character;
+    }
+
+    addRandomCharacter(type, interval) {
+        const spawnRandomly = () => {
+            if (this.currentLevel !== 1) return;
+            const x = Math.random() * (CONFIG.WORLD.WIDTH - CONFIG.PLAYER.WIDTH);
+            const y = Math.random() * (CONFIG.WORLD.HEIGHT - CONFIG.PLAYER.HEIGHT);
+            this.addCharacter(type, x, y);
+        };
+
+        this.characterTimers[type] = setInterval(spawnRandomly, interval);
+    }
+
+    update(player, worldBounds, input) {
+        console.log('LevelManager Update:', {
+            isGameStopped: this.isGameStopped(),
+            characterCount: this.characters.length,
+            characters: this.characters.map(char => ({
+                type: char.type,
+                position: { x: char.x, y: char.y },
+                isPaused: char.isPaused,
+                isCaught: char.isCaught
+            }))
+        });
+
+        if (this.isGameStopped()) {
+            console.log('LevelManager Update blocked by isGameStopped');
+            return;
+        }
+
+        this.characters = this.characters.filter(character => character && character.type);
+
+        console.log('Updating characters:', this.characters.length);
+
+        this.characters.forEach((character) => {
+            if (!character.isCaught && !character.isPaused) {
+                character.update(player, {
+                    width: CONFIG.WORLD.WIDTH,
+                    height: CONFIG.WORLD.HEIGHT
+                }, input);
+            } else {
+                console.log('Character update skipped:', {
+                    type: character.type,
+                    isCaught: character.isCaught,
+                    isPaused: character.isPaused
+                });
+            }
+        });
+    }
+
+    checkLevelTransition(player) {
+        if (this.isGameStopped()) return false;
+
+
+
+        const currentLevelConfig = CONFIG.LEVELS[this.currentLevel];
+        if (!currentLevelConfig || !currentLevelConfig.transitions) {
+            return false;
+        }
+
+        const gameInstance = window.gameInstance;
+        if (!gameInstance?.scoreManager) return false;
+
+
+        for (const [locationName, transition] of Object.entries(currentLevelConfig.transitions)) {
+            if (
+                player.x >= transition.x.min &&
+                player.x <= transition.x.max &&
+                player.y >= transition.y.min &&
+                player.y <= transition.y.max
+            ) {
+                this.loadLevel(transition.nextLevel, player);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
 
    clearTimers() {
        for (const timer in this.characterTimers) {
@@ -1443,7 +1495,6 @@ case 4:
        return this.assets.backgrounds[backgroundKey];
    }
 }
-
 
 
 
@@ -1721,6 +1772,7 @@ export class Camera {
 
 Input.js:
 // Input.js
+// Input.js
 import { CONFIG } from '../../config.js';
 
 export class InputHandler {
@@ -1730,8 +1782,8 @@ export class InputHandler {
             ArrowDown: false,
             ArrowLeft: false,
             ArrowRight: false,
-            KeyF: false,
-            KeyB: false
+            KeyF: false,  // Added F key
+            KeyB: false   // Added B key
         };
 
         this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
@@ -1857,6 +1909,7 @@ export class InputHandler {
                this.keys.ArrowLeft || this.keys.ArrowRight;
     }
 }
+
 
 
 
@@ -2294,6 +2347,8 @@ export class ScoreManager {
         this.gameOverTriggered = false;
         this.energyCountdownStarted = false;
         this.energyCountdownInterval = null;
+        this.isInTransition = false;
+        this.transitionScores = null;
 
         // Flash states for score bars
         this.flashStates = {
@@ -2304,15 +2359,28 @@ export class ScoreManager {
         
         this.flashConfig = {
             totalFlashes: 3,
-            flashDuration: 400,  // Duration of each flash in ms
-            flashInterval: 800   // Total time for one flash cycle (on+off)
+            flashDuration: 400,
+            flashInterval: 800
         };
         
-        // Initialize score animation system
         this.scoreAnimation = new ScoreAnimation();
-
-        // Start friendship countdown
         this.startFriendshipCountdown();
+    }
+
+    setTransitionState(isInTransition) {
+        console.log('Setting transition state:', isInTransition);
+        this.isInTransition = isInTransition;
+        if (isInTransition) {
+            this.transitionScores = { ...this.scores };
+        }
+    }
+
+    restoreTransitionScores() {
+        if (this.transitionScores) {
+            console.log('Restoring transition scores');
+            this.scores = { ...this.transitionScores };
+            this.transitionScores = null;
+        }
     }
 
     startBarFlash(type) {
@@ -2330,7 +2398,7 @@ export class ScoreManager {
             
             if (type === 'love' && amount > 0) {
                 const actualLoveIncrease = Math.min(this.maxScore, oldScore + amount) - oldScore;
-                const energyDecrease = actualLoveIncrease * 2;
+                const energyDecrease = actualLoveIncrease;
                 
                 const newEnergy = Math.max(0, this.scores.energy - energyDecrease);
                 if (newEnergy === 0 && this.scores.energy > 0) {
@@ -2347,7 +2415,6 @@ export class ScoreManager {
                 }
                 this.scores[type] = newScore;
                 
-                // If increasing energy and we're in countdown, stop it
                 if (type === 'energy' && amount > 0 && this.scores.energy > 30) {
                     this.stopEnergyCountdown();
                     this.energyWarningShown = false;
@@ -2362,7 +2429,7 @@ export class ScoreManager {
         if (this.energyCountdownStarted) return;
         
         this.energyCountdownStarted = true;
-        const countdownInterval = 1000; // 1 second
+        const countdownInterval = 1000;
 
         this.energyCountdownInterval = setInterval(() => {
             const gameInstance = window.gameInstance;
@@ -2393,98 +2460,102 @@ export class ScoreManager {
         this.energyCountdownStarted = false;
     }
 
+    checkScores() {
+        const gameInstance = window.gameInstance;
+        if (!gameInstance || this.isInTransition) return;
 
+        // Check if we're in Level 5 with Diego
+        const isLevel5WithDiego = gameInstance.levelManager?.currentLevel === 5 && 
+            gameInstance.levelManager.characters.some(c => c.type === 'diego');
 
-
-checkScores() {
-    const gameInstance = window.gameInstance;
-    if (!gameInstance) return;
-
-    // Check if we're in Level 5 with Diego
-    const isLevel5WithDiego = gameInstance.levelManager?.currentLevel === 5 && 
-        gameInstance.levelManager.characters.some(c => c.type === 'diego');
-
-    // Check Love score only when not in Diego's level
-    if (!isLevel5WithDiego && this.scores.love <= 0 && !this.gameOverTriggered) {
-        console.log('Love score triggered game over');
-        this.startBarFlash('love');
-        this.gameOverTriggered = true;
-        this.triggerGameOver('love');
-    }
-
-    // Check Energy warnings and game over
-    if (this.scores.energy <= 30 && !this.energyWarningShown) {
-        this.energyWarningShown = true;
-        this.startBarFlash('energy');
-        if (gameInstance.renderer) {
-            gameInstance.renderer.showLowEnergyWarning();
+        // Check Love score only when not in Diego's level and not during transitions
+        if (!isLevel5WithDiego && this.scores.love <= 0 && !this.gameOverTriggered) {
+            console.log('Love score triggered game over');
+            this.startBarFlash('love');
+            this.gameOverTriggered = true;
+            this.triggerGameOver('love');
         }
-        if (gameInstance.audioManager) {
-            gameInstance.audioManager.playSound('dingdong');
+
+        // Check Energy warnings and game over
+        if (this.scores.energy <= 30 && !this.energyWarningShown) {
+            this.energyWarningShown = true;
+            this.startBarFlash('energy');
+            if (gameInstance.renderer) {
+                gameInstance.renderer.showLowEnergyWarning();
+            }
+            if (gameInstance.audioManager) {
+                gameInstance.audioManager.playSound('dingdong');
+            }
+            this.startEnergyCountdown();
         }
-        this.startEnergyCountdown();
+
+        if (this.scores.energy <= 0 && !this.gameOverTriggered) {
+            console.log('Energy score triggered game over');
+            this.startBarFlash('energy');
+            this.gameOverTriggered = true;
+            this.triggerGameOver('energy');
+        }
     }
 
-    if (this.scores.energy <= 0 && !this.gameOverTriggered) {
-        console.log('Energy score triggered game over');
-        this.startBarFlash('energy');
-        this.gameOverTriggered = true;
-        this.triggerGameOver('energy');
-    }
+
+
+startFriendshipCountdown() {
+    const countdownInterval = 1000;
+    this.countdownInterval = setInterval(() => {
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.gameState?.isGameOver) {
+            clearInterval(this.countdownInterval);
+            return;
+        }
+
+        // Don't decrease friendship in level 5
+        if (gameInstance?.levelManager?.currentLevel === 5) {
+            return;
+        }
+
+        if (this.scores.friendship > 0) {
+            this.scores.friendship--;
+
+            if (this.scores.friendship === 30 && !this.warningShown) {
+                this.warningShown = true;
+                this.startBarFlash('friendship');
+                if (gameInstance?.renderer) {
+                    gameInstance.renderer.setScreenMessage('diegoWarning');
+                }
+                if (gameInstance?.audioManager) {
+                    gameInstance.audioManager.playSound('dingdong');
+                }
+            }
+
+            if (this.scores.friendship === 0 && !this.gameOverTriggered) {
+                console.log('Friendship score triggered game over');
+                this.gameOverTriggered = true;
+                this.startBarFlash('friendship');
+
+                if (gameInstance?.audioManager) {
+                    gameInstance.audioManager.playSound('buzz');
+                }
+
+                if (gameInstance?.renderer) {
+                    gameInstance.renderer.setScreenMessage('diegoGameOver');
+                }
+                if (gameInstance?.gameState) {
+                    gameInstance.gameState.isGameOver = true;
+                    setTimeout(() => {
+                        if (gameInstance.audioManager) {
+                            gameInstance.audioManager.playSound('suina_evil');
+                        }
+                        gameInstance.renderer.setScreenMessage('finalGameOver');
+                        gameInstance.renderer.showNewGameButton();
+                    }, 3000);
+                }
+            }
+        }
+    }, countdownInterval);
 }
 
 
 
-
-    startFriendshipCountdown() {
-        const countdownInterval = 1000;
-        this.countdownInterval = setInterval(() => {
-            const gameInstance = window.gameInstance;
-            if (gameInstance?.gameState?.isGameOver) {
-                clearInterval(this.countdownInterval);
-                return;
-            }
-
-            if (this.scores.friendship > 0) {
-                this.scores.friendship--;
-
-                if (this.scores.friendship === 30 && !this.warningShown) {
-                    this.warningShown = true;
-                    this.startBarFlash('friendship');
-                    if (gameInstance?.renderer) {
-                        gameInstance.renderer.setScreenMessage('diegoWarning');
-                    }
-                    if (gameInstance?.audioManager) {
-                        gameInstance.audioManager.playSound('dingdong');
-                    }
-                }
-
-                if (this.scores.friendship === 0 && !this.gameOverTriggered) {
-                    console.log('Friendship score triggered game over');
-                    this.gameOverTriggered = true;
-                    this.startBarFlash('friendship');
-
-                    if (gameInstance?.audioManager) {
-                        gameInstance.audioManager.playSound('buzz');
-                    }
-
-                    if (gameInstance?.renderer) {
-                        gameInstance.renderer.setScreenMessage('diegoGameOver');
-                    }
-                    if (gameInstance?.gameState) {
-                        gameInstance.gameState.isGameOver = true;
-                        setTimeout(() => {
-                            if (gameInstance.audioManager) {
-                                gameInstance.audioManager.playSound('suina_evil');
-                            }
-                            gameInstance.renderer.setScreenMessage('finalGameOver');
-                            gameInstance.renderer.showNewGameButton();
-                        }, 3000);
-                    }
-                }
-            }
-        }, countdownInterval);
-    }
 
     triggerGameOver(type) {
         const gameInstance = window.gameInstance;
@@ -2527,81 +2598,92 @@ checkScores() {
         }
     }
 
+    draw() {
+        this.ctx.save();
 
+        // Draw love score at top
+        const loveScore = Math.round(this.scores.love);
+        this.ctx.fillStyle = '#FF0000'; // Red heart
+        this.ctx.font = 'bold 24px Arial';
+        this.ctx.textAlign = 'center';
+        const topPadding = 35;
+        const leftOffset = 90;
+        this.ctx.fillText('♥', leftOffset - 12, topPadding); // Heart symbol
+        this.ctx.fillStyle = '#FF0000';
+        this.ctx.fillText(loveScore, leftOffset + 12, topPadding);
 
-draw() {
-    this.ctx.save();
+        // Draw score bars
+        Object.entries(this.scores).forEach(([type, score], index) => {
+            const x = this.ctx.canvas.width - this.barWidth - this.padding;
+            const y = this.padding + (index * (this.barHeight + this.barSpacing));
+            const flashState = this.flashStates[type];
 
-    // Draw love score at top
-    const loveScore = Math.round(this.scores.love);
-    this.ctx.fillStyle = '#FF0000'; // Red heart
-    this.ctx.font = 'bold 24px Arial';
-    this.ctx.textAlign = 'center';
-    const topPadding = 35;
-    const leftOffset = 90; // Shifted 80px left from 200
-    this.ctx.fillText('♥', leftOffset - 12, topPadding); // Heart symbol
-    this.ctx.fillStyle = '#FF0000'; // White text for number
-    this.ctx.fillText(loveScore, leftOffset + 12, topPadding); // Score number
+            // Draw label
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = 'bold 10px Arial';
+            this.ctx.textAlign = 'right';
+            this.ctx.fillText(type.toUpperCase(), x - this.textPadding, y + this.barHeight);
 
-    // Draw score bars
-    Object.entries(this.scores).forEach(([type, score], index) => {
-        const x = this.ctx.canvas.width - this.barWidth - this.padding;
-        const y = this.padding + (index * (this.barHeight + this.barSpacing));
-        const flashState = this.flashStates[type];
-
-        // Draw label
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 10px Arial';
-        this.ctx.textAlign = 'right';
-        this.ctx.fillText(type.toUpperCase(), x - this.textPadding, y + this.barHeight);
-
-        // Handle flash states and bar drawing
-        let shouldShow = true;
-        let isFlashFrame = false;
-        if (flashState.isFlashing) {
-            const elapsed = performance.now() - flashState.lastFlashTime;
-            const currentFlashCycle = Math.floor(elapsed / this.flashConfig.flashInterval);
-            shouldShow = Math.floor((elapsed % this.flashConfig.flashInterval) / this.flashConfig.flashDuration) === 0;
-            isFlashFrame = shouldShow;
-
-            if (currentFlashCycle >= this.flashConfig.totalFlashes) {
-                flashState.isFlashing = false;
-                shouldShow = true;
-                isFlashFrame = false;
-            }
-        }
-
-        // Draw the bars
-        if (shouldShow) {
-            const fillWidth = (score / this.maxScore) * this.barWidth;
-            const emptyWidth = this.barWidth - fillWidth;
-            
+            // Handle flash states and bar drawing
+            let shouldShow = true;
+            let isFlashFrame = false;
             if (flashState.isFlashing) {
-                if (fillWidth > 0) {
-                    this.ctx.fillStyle = this.colors[type];
-                    this.ctx.fillRect(x, y, fillWidth, this.barHeight);
-                }
-                
-                if (emptyWidth > 0) {
-                    this.ctx.fillStyle = isFlashFrame ? '#FF0000' : 'rgba(0, 0, 0, 0.3)';
-                    this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
-                }
-            } else {
-                if (fillWidth > 0) {
-                    this.ctx.fillStyle = this.colors[type];
-                    this.ctx.fillRect(x, y, fillWidth, this.barHeight);
-                }
-                if (emptyWidth > 0) {
-                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-                    this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
+                const elapsed = performance.now() - flashState.lastFlashTime;
+                const currentFlashCycle = Math.floor(elapsed / this.flashConfig.flashInterval);
+                shouldShow = Math.floor((elapsed % this.flashConfig.flashInterval) / this.flashConfig.flashDuration) === 0;
+                isFlashFrame = shouldShow;
+
+                if (currentFlashCycle >= this.flashConfig.totalFlashes) {
+                    flashState.isFlashing = false;
+                    shouldShow = true;
+                    isFlashFrame = false;
                 }
             }
-        }
-    });
 
-    this.scoreAnimation.update(this.ctx);
-    this.ctx.restore();
-}
+            // Draw the bars
+            if (shouldShow) {
+                const scoreValue = Math.round(score);
+                const fillWidth = (score / this.maxScore) * this.barWidth;
+                const emptyWidth = this.barWidth - fillWidth;
+                
+                if (flashState.isFlashing) {
+                    if (fillWidth > 0) {
+                        this.ctx.fillStyle = this.colors[type];
+                        this.ctx.fillRect(x, y, fillWidth, this.barHeight);
+                        
+                        // Draw score number inside the filled portion
+                        this.ctx.fillStyle = '#000000';
+                        this.ctx.font = 'bold 8px Arial';
+                        this.ctx.textAlign = 'left';
+                        this.ctx.fillText(scoreValue, x + 2, y + this.barHeight - 2);
+                    }
+                    
+                    if (emptyWidth > 0) {
+                        this.ctx.fillStyle = isFlashFrame ? '#FF0000' : 'rgba(0, 0, 0, 0.3)';
+                        this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
+                    }
+                } else {
+                    if (fillWidth > 0) {
+                        this.ctx.fillStyle = this.colors[type];
+                        this.ctx.fillRect(x, y, fillWidth, this.barHeight);
+                        
+                        // Draw score number inside the filled portion
+                        this.ctx.fillStyle = '#000000';
+                        this.ctx.font = 'bold 8px Arial';
+                        this.ctx.textAlign = 'left';
+                        this.ctx.fillText(scoreValue, x + 2, y + this.barHeight - 2);
+                    }
+                    if (emptyWidth > 0) {
+                        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                        this.ctx.fillRect(x + fillWidth, y, emptyWidth, this.barHeight);
+                    }
+                }
+            }
+        });
+
+        this.scoreAnimation.update(this.ctx);
+        this.ctx.restore();
+    }
 
     cleanup() {
         if (this.countdownInterval) {
@@ -4260,14 +4342,10 @@ export class Diego extends BaseCharacter {
                     gameInstance.audioManager.playSound('drink');
                 }
                 
+                // Only decrease energy, removed friendship increase
                 if (gameInstance?.scoreManager) {
-                    // Decrease energy
-                    gameInstance.scoreManager.increaseScore('energy', -20);
-                    gameInstance.scoreManager.scoreAnimation.addAnimation(30, true);
-                    
-                    // Increase friendship
-                    gameInstance.scoreManager.increaseScore('friendship', 30);
-                    gameInstance.scoreManager.scoreAnimation.addAnimation(30);
+                    gameInstance.scoreManager.increaseScore('energy', -10);
+                    gameInstance.scoreManager.scoreAnimation.addAnimation(10, true);
                 }
                 
                 this.energyTaken = true;
@@ -4351,9 +4429,6 @@ export class Diego extends BaseCharacter {
         super.cleanup();
     }
 }
-
-
-
 
 
 

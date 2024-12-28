@@ -8,8 +8,8 @@ export class InputHandler {
             ArrowDown: false,
             ArrowLeft: false,
             ArrowRight: false,
-            KeyF: false,
-            KeyB: false
+            KeyF: false,  // Added F key
+            KeyB: false   // Added B key
         };
 
         this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
