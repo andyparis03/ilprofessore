@@ -91,6 +91,8 @@ Ilprofessore
 │       │   professore-spritesheet.png
 │       │   skull.png
 │       │   skull1.png
+│       │   splash.png
+│       │   instructions.png
 │       │
 │       ├───diego
 │       │       diego-attack.png
@@ -1293,7 +1295,7 @@ export class LevelManager {
 
         this.friendshipInterval = setInterval(() => {
             if (gameInstance?.scoreManager && !gameInstance.gameState?.isGameOver) {
-                gameInstance.scoreManager.increaseScore('friendship', 10);
+                gameInstance.scoreManager.increaseScore('friendship', 3);
             }
         }, 1000);
     }
@@ -1359,7 +1361,6 @@ export class LevelManager {
 
         if ((character.type === 'suina1' || character.type === 'suina2' || character.type === 'suinaevil') && 
             (this.currentLevel === 2 || this.currentLevel === 3)) {
-            
             console.log("Triggering next random character spawn");
             this.spawnNextRandomCharacter();
         }
@@ -1409,7 +1410,8 @@ export class LevelManager {
         this.characterTimers[type] = setInterval(spawnRandomly, interval);
     }
 
-    update(player, worldBounds, input) {
+
+update(player, worldBounds, input) {
         console.log('LevelManager Update:', {
             isGameStopped: this.isGameStopped(),
             characterCount: this.characters.length,
@@ -1444,12 +1446,13 @@ export class LevelManager {
                 });
             }
         });
+
+        // Check for level transitions after character updates
+        this.checkLevelTransition(player);
     }
 
     checkLevelTransition(player) {
         if (this.isGameStopped()) return false;
-
-
 
         const currentLevelConfig = CONFIG.LEVELS[this.currentLevel];
         if (!currentLevelConfig || !currentLevelConfig.transitions) {
@@ -1459,7 +1462,6 @@ export class LevelManager {
         const gameInstance = window.gameInstance;
         if (!gameInstance?.scoreManager) return false;
 
-
         for (const [locationName, transition] of Object.entries(currentLevelConfig.transitions)) {
             if (
                 player.x >= transition.x.min &&
@@ -1467,6 +1469,24 @@ export class LevelManager {
                 player.y >= transition.y.min &&
                 player.y <= transition.y.max
             ) {
+                // Check for GUSTO location
+                if (locationName === 'GUSTO' && gameInstance.scoreManager.scores.energy > 30) {
+                    if (gameInstance.renderer) {
+                        gameInstance.renderer.setScreenMessage('gustoClosed');
+                    }
+                    return false;
+                }
+
+		if (locationName === 'CHESTER' /*&& gameInstance.scoreManager.scores.friendship > 30*/) {
+		    if (gameInstance.renderer) {
+		        gameInstance.renderer.setScreenMessage('chesterClosed');
+		    }
+		    return false;
+		}
+
+
+
+
                 this.loadLevel(transition.nextLevel, player);
                 return true;
             }
@@ -1475,28 +1495,29 @@ export class LevelManager {
         return false;
     }
 
+    getCurrentLevelBackground() {
+        const levelConfig = CONFIG.LEVELS[this.currentLevel];
+        if (!levelConfig) {
+            console.error(`Level ${this.currentLevel} configuration not found.`);
+            return null;
+        }
 
+        const backgroundKey = levelConfig.backgroundKey;
+        return this.assets.backgrounds[backgroundKey];
+    }
 
-   clearTimers() {
-       for (const timer in this.characterTimers) {
-           clearTimeout(this.characterTimers[timer]);
-           clearInterval(this.characterTimers[timer]);
-       }
-       this.characterTimers = {};
-   }
-
-   getCurrentLevelBackground() {
-       const levelConfig = CONFIG.LEVELS[this.currentLevel];
-       if (!levelConfig) {
-           console.error(`Level ${this.currentLevel} configuration not found.`);
-           return null;
-       }
-
-       const backgroundKey = levelConfig.backgroundKey;
-       return this.assets.backgrounds[backgroundKey];
-   }
+    clearTimers() {
+        for (const timer in this.characterTimers) {
+            clearTimeout(this.characterTimers[timer]);
+            clearInterval(this.characterTimers[timer]);
+        }
+        if (this.friendshipInterval) {
+            clearInterval(this.friendshipInterval);
+            this.friendshipInterval = null;
+        }
+        this.characterTimers = {};
+    }
 }
-
 
 
 

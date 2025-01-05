@@ -1,3 +1,4 @@
+
 // LevelManager.js
 import { CONFIG } from '../config.js';
 import { CharacterRegistry } from '../utils/CharacterRegistry.js';
@@ -317,7 +318,7 @@ export class LevelManager {
 
         this.friendshipInterval = setInterval(() => {
             if (gameInstance?.scoreManager && !gameInstance.gameState?.isGameOver) {
-                gameInstance.scoreManager.increaseScore('friendship', 3);
+                gameInstance.scoreManager.increaseScore('friendship', 10);
             }
         }, 1000);
     }
@@ -383,6 +384,7 @@ export class LevelManager {
 
         if ((character.type === 'suina1' || character.type === 'suina2' || character.type === 'suinaevil') && 
             (this.currentLevel === 2 || this.currentLevel === 3)) {
+            
             console.log("Triggering next random character spawn");
             this.spawnNextRandomCharacter();
         }
@@ -432,8 +434,7 @@ export class LevelManager {
         this.characterTimers[type] = setInterval(spawnRandomly, interval);
     }
 
-
-update(player, worldBounds, input) {
+    update(player, worldBounds, input) {
         console.log('LevelManager Update:', {
             isGameStopped: this.isGameStopped(),
             characterCount: this.characters.length,
@@ -468,13 +469,12 @@ update(player, worldBounds, input) {
                 });
             }
         });
-
-        // Check for level transitions after character updates
-        this.checkLevelTransition(player);
     }
 
     checkLevelTransition(player) {
         if (this.isGameStopped()) return false;
+
+
 
         const currentLevelConfig = CONFIG.LEVELS[this.currentLevel];
         if (!currentLevelConfig || !currentLevelConfig.transitions) {
@@ -484,6 +484,7 @@ update(player, worldBounds, input) {
         const gameInstance = window.gameInstance;
         if (!gameInstance?.scoreManager) return false;
 
+
         for (const [locationName, transition] of Object.entries(currentLevelConfig.transitions)) {
             if (
                 player.x >= transition.x.min &&
@@ -491,24 +492,6 @@ update(player, worldBounds, input) {
                 player.y >= transition.y.min &&
                 player.y <= transition.y.max
             ) {
-                // Check for GUSTO location
-                if (locationName === 'GUSTO' && gameInstance.scoreManager.scores.energy > 30) {
-                    if (gameInstance.renderer) {
-                        gameInstance.renderer.setScreenMessage('gustoClosed');
-                    }
-                    return false;
-                }
-
-		if (locationName === 'CHESTER' /*&& gameInstance.scoreManager.scores.friendship > 30*/) {
-		    if (gameInstance.renderer) {
-		        gameInstance.renderer.setScreenMessage('chesterClosed');
-		    }
-		    return false;
-		}
-
-
-
-
                 this.loadLevel(transition.nextLevel, player);
                 return true;
             }
@@ -517,26 +500,24 @@ update(player, worldBounds, input) {
         return false;
     }
 
-    getCurrentLevelBackground() {
-        const levelConfig = CONFIG.LEVELS[this.currentLevel];
-        if (!levelConfig) {
-            console.error(`Level ${this.currentLevel} configuration not found.`);
-            return null;
-        }
 
-        const backgroundKey = levelConfig.backgroundKey;
-        return this.assets.backgrounds[backgroundKey];
-    }
 
-    clearTimers() {
-        for (const timer in this.characterTimers) {
-            clearTimeout(this.characterTimers[timer]);
-            clearInterval(this.characterTimers[timer]);
-        }
-        if (this.friendshipInterval) {
-            clearInterval(this.friendshipInterval);
-            this.friendshipInterval = null;
-        }
-        this.characterTimers = {};
-    }
+   clearTimers() {
+       for (const timer in this.characterTimers) {
+           clearTimeout(this.characterTimers[timer]);
+           clearInterval(this.characterTimers[timer]);
+       }
+       this.characterTimers = {};
+   }
+
+   getCurrentLevelBackground() {
+       const levelConfig = CONFIG.LEVELS[this.currentLevel];
+       if (!levelConfig) {
+           console.error(`Level ${this.currentLevel} configuration not found.`);
+           return null;
+       }
+
+       const backgroundKey = levelConfig.backgroundKey;
+       return this.assets.backgrounds[backgroundKey];
+   }
 }
