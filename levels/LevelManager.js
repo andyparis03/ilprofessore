@@ -491,23 +491,22 @@ update(player, worldBounds, input) {
                 player.y >= transition.y.min &&
                 player.y <= transition.y.max
             ) {
-                // Check for GUSTO location
-                if (locationName === 'GUSTO' && gameInstance.scoreManager.scores.energy > 30) {
+
+                // Check for GUSTO location - Block if energy is ABOVE 30
+                if (locationName === 'GUSTO' && gameInstance.scoreManager.scores.energy >= 30) {
                     if (gameInstance.renderer) {
                         gameInstance.renderer.setScreenMessage('gustoClosed');
                     }
                     return false;
                 }
 
-		if (locationName === 'CHESTER' /*&& gameInstance.scoreManager.scores.friendship > 30*/) {
-		    if (gameInstance.renderer) {
-		        gameInstance.renderer.setScreenMessage('chesterClosed');
-		    }
-		    return false;
-		}
-
-
-
+                // Check for CHESTER location - Block if friendship is ABOVE 30
+                if (locationName === 'CHESTER' && gameInstance.scoreManager.scores.friendship >= 30) {
+                    if (gameInstance.renderer) {
+                        gameInstance.renderer.setScreenMessage('chesterClosed');
+                    }
+                    return false;
+                }
 
                 this.loadLevel(transition.nextLevel, player);
                 return true;

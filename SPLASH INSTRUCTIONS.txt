@@ -1,0 +1,13 @@
+I want to add a splash screen at the beginning of the game (attached there is how the splash.png look like).
+I've already put the splash.png in the directory .\assets\sprites\splash.png and the instructions.png in the .\assets\sprites\instructions.png.
+The splash.png appears at the start of the game and has two buttons: "Start" and "Instructions".
+
+Tell me if you can identify the two buttons on the attached png and take the buttons coordinates on the screen in oder to make two touch areas that:
+1) allows to start the game (go to startinglevel) when the "Start" area is pressed.
+2) allow to show the instructions png (.\assets\sprites\instructions.png) when "Instruction" area is pressed.
+Tell me if everything is ok for you and feel free to ask any questions in order to help you coding at best.
+
+The splash screen appears only once at the beginning when the game is loadede. When the game ends it will be possible to restart it again with the "New Game" button as usual (from startinglevel).
+
+IMPORTANT notice to you Calude coding assistant: recently I noted, as the code get bigger and complex, that you are loosing your ability to focus on the original code and do not stick with the original project. For example sometimes you are creating new methods and variables that are not connected with the other modules and this makes the game malfunction. Please stick with the original plan and code, always doublecheck that everything is consistent. No need to create new methods or new logics if the actual ones are already working fine. Always doublecheck if the method (or similar methods) that you are creating or improving are already exsisting and working fine. Stick to the plan, don't go off track of the existing code, be consistent, cosider the project as a whole, when coding a change or modification always check the integrity and consistency between all modules!
+Always keep in mind the following comprehensive list of game functionalities and their managing components (do create new components unless is strictly necessary and warn me if you have to do it)
