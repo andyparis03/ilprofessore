@@ -139,9 +139,7 @@ export class ScoreManager {
         this.energyCountdownStarted = false;
     }
 
-
-
-checkScores() {
+    checkScores() {
         const gameInstance = window.gameInstance;
         if (!gameInstance || this.isInTransition) return;
 
@@ -158,7 +156,8 @@ checkScores() {
         }
 
         // Check Energy warnings and game over
-        if (this.scores.energy <= 30) {
+        if (this.scores.energy <= 30 && !this.energyWarningShown) {
+            this.energyWarningShown = true;
             this.startBarFlash('energy');
             if (gameInstance.renderer) {
                 gameInstance.renderer.showLowEnergyWarning();
@@ -174,17 +173,6 @@ checkScores() {
             this.startBarFlash('energy');
             this.gameOverTriggered = true;
             this.triggerGameOver('energy');
-        }
-
-        // Check Friendship at 30
-        if (this.scores.friendship <= 30) {
-            this.startBarFlash('friendship');
-            if (gameInstance?.renderer) {
-                gameInstance.renderer.setScreenMessage('diegoWarning');
-            }
-            if (gameInstance?.audioManager) {
-                gameInstance.audioManager.playSound('dingdong');
-            }
         }
     }
 
