@@ -22,14 +22,14 @@ export class Renderer {
 
     this.splashButtons = {
         start: {
-            x: 230,       // Approximate position based on image
-            y: 450,       // Approximate position based on image
+            x: 130,       // Approximate position based on image
+            y: 1600,       // Approximate position based on image
             width: 150,   // Approximate size based on image
             height: 40    // Approximate size based on image
         },
         instructions: {
-            x: 420,       // Approximate position based on image
-            y: 450,       // Approximate position based on image
+            x: 560,       // Approximate position based on image
+            y: 1600,       // Approximate position based on image
             width: 150,   // Approximate size based on image
             height: 40    // Approximate size based on image
         }
