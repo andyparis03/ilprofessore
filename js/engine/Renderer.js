@@ -20,6 +20,25 @@ export class Renderer {
             y: 0
         };
 
+    this.splashButtons = {
+        start: {
+            x: 230,       // Approximate position based on image
+            y: 450,       // Approximate position based on image
+            width: 150,   // Approximate size based on image
+            height: 40    // Approximate size based on image
+        },
+        instructions: {
+            x: 420,       // Approximate position based on image
+            y: 450,       // Approximate position based on image
+            width: 150,   // Approximate size based on image
+            height: 40    // Approximate size based on image
+        }
+    };
+
+    this.canvas = this.ctx.canvas;
+    this.canvas.addEventListener('click', (e) => this.handleSplashClick(e));
+
+
         // Touch controls reference
         this.touchControls = document.getElementById('controls-container');
         
@@ -365,6 +384,51 @@ export class Renderer {
             );
         }
     }
+
+
+
+handleSplashClick(e) {
+    if (!this.isSplashVisible) return;
+
+    // Get click position relative to canvas
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
+    // Check START button
+    if (this.isClickInButton(x, y, this.splashButtons.start)) {
+        console.log('Start button clicked');
+        this.setSplashVisibility(false);
+        return;
+    }
+
+    // Check INSTRUCTIONS button
+    if (this.isClickInButton(x, y, this.splashButtons.instructions)) {
+        console.log('Instructions button clicked');
+        this.showInstructions();
+        return;
+    }
+}
+
+isClickInButton(x, y, button) {
+    return x >= button.x && 
+           x <= button.x + button.width && 
+           y >= button.y && 
+           y <= button.y + button.height;
+}
+
+showInstructions() {
+    const gameInstance = window.gameInstance;
+    if (gameInstance?.assets?.sprites?.instructions) {
+        this.splashScreen = gameInstance.assets.sprites.instructions;
+        this.calculateSplashDimensions();
+    }
+}
+
+
+
 
     drawPlayer(player, sprites, camera) {
         if (!player) return;
