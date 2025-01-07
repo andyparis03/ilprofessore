@@ -110,7 +110,22 @@ export class Renderer {
                 duration: 800,
                 interval: 200,
                 isActive: false
-            }
+            },
+    gustoClosed: {
+        lines: ['Gusto è chiuso', 'Riprova più tardi'],
+        startTime: 0,
+        duration: 2000,
+        interval: 400,
+        isActive: false
+    },
+    chesterClosed: {
+        lines: ['Chester è chiuso', 'Riprova più tardi'],
+        startTime: 0,
+        duration: 2000,
+        interval: 400,
+        isActive: false
+    }
+
         };
 
         // Initialize new game button
@@ -164,31 +179,28 @@ export class Renderer {
         }
     }
 
-    calculateSplashDimensions() {
-        if (!this.splashScreen) return;
 
-        const canvasWidth = this.ctx.canvas.width;
-        const canvasHeight = this.ctx.canvas.height;
-        const imageRatio = this.splashScreen.width / this.splashScreen.height;
-        const canvasRatio = canvasWidth / canvasHeight;
+calculateSplashDimensions() {
+    if (!this.splashScreen) return;
 
-        let newWidth, newHeight;
+    const canvasHeight = this.ctx.canvas.height;
+    
+    // Keep original width, stretch height
+    const newWidth = this.splashScreen.width;
+    const newHeight = canvasHeight;
 
-        if (canvasRatio > imageRatio) {
-            newHeight = canvasHeight;
-            newWidth = canvasHeight * imageRatio;
-        } else {
-            newWidth = canvasWidth;
-            newHeight = canvasWidth / imageRatio;
-        }
+    // Center horizontally
+    const x = (this.ctx.canvas.width - newWidth) / 2;
+    
+    this.splashDimensions = {
+        width: newWidth,
+        height: newHeight,
+        x: x,
+        y: 0
+    };
+}
 
-        this.splashDimensions = {
-            width: newWidth,
-            height: newHeight,
-            x: (canvasWidth - newWidth) / 2,
-            y: (canvasHeight - newHeight) / 2
-        };
-    }
+
 
     handleResize() {
         if (this.splashScreenReady) {
@@ -435,12 +447,69 @@ isClickInButton(x, y, button) {
 
 
 showInstructions() {
-    const gameInstance = window.gameInstance;
-    if (gameInstance?.assets?.sprites?.instructions) {
-        this.splashScreen = gameInstance.assets.sprites.instructions;
-        this.calculateSplashDimensions();
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.assets?.sprites?.instructions) {
+            this.splashScreen = gameInstance.assets.sprites.instructions;
+            this.calculateSplashDimensions();
+            this.showingInstructions = true; // New flag
+        }
     }
-}
+
+    handleSplashClick(e) {
+        if (!this.isSplashVisible) return;
+
+        if (this.showingInstructions) {
+            this.setSplashVisibility(false);
+            return;
+        }
+
+        // Get click position relative to canvas
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+
+        // Check START button
+        if (this.isClickInButton(x, y, this.splashButtons.start)) {
+            this.setSplashVisibility(false);
+            return;
+        }
+
+        // Check INSTRUCTIONS button
+        if (this.isClickInButton(x, y, this.splashButtons.instructions)) {
+            this.showInstructions();
+            return;
+        }
+    }
+
+    // Only draw buttons if not showing instructions
+    drawSplashScreen() {
+        if (this.splashScreenReady && this.splashScreen && this.isSplashVisible) {
+            this.ctx.drawImage(
+                this.splashScreen,
+                this.splashDimensions.x,
+                this.splashDimensions.y,
+                this.splashDimensions.width,
+                this.splashDimensions.height
+            );
+
+            // Draw debug rectangles only when not showing instructions
+            if (!this.showingInstructions) {
+                this.ctx.strokeStyle = 'red';
+                this.ctx.lineWidth = 2;
+                
+                for (const [key, button] of Object.entries(this.splashButtons)) {
+                    const actualX = this.splashDimensions.x + (button.x * this.splashDimensions.width);
+                    const actualY = this.splashDimensions.y + (button.y * this.splashDimensions.height);
+                    const actualWidth = button.width * this.splashDimensions.width;
+                    const actualHeight = button.height * this.splashDimensions.height;
+                    
+                    this.ctx.strokeRect(actualX, actualY, actualWidth, actualHeight);
+                }
+            }
+        }
+    }
 
 
 
