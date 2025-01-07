@@ -127,7 +127,7 @@ export class AssetLoader {
             ]);
 
 console.log("Asset structure being returned:", {
-    sprites: {
+    ui: {
         splash: splashScreen,
         instructions: instructionsScreen
     }
@@ -135,6 +135,11 @@ console.log("Asset structure being returned:", {
 
 
             return {
+		ui: {
+            		splash: splashScreen,
+            		instructions: instructionsScreen
+ 		},
+
                 sprites: {
                     professore: { idle: professoreidle, walking: professorewalking, freeze: skullSprite },
                     milly: { idle: millyidle, spritesheet: millyspritesheet, interact: millyinteract },
@@ -142,9 +147,7 @@ console.log("Asset structure being returned:", {
                     suina2: { idle: suina2idle, walking: suina2walking, attack: suina1attack },
                     suinaevil: { idle: suinaevilidle, walking: suinaevilwalking, attack: suina1attack },
                     walter: { idle: walteridle, walking: walterwalking, attack: walterattack },
-                    diego: { idle: diegoidle, walking: diegowalking, attack: diegoattack },
-		    splash: splashScreen,
-		    instructions: instructionsScreen
+                    diego: { idle: diegoidle, walking: diegowalking, attack: diegoattack }
                 },
                 backgrounds: {
                     background1,

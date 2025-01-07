@@ -575,6 +575,7 @@ export const CONFIG = {
 
 assetLoader.js:
 // AssetLoader.js
+// AssetLoader.js
 export class AssetLoader {
     static async loadImage(src, fallbackSrc = null) {
         const img = new Image();
@@ -609,8 +610,6 @@ export class AssetLoader {
         try {
             const audioContext = new AudioContext(); 
             const [
-                splashScreen,
-                instructionsScreen,
                 professoreidle,
                 professorewalking,
                 skullSprite,
@@ -655,8 +654,6 @@ export class AssetLoader {
                 millysound,
 		recharge
             ] = await Promise.all([
-                this.loadImage('./assets/sprites/splash.png'),
-                this.loadImage('./assets/sprites/instructions.png'),
                 this.loadImage('./assets/sprites/professore/professore-idle.png'),
                 this.loadImage('./assets/sprites/professore/professore-spritesheet.png'),
                 this.loadImage('./assets/sprites/skull.png'),
@@ -702,14 +699,6 @@ export class AssetLoader {
 		this.loadSound(audioContext, './assets/sounds/recharge.mp3')
             ]);
 
-console.log("Asset structure being returned:", {
-    sprites: {
-        splash: splashScreen,
-        instructions: instructionsScreen
-    }
-});
-
-
             return {
                 sprites: {
                     professore: { idle: professoreidle, walking: professorewalking, freeze: skullSprite },
@@ -718,9 +707,7 @@ console.log("Asset structure being returned:", {
                     suina2: { idle: suina2idle, walking: suina2walking, attack: suina1attack },
                     suinaevil: { idle: suinaevilidle, walking: suinaevilwalking, attack: suina1attack },
                     walter: { idle: walteridle, walking: walterwalking, attack: walterattack },
-                    diego: { idle: diegoidle, walking: diegowalking, attack: diegoattack },
-		    splash: splashScreen,
-		    instructions: instructionsScreen
+                    diego: { idle: diegoidle, walking: diegowalking, attack: diegoattack }
                 },
                 backgrounds: {
                     background1,
@@ -756,6 +743,7 @@ console.log("Asset structure being returned:", {
         }
     }
 }
+
 
 
 

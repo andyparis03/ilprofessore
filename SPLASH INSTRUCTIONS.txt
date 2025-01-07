@@ -1,3 +1,31 @@
+A splash screen should appear at the beginning of the game (splash.png and instructions.png attached to this chat). It has been implemented in different modules but still not showing at startup. Can you please analyze the structure and understand how the flow works and if there is any impediment to the showing of the splash screen?
+Here is how it should work:
+The game should Start game in splash screen state
+The splash.png appears at the start of the game and has two buttons: "Start" and "Instructions".
+The buttons area on the splash.png are:
+1) START button area: allows to start the game (go to startinglevel) when the "Start" area is pressed.
+x: 220 to 380
+y: 450 to 500
+2) INSTRUCTIONS button area: allow to show the instructions.png when "Instruction" area is pressed.
+x: 420 to 580
+y: 450 to 500
+The splash.png (dimension 1024 x 1792) is centered and properly scaled on both mobile and desktop when the game first loads. make sure that the splash screen is enabled both for the mobile version and desktop version only when the game starts the first time.
+The Instructions.png screen have the same scaling/centering behavior.
+When showing Instructions, use a "Back" button to return to splash. 
+Instructions.png BACK button area (on instructions.png screen attached to this chat):
+x: 650 to 750
+y: 520 to 570
+Use a simple fade transition effects between screens Splash and Instructions.
+When the game ends (gameover) it will be possible to restart it again with the "New Game" button as usual (goes to startinglevel).
+Tell me if everything is ok for you and feel free to ask any questions in order to help you coding at best. IMPORTANT notice to you Calude coding assistant: recently I noted, as the code get bigger and complex, that you are loosing your ability to focus on the original code and do not stick with the original project. For example sometimes you are creating new methods and variables that are not connected with the other modules and this makes the game malfunction. Please stick with the original plan and code, always doublecheck that everything is consistent. No need to create new methods or new logics if the actual ones are already working fine. Always doublecheck if the method (or similar methods) that you are creating or improving are already exsisting and working fine. Stick to the plan, don't go off track of the existing code, be consistent, cosider the project as a whole, when coding a change or modification always check the integrity and consistency between all modules!
+(do create new components unless is strictly necessary and warn me if you have to do it)
+
+
+
+------------------------
+
+
+
 I want to add a splash screen at the beginning of the game (attached there is how the splash.png look like).
 I've already put the splash.png in the directory .\assets\sprites\splash.png and the instructions.png in the .\assets\sprites\instructions.png.
 The splash.png appears at the start of the game and has two buttons: "Start" and "Instructions".

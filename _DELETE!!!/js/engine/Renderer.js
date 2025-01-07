@@ -9,80 +9,49 @@ export class Renderer {
         this.gameState = gameState;
         this.directions = { down: 0, left: 1, right: 2, up: 3 };
         
-
-        this.splashScreen = null;
-        this.splashScreenReady = false;
-        this.splashDimensions = {
-            width: 0,
-            height: 0,
-            x: 0,
-            y: 0
-        };
-
         this.screenMessages = {
-
-
-        gustoClosed: {
-            lines: ['Gusto chiuso,', 'riprova più tardi'],
-            startTime: 0,
-            duration: 2000,
-            interval: 400,
-            isActive: false
-        },
-        chesterClosed: {
-            lines: ['Chester chiuso,', 'riprova più tardi'],
-            startTime: 0,
-            duration: 2000,
-            interval: 400,
-            isActive: false
-        },
-    
-
-	        diegoWarning: {
-        lines: ['Il tuo amico Diego', 'ha bisogno di te!'],
-        startTime: 0,
-        duration: 2000,    //
-        interval: 400,     // Flash 4 times (400ms each)
-        isActive: false
-    },
-	   diegoGameOver: {
-        lines: ['Il tuo amico Diego', 'ti ha aspettato', " invano, l'amicizia è",'rotta per sempre'],
-        startTime: 0,
-        duration: 3000,    //
-        interval: 400,     // Flash 3 times (400ms each)
-        isActive: false,
-        nextMessage: 'finalGameOver'  // Chain to existing game over message
-    },
-
-    lowLove: {
-        lines: ['Troppo poco amore', 'professore'],
-        startTime: 0,
-        duration: 2000,
-        interval: 400,
-        isActive: false,
-        nextMessage: 'finalGameOver'
-    },
-    lowEnergy: {
-        lines: ['Fame, hai bisogno', 'di pizza!'],
-        startTime: 0,
-        duration: 2000,
-        interval: 400,
-        isActive: false
-    },
-    noEnergy: {
-        lines: ['Troppa poca pizza', 'professore'],
-        startTime: 0,
-        duration: 2000,
-        interval: 400,
-        isActive: false,
-        nextMessage: 'finalGameOver'
-    },
-
-
+            diegoWarning: {
+                lines: ['Il tuo amico Diego', 'ha bisogno di te!'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            },
+            diegoGameOver: {
+                lines: ['Il tuo amico Diego', 'ti ha aspettato', " invano, l'amicizia è",'rotta per sempre'],
+                startTime: 0,
+                duration: 3000,
+                interval: 400,
+                isActive: false,
+                nextMessage: 'finalGameOver'
+            },
+            lowLove: {
+                lines: ['Troppo poco amore', 'professore'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false,
+                nextMessage: 'finalGameOver'
+            },
+            lowEnergy: {
+                lines: ['Fame, hai bisogno', 'di pizza!'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            },
+            noEnergy: {
+                lines: ['Troppa poca pizza', 'professore'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false,
+                nextMessage: 'finalGameOver'
+            },
             gameOver: {
                 lines: ['Hai beccato', 'la Suina Mala... :('],
                 startTime: 0,
-                duration: 3000,
+                duration: 2000,
                 interval: 400,
                 isActive: false,
                 nextMessage: 'finalGameOver'
@@ -105,69 +74,87 @@ export class Renderer {
             }
         };
 
-        // Initialize new game button
         this.newGameButton = {
             element: null,
             visible: false
         };
 
         this.createNewGameButton();
-        this.debug = true;
-
-       this.initializeSplashScreen();
-      window.addEventListener('resize', () => this.handleResize());
     }
 
+    drawUIScreen(image) {
+        if (!image) return;
 
-    initializeSplashScreen() {
-        const gameInstance = window.gameInstance;
-        if (gameInstance?.assets?.sprites?.splash) {
-            this.splashScreen = gameInstance.assets.sprites.splash;
-            this.calculateSplashDimensions();
-            this.splashScreenReady = true;
-            console.log('Splash screen initialized with dimensions:', this.splashDimensions);
+        const canvas = this.ctx.canvas;
+        const canvasAspect = canvas.width / canvas.height;
+        const imageAspect = image.width / image.height;
+        
+        let drawWidth, drawHeight, drawX, drawY;
+
+        if (canvasAspect > imageAspect) {
+            drawHeight = canvas.height;
+            drawWidth = drawHeight * imageAspect;
+            drawX = (canvas.width - drawWidth) / 2;
+            drawY = 0;
         } else {
-            console.warn('Splash screen asset not found');
+            drawWidth = canvas.width;
+            drawHeight = drawWidth / imageAspect;
+            drawX = 0;
+            drawY = (canvas.height - drawHeight) / 2;
+        }
+
+        this.ctx.save();
+        if (this.gameState.fadeAlpha !== undefined) {
+            this.ctx.globalAlpha = this.gameState.fadeAlpha;
+        }
+        this.ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+        this.ctx.restore();
+    }
+
+    clear() {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    }
+
+    draw(player, sprites, camera) {
+        this.clear();
+
+    // Draw splash screen
+    if (this.gameState.gameState === 'SPLASH') {
+        if (this.gameState.game.assets?.ui?.splash) {
+            // Set background to black first
+            this.ctx.fillStyle = 'black';
+            this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+            // Draw splash screen
+            this.drawUIScreen(this.gameState.game.assets.ui.splash);
+            return;
         }
     }
 
-    calculateSplashDimensions() {
-        if (!this.splashScreen) return;
-
-        const canvasWidth = this.ctx.canvas.width;
-        const canvasHeight = this.ctx.canvas.height;
-        const imageRatio = this.splashScreen.width / this.splashScreen.height;
-        const canvasRatio = canvasWidth / canvasHeight;
-
-        let newWidth, newHeight;
-
-        if (canvasRatio > imageRatio) {
-            // Canvas is wider than image ratio - fit to height
-            newHeight = canvasHeight;
-            newWidth = canvasHeight * imageRatio;
-        } else {
-            // Canvas is taller than image ratio - fit to width
-            newWidth = canvasWidth;
-            newHeight = canvasWidth / imageRatio;
+        if (this.gameState.gameState === 'INSTRUCTIONS') {
+            if (this.gameState.game.assets?.ui?.instructions) {
+                this.drawUIScreen(this.gameState.game.assets.ui.instructions);
+            }
+            return;
         }
 
-        this.splashDimensions = {
-            width: newWidth,
-            height: newHeight,
-            x: (canvasWidth - newWidth) / 2,
-            y: (canvasHeight - newHeight) / 2
-        };
-    }
-
-    handleResize() {
-        if (this.splashScreenReady) {
-            this.calculateSplashDimensions();
+        // Game state rendering
+        this.drawBackground(this.levelManager.getCurrentLevelBackground(), camera);
+        
+        if (this.levelManager?.characters) {
+            this.drawCharacters(camera);
         }
+        
+        if (player && sprites.professore && this.gameState.playerInitialized) {
+            this.drawPlayer(player, sprites.professore, camera);
+        }
+        
+        Object.keys(this.screenMessages).forEach(type => {
+            this.drawScreenMessage(type);
+        });
     }
 
 
-
-
+ 
 
     showSuinaMalaMessage() {
         console.log('Showing Suina Mala message');
@@ -343,10 +330,12 @@ showNoEnergyMessage() {
 
 
 
-
-
     draw(player, sprites, camera) {
         this.clear();
+
+console.log("Current game state:", this.gameState.gameState);
+console.log("UI assets:", this.gameState.game.assets?.ui);
+
         
         // Draw background
         this.drawBackground(this.levelManager.getCurrentLevelBackground(), camera);
@@ -365,25 +354,11 @@ showNoEnergyMessage() {
         Object.keys(this.screenMessages).forEach(type => {
             this.drawScreenMessage(type);
         });
-  this.drawSplashScreen();
-    }
-
-    drawSplashScreen() {
-        if (this.splashScreenReady && this.splashScreen) {
-            this.ctx.drawImage(
-                this.splashScreen,
-                this.splashDimensions.x,
-                this.splashDimensions.y,
-                this.splashDimensions.width,
-                this.splashDimensions.height
-            );
+        if (this.gameState.isFading) {
+            this.ctx.fillStyle = `rgba(0, 0, 0, ${1 - this.gameState.fadeAlpha})`;
+            this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
         }
     }
-
-    clear() {
-        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-    }
-
 
     drawPlayer(player, sprites, camera) {
         if (!player) return;

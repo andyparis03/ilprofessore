@@ -1,0 +1,80 @@
+Collision Handling: I want to handle collision between il professore and Suina1 according to the following YAML rules:
+
+level2, Teatro:
+  description: "Il professore transitions to Level2 and tries to catch Suina1"
+  transition:
+    - sound: "suinasound (played once)"
+  characters:
+    - name: "Suina1"
+      state: "Exists at the beginning of transition"
+    - name: "Il professore"
+      state: "Transaction from level1"
+  interactions:
+    on_collision:
+      - targets: ["Suina1"]
+        effects:
+          - "Play sound: suinasound (once)"
+          - "Change sprite to: suina1-attack.png (for 2 seconds)"
+          - "Suina1 disappear after changing sprite"
+          - "Add animated effect of sparkles sprite when disappearing"
+    specific_actions:
+      - targets: ["Suina1"]
+        action: "If press F button during 1 second change sprite to suina1-attack.png"
+        effects:
+          - "Play sound: suinafuck (once)"
+          - "Increase Love score by 10 points"
+      - targets: ["Suina1"]
+        action: "If press B button during 1 second change sprite to suina1-attack.png"
+        effects:
+          - "Play sound: suinasound (twice)"
+          - "Increase Love score by 1 point"
+  
+
+level3, Malafama:
+  description: "Il professore transitions to Level3 and tries to catch Suina1"
+  transition:
+    - sound: "suinasound (played once)"
+  characters:
+    - name: "Suina1"
+      state: "Exists at the beginning of transition"
+    - name: "Il professore"
+      state: "Transaction from level1"
+  interactions:
+    on_collision:
+      - targets: ["Suina1"]
+        effects:
+          - "Play sound: suinasound (once)"
+          - "Change sprite to: suina1-attack.png (for 2 seconds)"
+          - "Suina1 disappear after changing sprite"
+          - "Add animated effect of sparkles sprite when disappearing"
+    specific_actions:
+      - targets: ["Suina1"]
+        action: "If press F button during 1 second change sprite to suina1-attack.png"
+        effects:
+          - "Play sound: suinafuck (once)"
+          - "Increase Love score by 10 points"
+      - targets: ["Suina1"]
+        action: "If press B button during 1 second change sprite to suina1-attack.png"
+        effects:
+          - "Play sound: suinasound (twice)"
+          - "Increase Love score by 1 point"
+
+
+Please consider that I want to implement a scoring bar on the top of the screen with the following YAML rules:
+
+scoring_system for Il Professore:
+  energy_bars:
+    - name: "Energy"
+    - name: "Love"
+    - name: "Friendhip"
+  rules:
+    - event: "Collision with Suina1 + Press B button"
+      effect: "Increase Love level in the scoring bar by 10 points"
+    - event: "Collision with Suina1 + Press F button"
+      effect: "Increase Energy level in the scoring bar by 10 points"
+
+Answer this question: what is the best way to implement 3 scoring bars on the screen in order to optimize space and not to interfere with the game visibility?
+Give me the best coding soluntion about how to implement all bar creation and collision handling as from the yaml above.
+The code should be clean and alligned with the existing modules avoiding conflicts, inconsistencies and incongruences.
+
+
