@@ -20,20 +20,26 @@ export class Renderer {
             y: 0
         };
 
+   this.originalSplashDimensions = {
+        width: 1000,    // Original splash.png width
+        height: 1800    // Original splash.png height
+    };
+
     this.splashButtons = {
         start: {
-            x: 130,       // Approximate position based on image
-            y: 1600,       // Approximate position based on image
-            width: 150,   // Approximate size based on image
-            height: 40    // Approximate size based on image
+            x: 100 / this.originalSplashDimensions.width,
+            y: 1300 / this.originalSplashDimensions.height,
+            width: 380 / this.originalSplashDimensions.width,
+            height: 200 / this.originalSplashDimensions.height
         },
         instructions: {
-            x: 560,       // Approximate position based on image
-            y: 1600,       // Approximate position based on image
-            width: 150,   // Approximate size based on image
-            height: 40    // Approximate size based on image
+            x: 520 / this.originalSplashDimensions.width,
+            y: 1300 / this.originalSplashDimensions.height,
+            width: 380 / this.originalSplashDimensions.width,
+            height: 200 / this.originalSplashDimensions.height
         }
     };
+
 
     this.canvas = this.ctx.canvas;
     this.canvas.addEventListener('click', (e) => this.handleSplashClick(e));
@@ -415,11 +421,18 @@ handleSplashClick(e) {
 }
 
 isClickInButton(x, y, button) {
-    return x >= button.x && 
-           x <= button.x + button.width && 
-           y >= button.y && 
-           y <= button.y + button.height;
+    // Convert percentage-based positions to actual screen coordinates
+    const actualX = this.splashDimensions.x + (button.x * this.splashDimensions.width);
+    const actualY = this.splashDimensions.y + (button.y * this.splashDimensions.height);
+    const actualWidth = button.width * this.splashDimensions.width;
+    const actualHeight = button.height * this.splashDimensions.height;
+
+    return x >= actualX && 
+           x <= actualX + actualWidth && 
+           y >= actualY && 
+           y <= actualY + actualHeight;
 }
+
 
 showInstructions() {
     const gameInstance = window.gameInstance;
@@ -537,20 +550,17 @@ showInstructions() {
                 this.splashDimensions.height
             );
 
-        // Debug rectangles for buttons
-        this.ctx.strokeStyle = 'red';
-        this.ctx.lineWidth = 2;
-        
-        // START button rectangle
-        this.ctx.strokeRect(230, 450, 150, 40);
-        
-        // INSTRUCTIONS button rectangle
-        this.ctx.strokeRect(420, 450, 150, 40);
-
-
+        // Draw debug rectangles for both buttons
+        for (const [key, button] of Object.entries(this.splashButtons)) {
+            const actualX = this.splashDimensions.x + (button.x * this.splashDimensions.width);
+            const actualY = this.splashDimensions.y + (button.y * this.splashDimensions.height);
+            const actualWidth = button.width * this.splashDimensions.width;
+            const actualHeight = button.height * this.splashDimensions.height;
+            
+            this.ctx.strokeRect(actualX, actualY, actualWidth, actualHeight);
         }
     }
-
+}
 
 
 
