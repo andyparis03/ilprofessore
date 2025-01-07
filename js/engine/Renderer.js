@@ -180,25 +180,35 @@ export class Renderer {
     }
 
 
-calculateSplashDimensions() {
-    if (!this.splashScreen) return;
 
-    const canvasHeight = this.ctx.canvas.height;
-    
-    // Keep original width, stretch height
-    const newWidth = this.splashScreen.width;
-    const newHeight = canvasHeight;
 
-    // Center horizontally
-    const x = (this.ctx.canvas.width - newWidth) / 2;
-    
-    this.splashDimensions = {
-        width: newWidth,
-        height: newHeight,
-        x: x,
-        y: 0
-    };
-}
+    calculateSplashDimensions() {
+        if (!this.splashScreen) return;
+
+        const canvasWidth = this.ctx.canvas.width;
+        const canvasHeight = this.ctx.canvas.height;
+        const imageRatio = this.splashScreen.width / this.splashScreen.height;
+        const canvasRatio = canvasWidth / canvasHeight;
+
+        let newWidth, newHeight;
+
+        if (canvasRatio > imageRatio) {
+            // Canvas is wider than image ratio - fit to height
+            newHeight = canvasHeight;
+            newWidth = canvasHeight * imageRatio;
+        } else {
+            // Canvas is taller than image ratio - fit to width
+            newWidth = canvasWidth;
+            newHeight = canvasWidth / imageRatio;
+        }
+
+        this.splashDimensions = {
+            width: newWidth,
+            height: newHeight,
+            x: (canvasWidth - newWidth) / 2,
+            y: (canvasHeight - newHeight) / 2
+        };
+    }
 
 
 
