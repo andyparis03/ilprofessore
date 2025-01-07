@@ -277,7 +277,12 @@ startFriendshipCountdown() {
         }
     }
 
+setVisibility(visible) {
+    this.isVisible = visible;
+}
+
     draw() {
+    if (!this.isVisible) return;
         this.ctx.save();
 
         // Draw love score at top

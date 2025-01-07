@@ -301,6 +301,24 @@ export class LevelManager {
         }
     }
 
+
+pauseFriendshipCountdown() {
+    console.log('Pausing friendship increase');
+    if (this.friendshipInterval) {
+        clearInterval(this.friendshipInterval);
+        this.friendshipInterval = null;
+    }
+}
+
+resumeFriendshipCountdown() {
+    console.log('Resuming friendship increase');
+    // Only resume if we're in level 5
+    if (this.currentLevel === 5) {
+        this.startFriendshipIncrease();
+    }
+}
+
+
     startFriendshipIncrease() {
         if (this.friendshipInterval) {
             clearInterval(this.friendshipInterval);
