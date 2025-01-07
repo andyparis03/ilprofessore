@@ -28,13 +28,13 @@ export class Renderer {
     this.splashButtons = {
         start: {
             x: 100 / this.originalSplashDimensions.width,
-            y: 1300 / this.originalSplashDimensions.height,
+            y: 1110 / this.originalSplashDimensions.height,
             width: 380 / this.originalSplashDimensions.width,
             height: 200 / this.originalSplashDimensions.height
         },
         instructions: {
             x: 520 / this.originalSplashDimensions.width,
-            y: 1300 / this.originalSplashDimensions.height,
+            y: 1110 / this.originalSplashDimensions.height,
             width: 380 / this.originalSplashDimensions.width,
             height: 200 / this.originalSplashDimensions.height
         }
