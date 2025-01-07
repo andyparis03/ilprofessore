@@ -504,7 +504,20 @@ showInstructions() {
                 this.splashDimensions.height
             );
 
-
+            // Draw debug rectangles only when not showing instructions
+            // if (!this.showingInstructions) {
+            //    this.ctx.strokeStyle = 'red';
+                this.ctx.lineWidth = 2;
+                
+                for (const [key, button] of Object.entries(this.splashButtons)) {
+                    const actualX = this.splashDimensions.x + (button.x * this.splashDimensions.width);
+                    const actualY = this.splashDimensions.y + (button.y * this.splashDimensions.height);
+                    const actualWidth = button.width * this.splashDimensions.width;
+                    const actualHeight = button.height * this.splashDimensions.height;
+                    
+                  //  this.ctx.strokeRect(actualX, actualY, actualWidth, actualHeight);
+                }
+            }
         }
     }
 
@@ -616,7 +629,15 @@ showInstructions() {
                 this.splashDimensions.height
             );
 
-
+        // Draw debug rectangles for both buttons
+        for (const [key, button] of Object.entries(this.splashButtons)) {
+            const actualX = this.splashDimensions.x + (button.x * this.splashDimensions.width);
+            const actualY = this.splashDimensions.y + (button.y * this.splashDimensions.height);
+            const actualWidth = button.width * this.splashDimensions.width;
+            const actualHeight = button.height * this.splashDimensions.height;
+            
+           // this.ctx.strokeRect(actualX, actualY, actualWidth, actualHeight);
+        }
     }
 }
 

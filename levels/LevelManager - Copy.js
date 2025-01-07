@@ -101,17 +101,18 @@ export class LevelManager {
         }
 
         // Handle friendship system when leaving level 5
-// In loadLevel method
-if (levelNumber !== 5) {
-    const wasInLevel5 = (this.currentLevel === 5);
-    if (this.friendshipInterval) {
-        clearInterval(this.friendshipInterval);
-        this.friendshipInterval = null;
-    }
-    if (wasInLevel5 && gameInstance?.scoreManager) {
-        gameInstance.scoreManager.startFriendshipCountdown();
-    }
-}
+        if (levelNumber !== 5 && this.friendshipInterval) {
+            clearInterval(this.friendshipInterval);
+            this.friendshipInterval = null;
+            
+            // Restart countdown only when leaving level 5
+            if (this.currentLevel === 5) {
+                const gameInstance = window.gameInstance;
+                if (gameInstance?.scoreManager) {
+                    gameInstance.scoreManager.startFriendshipCountdown();
+                }
+            }
+        }
 
         console.log('Loading level:', {
             level: levelNumber,
