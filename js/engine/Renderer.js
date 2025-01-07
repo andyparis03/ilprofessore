@@ -264,6 +264,8 @@ export class Renderer {
         window.location.reload();
     }
 
+
+
     showNewGameButton() {
         if (!this.newGameButton.element) return;
 
@@ -515,6 +517,16 @@ showInstructions() {
         });
     }
 
+
+
+
+
+
+
+
+
+
+
     drawSplashScreen() {
         if (this.splashScreenReady && this.splashScreen && this.isSplashVisible) {
             this.ctx.drawImage(
@@ -524,8 +536,29 @@ showInstructions() {
                 this.splashDimensions.width,
                 this.splashDimensions.height
             );
+
+        // Debug rectangles for buttons
+        this.ctx.strokeStyle = 'red';
+        this.ctx.lineWidth = 2;
+        
+        // START button rectangle
+        this.ctx.strokeRect(230, 450, 150, 40);
+        
+        // INSTRUCTIONS button rectangle
+        this.ctx.strokeRect(420, 450, 150, 40);
+
+
         }
     }
+
+
+
+
+
+
+
+
+
 
     setSplashVisibility(visible) {
         this.isSplashVisible = visible;
