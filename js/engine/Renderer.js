@@ -488,17 +488,7 @@ export class Renderer {
                 this.winScreenDimensions.height
             );
 
-        const button = this.winScreenButtons.playAgain;
-        const actualX = this.winScreenDimensions.x + (button.x * this.winScreenDimensions.width);
-        const actualY = this.winScreenDimensions.y + (button.y * this.winScreenDimensions.height);
-        const actualWidth = button.width * this.winScreenDimensions.width;
-        const actualHeight = button.height * this.winScreenDimensions.height;
 
-        this.ctx.save();
-        this.ctx.strokeStyle = 'red';
-        this.ctx.lineWidth = 2;
-        this.ctx.strokeRect(actualX, actualY, actualWidth, actualHeight);
-        this.ctx.restore();
 
 
             return; // Don't draw anything else when win screen is showing
