@@ -54,10 +54,10 @@ export class Renderer {
         // Win screen button area
         this.winScreenButtons = {
             playAgain: {
-                x: 0.35,    // 35% from left
-                y: 0.85,    // 85% from top
-                width: 0.3, // 30% of screen width
-                height: 0.1 // 10% of screen height
+                x: 0.25, // 35% from left
+                y: 0.90, // 85% from top
+                width: 0.5, // 30% of screen width
+                height: 0.12 // 10% of screen height
             }
         };
 
