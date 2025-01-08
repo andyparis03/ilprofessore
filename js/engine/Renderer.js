@@ -5,7 +5,6 @@ export class Renderer {
     constructor(ctx, levelManager, gameState) {
         console.log('Initializing Renderer');
         this.ctx = ctx;
-	this.hasTriggeredWin = false;
         this.levelManager = levelManager;
         this.gameState = gameState;
         this.directions = { down: 0, left: 1, right: 2, up: 3 };
@@ -24,6 +23,7 @@ export class Renderer {
         // Win screen properties
         this.winScreen = null;
         this.isWinScreenVisible = false;
+        this.hasTriggeredWin = false;
         this.winScreenDimensions = {
             width: 0,
             height: 0,
@@ -51,8 +51,25 @@ export class Renderer {
             }
         };
 
+        // Win screen button area
+        this.winScreenButtons = {
+            playAgain: {
+                x: 0.35,    // 35% from left
+                y: 0.85,    // 85% from top
+                width: 0.3, // 30% of screen width
+                height: 0.1 // 10% of screen height
+            }
+        };
+
         this.canvas = this.ctx.canvas;
-        this.canvas.addEventListener('click', (e) => this.handleSplashClick(e));
+        this.canvas.addEventListener('click', (e) => {
+
+            if (this.isWinScreenVisible) {
+                this.handleWinScreenClick(e);
+            } else if (this.isSplashVisible) {
+                this.handleSplashClick(e);
+            }
+        });
 
         // Touch controls reference
         this.touchControls = document.getElementById('controls-container');
@@ -206,7 +223,7 @@ export class Renderer {
         };
     }
 
-showWinScreen() {
+    showWinScreen() {
         const gameInstance = window.gameInstance;
         if (gameInstance?.audioManager) {
             // Stop background music immediately
@@ -217,18 +234,28 @@ showWinScreen() {
             gameInstance.audioManager.playSound('win');
         }
         this.isWinScreenVisible = true;
-	 this.updateUIVisibility();
+        this.updateUIVisibility();
     }
 
-updateUIVisibility() {
+    handleWinScreenClick(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+
+        if (this.isClickInButton(x, y, this.winScreenButtons.playAgain)) {
+            window.location.reload();
+        }
+    }
+
+    updateUIVisibility() {
         if (this.touchControls) {
-            // Hide controls if splash is visible OR win screen is visible
             this.touchControls.style.display = (this.isSplashVisible || this.isWinScreenVisible) ? 'none' : 'flex';
         }
 
         const gameInstance = window.gameInstance;
         if (gameInstance?.scoreManager) {
-            // Hide scores if splash is visible OR win screen is visible
             gameInstance.scoreManager.setVisibility(!this.isSplashVisible && !this.isWinScreenVisible);
         }
 
@@ -425,6 +452,7 @@ updateUIVisibility() {
                 this.showNewGameButton();
             }
         }
+
     }
 
     draw(player, sprites, camera) {
@@ -459,11 +487,24 @@ updateUIVisibility() {
                 this.winScreenDimensions.width,
                 this.winScreenDimensions.height
             );
+
+        const button = this.winScreenButtons.playAgain;
+        const actualX = this.winScreenDimensions.x + (button.x * this.winScreenDimensions.width);
+        const actualY = this.winScreenDimensions.y + (button.y * this.winScreenDimensions.height);
+        const actualWidth = button.width * this.winScreenDimensions.width;
+        const actualHeight = button.height * this.winScreenDimensions.height;
+
+        this.ctx.save();
+        this.ctx.strokeStyle = 'red';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(actualX, actualY, actualWidth, actualHeight);
+        this.ctx.restore();
+
+
             return; // Don't draw anything else when win screen is showing
         }
         
-
-// Only draw scores if splash is not visible
+        // Only draw scores if splash is not visible
         if (!this.isSplashVisible) {
             // Draw messages
             Object.keys(this.screenMessages).forEach(type => {
@@ -518,16 +559,31 @@ updateUIVisibility() {
     }
 
     isClickInButton(x, y, button) {
-        // Convert percentage-based positions to actual screen coordinates
-        const actualX = this.splashDimensions.x + (button.x * this.splashDimensions.width);
-        const actualY = this.splashDimensions.y + (button.y * this.splashDimensions.height);
-        const actualWidth = button.width * this.splashDimensions.width;
-        const actualHeight = button.height * this.splashDimensions.height;
+        // For splash screen buttons
+        if (this.isSplashVisible) {
+            const actualX = this.splashDimensions.x + (button.x * this.splashDimensions.width);
+            const actualY = this.splashDimensions.y + (button.y * this.splashDimensions.height);
+            const actualWidth = button.width * this.splashDimensions.width;
+            const actualHeight = button.height * this.splashDimensions.height;
 
-        return x >= actualX && 
-               x <= actualX + actualWidth && 
-               y >= actualY && 
-               y <= actualY + actualHeight;
+            return x >= actualX && 
+                   x <= actualX + actualWidth && 
+                   y >= actualY && 
+                   y <= actualY + actualHeight;
+        }
+        // For win screen buttons
+        else if (this.isWinScreenVisible) {
+            const actualX = this.winScreenDimensions.x + (button.x * this.winScreenDimensions.width);
+            const actualY = this.winScreenDimensions.y + (button.y * this.winScreenDimensions.height);
+            const actualWidth = button.width * this.winScreenDimensions.width;
+            const actualHeight = button.height * this.winScreenDimensions.height;
+
+            return x >= actualX && 
+                   x <= actualX + actualWidth && 
+                   y >= actualY && 
+                   y <= actualY + actualHeight;
+        }
+        return false;
     }
 
     showInstructions() {

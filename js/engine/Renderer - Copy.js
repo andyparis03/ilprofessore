@@ -20,30 +20,55 @@ export class Renderer {
             y: 0
         };
 
-   this.originalSplashDimensions = {
-        width: 1000,    // Original splash.png width
-        height: 1800    // Original splash.png height
-    };
+        // Win screen properties
+        this.winScreen = null;
+        this.isWinScreenVisible = false;
+        this.hasTriggeredWin = false;
+        this.winScreenDimensions = {
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0
+        };
 
-    this.splashButtons = {
-        start: {
-            x: 100 / this.originalSplashDimensions.width,
-            y: 1110 / this.originalSplashDimensions.height,
-            width: 380 / this.originalSplashDimensions.width,
-            height: 200 / this.originalSplashDimensions.height
-        },
-        instructions: {
-            x: 520 / this.originalSplashDimensions.width,
-            y: 1110 / this.originalSplashDimensions.height,
-            width: 380 / this.originalSplashDimensions.width,
-            height: 200 / this.originalSplashDimensions.height
-        }
-    };
+        this.originalSplashDimensions = {
+            width: 1000,    // Original splash.png width
+            height: 1800    // Original splash.png height
+        };
 
+        this.splashButtons = {
+            start: {
+                x: 100 / this.originalSplashDimensions.width,
+                y: 1110 / this.originalSplashDimensions.height,
+                width: 380 / this.originalSplashDimensions.width,
+                height: 200 / this.originalSplashDimensions.height
+            },
+            instructions: {
+                x: 520 / this.originalSplashDimensions.width,
+                y: 1110 / this.originalSplashDimensions.height,
+                width: 380 / this.originalSplashDimensions.width,
+                height: 200 / this.originalSplashDimensions.height
+            }
+        };
 
-    this.canvas = this.ctx.canvas;
-    this.canvas.addEventListener('click', (e) => this.handleSplashClick(e));
+        // Win screen button area
+        this.winScreenButtons = {
+            playAgain: {
+                x: 0.35,    // 35% from left
+                y: 0.85,    // 85% from top
+                width: 0.3, // 30% of screen width
+                height: 0.1 // 10% of screen height
+            }
+        };
 
+        this.canvas = this.ctx.canvas;
+        this.canvas.addEventListener('click', (e) => {
+            if (this.isWinScreenVisible) {
+                this.handleWinScreenClick(e);
+            } else if (this.isSplashVisible) {
+                this.handleSplashClick(e);
+            }
+        });
 
         // Touch controls reference
         this.touchControls = document.getElementById('controls-container');
@@ -111,21 +136,20 @@ export class Renderer {
                 interval: 200,
                 isActive: false
             },
-    gustoClosed: {
-        lines: ['Gusto è chiuso', 'Riprova più tardi'],
-        startTime: 0,
-        duration: 2000,
-        interval: 400,
-        isActive: false
-    },
-    chesterClosed: {
-        lines: ['Chester è chiuso', 'Riprova più tardi'],
-        startTime: 0,
-        duration: 2000,
-        interval: 400,
-        isActive: false
-    }
-
+            gustoClosed: {
+                lines: ['Gusto è chiuso', 'Riprova più tardi'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            },
+            chesterClosed: {
+                lines: ['Chester è chiuso', 'Riprova più tardi'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            }
         };
 
         // Initialize new game button
@@ -137,8 +161,9 @@ export class Renderer {
         this.createNewGameButton();
         this.debug = true;
 
-        // Initialize splash screen
+        // Initialize screens
         this.initializeSplashScreen();
+        this.initializeWinScreen();
         
         // Add resize listener
         window.addEventListener('resize', () => this.handleResize());
@@ -160,27 +185,87 @@ export class Renderer {
         }
     }
 
+    initializeWinScreen() {
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.assets?.sprites?.winscreen) {
+            this.winScreen = gameInstance.assets.sprites.winscreen;
+            this.calculateWinScreenDimensions();
+            console.log('Win screen initialized with dimensions:', this.winScreenDimensions);
+        } else {
+            console.warn('Win screen asset not found');
+        }
+    }
+
+    calculateWinScreenDimensions() {
+        if (!this.winScreen) return;
+
+        const canvasWidth = this.ctx.canvas.width;
+        const canvasHeight = this.ctx.canvas.height;
+        const imageRatio = this.winScreen.width / this.winScreen.height;
+        const canvasRatio = canvasWidth / canvasHeight;
+
+        let newWidth, newHeight;
+
+        if (canvasRatio > imageRatio) {
+            newHeight = canvasHeight;
+            newWidth = canvasHeight * imageRatio;
+        } else {
+            newWidth = canvasWidth;
+            newHeight = canvasWidth / imageRatio;
+        }
+
+        this.winScreenDimensions = {
+            width: newWidth,
+            height: newHeight,
+            x: (canvasWidth - newWidth) / 2,
+            y: (canvasHeight - newHeight) / 2
+        };
+    }
+
+    showWinScreen() {
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.audioManager) {
+            // Stop background music immediately
+            if (gameInstance.audioManager.currentMusicSource) {
+                gameInstance.audioManager.currentMusicSource.stop();
+            }
+            // Play win sound
+            gameInstance.audioManager.playSound('win');
+        }
+        this.isWinScreenVisible = true;
+        this.updateUIVisibility();
+    }
+
+    handleWinScreenClick(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+
+        if (this.isClickInButton(x, y, this.winScreenButtons.playAgain)) {
+            window.location.reload();
+        }
+    }
+
     updateUIVisibility() {
         if (this.touchControls) {
-            this.touchControls.style.display = this.isSplashVisible ? 'none' : 'flex';
+            this.touchControls.style.display = (this.isSplashVisible || this.isWinScreenVisible) ? 'none' : 'flex';
         }
 
         const gameInstance = window.gameInstance;
         if (gameInstance?.scoreManager) {
-            gameInstance.scoreManager.setVisibility(!this.isSplashVisible);
+            gameInstance.scoreManager.setVisibility(!this.isSplashVisible && !this.isWinScreenVisible);
         }
 
         if (gameInstance?.levelManager) {
-            if (this.isSplashVisible) {
+            if (this.isSplashVisible || this.isWinScreenVisible) {
                 gameInstance.levelManager.pauseFriendshipCountdown();
             } else {
                 gameInstance.levelManager.resumeFriendshipCountdown();
             }
         }
     }
-
-
-
 
     calculateSplashDimensions() {
         if (!this.splashScreen) return;
@@ -193,11 +278,9 @@ export class Renderer {
         let newWidth, newHeight;
 
         if (canvasRatio > imageRatio) {
-            // Canvas is wider than image ratio - fit to height
             newHeight = canvasHeight;
             newWidth = canvasHeight * imageRatio;
         } else {
-            // Canvas is taller than image ratio - fit to width
             newWidth = canvasWidth;
             newHeight = canvasWidth / imageRatio;
         }
@@ -210,12 +293,11 @@ export class Renderer {
         };
     }
 
-
-
     handleResize() {
         if (this.splashScreenReady) {
             this.calculateSplashDimensions();
         }
+        this.calculateWinScreenDimensions();
     }
 
     showSuinaMalaMessage() {
@@ -291,8 +373,6 @@ export class Renderer {
         });
         window.location.reload();
     }
-
-
 
     showNewGameButton() {
         if (!this.newGameButton.element) return;
@@ -371,6 +451,7 @@ export class Renderer {
                 this.showNewGameButton();
             }
         }
+
     }
 
     draw(player, sprites, camera) {
@@ -387,6 +468,25 @@ export class Renderer {
         // Draw player
         if (player && sprites.professore) {
             this.drawPlayer(player, sprites.professore, camera);
+        }
+
+        // Check for win condition
+        const gameInstance = window.gameInstance;
+        if (!this.hasTriggeredWin && gameInstance?.scoreManager?.scores?.love >= 100) {
+            this.showWinScreen();
+            this.hasTriggeredWin = true;
+        }
+
+        // Draw win screen if visible
+        if (this.isWinScreenVisible && this.winScreen) {
+            this.ctx.drawImage(
+                this.winScreen,
+                this.winScreenDimensions.x,
+                this.winScreenDimensions.y,
+                this.winScreenDimensions.width,
+                this.winScreenDimensions.height
+            );
+            return; // Don't draw anything else when win screen is showing
         }
         
         // Only draw scores if splash is not visible
@@ -412,56 +512,6 @@ export class Renderer {
                 0, 0,
                 camera.width, camera.height
             );
-        }
-    }
-
-
-
-handleSplashClick(e) {
-    if (!this.isSplashVisible) return;
-
-    // Get click position relative to canvas
-    const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
-
-    // Check START button
-    if (this.isClickInButton(x, y, this.splashButtons.start)) {
-        console.log('Start button clicked');
-        this.setSplashVisibility(false);
-        return;
-    }
-
-    // Check INSTRUCTIONS button
-    if (this.isClickInButton(x, y, this.splashButtons.instructions)) {
-        console.log('Instructions button clicked');
-        this.showInstructions();
-        return;
-    }
-}
-
-isClickInButton(x, y, button) {
-    // Convert percentage-based positions to actual screen coordinates
-    const actualX = this.splashDimensions.x + (button.x * this.splashDimensions.width);
-    const actualY = this.splashDimensions.y + (button.y * this.splashDimensions.height);
-    const actualWidth = button.width * this.splashDimensions.width;
-    const actualHeight = button.height * this.splashDimensions.height;
-
-    return x >= actualX && 
-           x <= actualX + actualWidth && 
-           y >= actualY && 
-           y <= actualY + actualHeight;
-}
-
-
-showInstructions() {
-        const gameInstance = window.gameInstance;
-        if (gameInstance?.assets?.sprites?.instructions) {
-            this.splashScreen = gameInstance.assets.sprites.instructions;
-            this.calculateSplashDimensions();
-            this.showingInstructions = true; // New flag
         }
     }
 
@@ -493,7 +543,43 @@ showInstructions() {
         }
     }
 
-    // Only draw buttons if not showing instructions
+    isClickInButton(x, y, button) {
+        // For splash screen buttons
+        if (this.isSplashVisible) {
+            const actualX = this.splashDimensions.x + (button.x * this.splashDimensions.width);
+            const actualY = this.splashDimensions.y + (button.y * this.splashDimensions.height);
+            const actualWidth = button.width * this.splashDimensions.width;
+            const actualHeight = button.height * this.splashDimensions.height;
+
+            return x >= actualX && 
+                   x <= actualX + actualWidth && 
+                   y >= actualY && 
+                   y <= actualY + actualHeight;
+        }
+        // For win screen buttons
+        else if (this.isWinScreenVisible) {
+            const actualX = this.winScreenDimensions.x + (button.x * this.winScreenDimensions.width);
+            const actualY = this.winScreenDimensions.y + (button.y * this.winScreenDimensions.height);
+            const actualWidth = button.width * this.winScreenDimensions.width;
+            const actualHeight = button.height * this.winScreenDimensions.height;
+
+            return x >= actualX && 
+                   x <= actualX + actualWidth && 
+                   y >= actualY && 
+                   y <= actualY + actualHeight;
+        }
+        return false;
+    }
+
+    showInstructions() {
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.assets?.sprites?.instructions) {
+            this.splashScreen = gameInstance.assets.sprites.instructions;
+            this.calculateSplashDimensions();
+            this.showingInstructions = true;
+        }
+    }
+
     drawSplashScreen() {
         if (this.splashScreenReady && this.splashScreen && this.isSplashVisible) {
             this.ctx.drawImage(
@@ -503,13 +589,13 @@ showInstructions() {
                 this.splashDimensions.width,
                 this.splashDimensions.height
             );
-
-
         }
     }
 
-
-
+    setSplashVisibility(visible) {
+        this.isSplashVisible = visible;
+        this.updateUIVisibility();
+    }
 
     drawPlayer(player, sprites, camera) {
         if (!player) return;
@@ -594,45 +680,6 @@ showInstructions() {
                 );
             }
         });
-    }
-
-
-
-
-
-
-
-
-
-
-
-    drawSplashScreen() {
-        if (this.splashScreenReady && this.splashScreen && this.isSplashVisible) {
-            this.ctx.drawImage(
-                this.splashScreen,
-                this.splashDimensions.x,
-                this.splashDimensions.y,
-                this.splashDimensions.width,
-                this.splashDimensions.height
-            );
-
-
-    }
-}
-
-
-
-
-
-
-
-
-
-    setSplashVisibility(visible) {
-        this.isSplashVisible = visible;
-
-
-this.updateUIVisibility();
     }
 
     setFlashStartTime() {
