@@ -9,9 +9,10 @@ export class Renderer {
         this.gameState = gameState;
         this.directions = { down: 0, left: 1, right: 2, up: 3 };
         
-
+        // Splash screen properties
         this.splashScreen = null;
         this.splashScreenReady = false;
+        this.isSplashVisible = true;
         this.splashDimensions = {
             width: 0,
             height: 0,
@@ -19,70 +20,77 @@ export class Renderer {
             y: 0
         };
 
+   this.originalSplashDimensions = {
+        width: 1000,    // Original splash.png width
+        height: 1800    // Original splash.png height
+    };
+
+    this.splashButtons = {
+        start: {
+            x: 100 / this.originalSplashDimensions.width,
+            y: 1110 / this.originalSplashDimensions.height,
+            width: 380 / this.originalSplashDimensions.width,
+            height: 200 / this.originalSplashDimensions.height
+        },
+        instructions: {
+            x: 520 / this.originalSplashDimensions.width,
+            y: 1110 / this.originalSplashDimensions.height,
+            width: 380 / this.originalSplashDimensions.width,
+            height: 200 / this.originalSplashDimensions.height
+        }
+    };
+
+
+    this.canvas = this.ctx.canvas;
+    this.canvas.addEventListener('click', (e) => this.handleSplashClick(e));
+
+
+        // Touch controls reference
+        this.touchControls = document.getElementById('controls-container');
+        
         this.screenMessages = {
-
-
-        gustoClosed: {
-            lines: ['Gusto chiuso,', 'riprova più tardi'],
-            startTime: 0,
-            duration: 2000,
-            interval: 400,
-            isActive: false
-        },
-        chesterClosed: {
-            lines: ['Chester chiuso,', 'riprova più tardi'],
-            startTime: 0,
-            duration: 2000,
-            interval: 400,
-            isActive: false
-        },
-    
-
-	        diegoWarning: {
-        lines: ['Il tuo amico Diego', 'ha bisogno di te!'],
-        startTime: 0,
-        duration: 2000,    //
-        interval: 400,     // Flash 4 times (400ms each)
-        isActive: false
-    },
-	   diegoGameOver: {
-        lines: ['Il tuo amico Diego', 'ti ha aspettato', " invano, l'amicizia è",'rotta per sempre'],
-        startTime: 0,
-        duration: 3000,    //
-        interval: 400,     // Flash 3 times (400ms each)
-        isActive: false,
-        nextMessage: 'finalGameOver'  // Chain to existing game over message
-    },
-
-    lowLove: {
-        lines: ['Troppo poco amore', 'professore'],
-        startTime: 0,
-        duration: 2000,
-        interval: 400,
-        isActive: false,
-        nextMessage: 'finalGameOver'
-    },
-    lowEnergy: {
-        lines: ['Fame, hai bisogno', 'di pizza!'],
-        startTime: 0,
-        duration: 2000,
-        interval: 400,
-        isActive: false
-    },
-    noEnergy: {
-        lines: ['Troppa poca pizza', 'professore'],
-        startTime: 0,
-        duration: 2000,
-        interval: 400,
-        isActive: false,
-        nextMessage: 'finalGameOver'
-    },
-
-
+            diegoWarning: {
+                lines: ['Il tuo amico Diego', 'ha bisogno di te!'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            },
+            diegoGameOver: {
+                lines: ['Il tuo amico Diego', 'ti ha aspettato', " invano, l'amicizia è",'rotta per sempre'],
+                startTime: 0,
+                duration: 3000,
+                interval: 400,
+                isActive: false,
+                nextMessage: 'finalGameOver'
+            },
+            lowLove: {
+                lines: ['Troppo poco amore', 'professore'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false,
+                nextMessage: 'finalGameOver'
+            },
+            lowEnergy: {
+                lines: ['Fame, hai bisogno', 'di pizza!'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            },
+            noEnergy: {
+                lines: ['Troppa poca pizza', 'professore'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false,
+                nextMessage: 'finalGameOver'
+            },
             gameOver: {
                 lines: ['Hai beccato', 'la Suina Mala... :('],
                 startTime: 0,
-                duration: 3000,
+                duration: 2000,
                 interval: 400,
                 isActive: false,
                 nextMessage: 'finalGameOver'
@@ -102,7 +110,22 @@ export class Renderer {
                 duration: 800,
                 interval: 200,
                 isActive: false
-            }
+            },
+    gustoClosed: {
+        lines: ['Gusto è chiuso', 'Riprova più tardi'],
+        startTime: 0,
+        duration: 2000,
+        interval: 400,
+        isActive: false
+    },
+    chesterClosed: {
+        lines: ['Chester è chiuso', 'Riprova più tardi'],
+        startTime: 0,
+        duration: 2000,
+        interval: 400,
+        isActive: false
+    }
+
         };
 
         // Initialize new game button
@@ -114,10 +137,15 @@ export class Renderer {
         this.createNewGameButton();
         this.debug = true;
 
-       this.initializeSplashScreen();
-      window.addEventListener('resize', () => this.handleResize());
-    }
+        // Initialize splash screen
+        this.initializeSplashScreen();
+        
+        // Add resize listener
+        window.addEventListener('resize', () => this.handleResize());
 
+        // Initial UI state setup
+        this.updateUIVisibility();
+    }
 
     initializeSplashScreen() {
         const gameInstance = window.gameInstance;
@@ -125,11 +153,34 @@ export class Renderer {
             this.splashScreen = gameInstance.assets.sprites.splash;
             this.calculateSplashDimensions();
             this.splashScreenReady = true;
+            this.updateUIVisibility();
             console.log('Splash screen initialized with dimensions:', this.splashDimensions);
         } else {
             console.warn('Splash screen asset not found');
         }
     }
+
+    updateUIVisibility() {
+        if (this.touchControls) {
+            this.touchControls.style.display = this.isSplashVisible ? 'none' : 'flex';
+        }
+
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.scoreManager) {
+            gameInstance.scoreManager.setVisibility(!this.isSplashVisible);
+        }
+
+        if (gameInstance?.levelManager) {
+            if (this.isSplashVisible) {
+                gameInstance.levelManager.pauseFriendshipCountdown();
+            } else {
+                gameInstance.levelManager.resumeFriendshipCountdown();
+            }
+        }
+    }
+
+
+
 
     calculateSplashDimensions() {
         if (!this.splashScreen) return;
@@ -159,15 +210,13 @@ export class Renderer {
         };
     }
 
+
+
     handleResize() {
         if (this.splashScreenReady) {
             this.calculateSplashDimensions();
         }
     }
-
-
-
-
 
     showSuinaMalaMessage() {
         console.log('Showing Suina Mala message');
@@ -179,34 +228,20 @@ export class Renderer {
         this.setScreenMessage('gameOver');
     }
 
-    drawBackground(background, camera) {
-        if (background) {
-            this.ctx.drawImage(
-                background,
-                camera.x, camera.y,
-                camera.width, camera.height,
-                0, 0,
-                camera.width, camera.height
-            );
-        }
+    showLowLoveMessage() {
+        console.log('Showing Low Love message');
+        this.setScreenMessage('lowLove');
     }
 
+    showLowEnergyWarning() {
+        console.log('Showing Low Energy warning');
+        this.setScreenMessage('lowEnergy');
+    }
 
-showLowLoveMessage() {
-    console.log('Showing Low Love message');
-    this.setScreenMessage('lowLove');
-}
-
-showLowEnergyWarning() {
-    console.log('Showing Low Energy warning');
-    this.setScreenMessage('lowEnergy');
-}
-
-showNoEnergyMessage() {
-    console.log('Showing No Energy message');
-    this.setScreenMessage('noEnergy');
-}
-
+    showNoEnergyMessage() {
+        console.log('Showing No Energy message');
+        this.setScreenMessage('noEnergy');
+    }
 
     createNewGameButton() {
         if (this.newGameButton.element) {
@@ -256,6 +291,8 @@ showNoEnergyMessage() {
         });
         window.location.reload();
     }
+
+
 
     showNewGameButton() {
         if (!this.newGameButton.element) return;
@@ -336,15 +373,6 @@ showNoEnergyMessage() {
         }
     }
 
-    clear() {
-        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-    }
-
-
-
-
-
-
     draw(player, sprites, camera) {
         this.clear();
         
@@ -361,15 +389,113 @@ showNoEnergyMessage() {
             this.drawPlayer(player, sprites.professore, camera);
         }
         
-        // Draw messages
-        Object.keys(this.screenMessages).forEach(type => {
-            this.drawScreenMessage(type);
-        });
-  this.drawSplashScreen();
+        // Only draw scores if splash is not visible
+        if (!this.isSplashVisible) {
+            // Draw messages
+            Object.keys(this.screenMessages).forEach(type => {
+                this.drawScreenMessage(type);
+            });
+        }
+
+        // Draw splash screen on top if visible
+        if (this.isSplashVisible) {
+            this.drawSplashScreen();
+        }
     }
 
+    drawBackground(background, camera) {
+        if (background) {
+            this.ctx.drawImage(
+                background,
+                camera.x, camera.y,
+                camera.width, camera.height,
+                0, 0,
+                camera.width, camera.height
+            );
+        }
+    }
+
+
+
+handleSplashClick(e) {
+    if (!this.isSplashVisible) return;
+
+    // Get click position relative to canvas
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
+    // Check START button
+    if (this.isClickInButton(x, y, this.splashButtons.start)) {
+        console.log('Start button clicked');
+        this.setSplashVisibility(false);
+        return;
+    }
+
+    // Check INSTRUCTIONS button
+    if (this.isClickInButton(x, y, this.splashButtons.instructions)) {
+        console.log('Instructions button clicked');
+        this.showInstructions();
+        return;
+    }
+}
+
+isClickInButton(x, y, button) {
+    // Convert percentage-based positions to actual screen coordinates
+    const actualX = this.splashDimensions.x + (button.x * this.splashDimensions.width);
+    const actualY = this.splashDimensions.y + (button.y * this.splashDimensions.height);
+    const actualWidth = button.width * this.splashDimensions.width;
+    const actualHeight = button.height * this.splashDimensions.height;
+
+    return x >= actualX && 
+           x <= actualX + actualWidth && 
+           y >= actualY && 
+           y <= actualY + actualHeight;
+}
+
+
+showInstructions() {
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.assets?.sprites?.instructions) {
+            this.splashScreen = gameInstance.assets.sprites.instructions;
+            this.calculateSplashDimensions();
+            this.showingInstructions = true; // New flag
+        }
+    }
+
+    handleSplashClick(e) {
+        if (!this.isSplashVisible) return;
+
+        if (this.showingInstructions) {
+            this.setSplashVisibility(false);
+            return;
+        }
+
+        // Get click position relative to canvas
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+
+        // Check START button
+        if (this.isClickInButton(x, y, this.splashButtons.start)) {
+            this.setSplashVisibility(false);
+            return;
+        }
+
+        // Check INSTRUCTIONS button
+        if (this.isClickInButton(x, y, this.splashButtons.instructions)) {
+            this.showInstructions();
+            return;
+        }
+    }
+
+    // Only draw buttons if not showing instructions
     drawSplashScreen() {
-        if (this.splashScreenReady && this.splashScreen) {
+        if (this.splashScreenReady && this.splashScreen && this.isSplashVisible) {
             this.ctx.drawImage(
                 this.splashScreen,
                 this.splashDimensions.x,
@@ -377,12 +503,12 @@ showNoEnergyMessage() {
                 this.splashDimensions.width,
                 this.splashDimensions.height
             );
+
+
         }
     }
 
-    clear() {
-        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-    }
+
 
 
     drawPlayer(player, sprites, camera) {
@@ -470,6 +596,45 @@ showNoEnergyMessage() {
         });
     }
 
+
+
+
+
+
+
+
+
+
+
+    drawSplashScreen() {
+        if (this.splashScreenReady && this.splashScreen && this.isSplashVisible) {
+            this.ctx.drawImage(
+                this.splashScreen,
+                this.splashDimensions.x,
+                this.splashDimensions.y,
+                this.splashDimensions.width,
+                this.splashDimensions.height
+            );
+
+
+    }
+}
+
+
+
+
+
+
+
+
+
+    setSplashVisibility(visible) {
+        this.isSplashVisible = visible;
+
+
+this.updateUIVisibility();
+    }
+
     setFlashStartTime() {
         const startTime = performance.now();
         this.screenMessages.gameOver.startTime = startTime;
@@ -478,10 +643,23 @@ showNoEnergyMessage() {
         }
     }
 
+    clear() {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    }
+
     cleanup() {
+        // Remove resize listener
+        window.removeEventListener('resize', () => this.handleResize());
+        
+        // Clean up new game button
         if (this.newGameButton.element) {
             document.body.removeChild(this.newGameButton.element);
             this.newGameButton.element = null;
         }
+
+        // Reset splash screen state
+        this.splashScreenReady = false;
+        this.splashScreen = null;
+        this.isSplashVisible = false;
     }
 }

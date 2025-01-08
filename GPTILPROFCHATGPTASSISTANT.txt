@@ -76,6 +76,8 @@ Ilprofessore
 │   │       urlo.mp3
 │   │       walter-sound.mp3
 │   │       walter-welcome.mp3
+│   │       win.mp3
+│   │       buzz.mp3
 │   │
 │   └───sprites
 │       │   background.png
@@ -93,6 +95,7 @@ Ilprofessore
 │       │   skull1.png
 │       │   splash.png
 │       │   instructions.png
+│       │   winscreen.png
 │       │
 │       ├───diego
 │       │       diego-attack.png
@@ -478,6 +481,8 @@ startGame();
 
 
 
+
+
 index.html:
 <!DOCTYPE html>
 <html lang="en">
@@ -507,7 +512,6 @@ index.html:
   <script src="./main.js" type="module"></script>
 </body>
 </html>
-
 
 
 
@@ -575,6 +579,7 @@ export const CONFIG = {
 
 assetLoader.js:
 // AssetLoader.js
+// AssetLoader.js
 export class AssetLoader {
     static async loadImage(src, fallbackSrc = null) {
         const img = new Image();
@@ -610,6 +615,8 @@ export class AssetLoader {
             const audioContext = new AudioContext(); 
             const [
                 splashScreen,
+		win,
+		winscreen,
                 instructionsScreen,
                 professoreidle,
                 professorewalking,
@@ -656,6 +663,7 @@ export class AssetLoader {
 		recharge
             ] = await Promise.all([
                 this.loadImage('./assets/sprites/splash.png'),
+                this.loadImage('./assets/sprites/winscreen.png'),
                 this.loadImage('./assets/sprites/instructions.png'),
                 this.loadImage('./assets/sprites/professore/professore-idle.png'),
                 this.loadImage('./assets/sprites/professore/professore-spritesheet.png'),
@@ -699,6 +707,7 @@ export class AssetLoader {
                 this.loadSound(audioContext, './assets/sounds/walter-welcome.mp3'),
                 this.loadSound(audioContext, './assets/sounds/diego-sound.mp3'),
                 this.loadSound(audioContext, './assets/sounds/milly-sound.mp3'),
+		this.loadSound(audioContext, './assets/sounds/win.mp3'),
 		this.loadSound(audioContext, './assets/sounds/recharge.mp3')
             ]);
 
@@ -721,6 +730,7 @@ console.log("Asset structure being returned:", {
                     diego: { idle: diegoidle, walking: diegowalking, attack: diegoattack },
 		    splash: splashScreen,
 		    instructions: instructionsScreen
+		    winscreen : winScreen
                 },
                 backgrounds: {
                     background1,
@@ -731,6 +741,7 @@ console.log("Asset structure being returned:", {
                 },
                 sounds: {
                     proffuck,
+		    win,
                     profpunch,
                     profsmack,
                     buzz,
@@ -756,6 +767,9 @@ console.log("Asset structure being returned:", {
         }
     }
 }
+
+
+
 
 
 
@@ -821,7 +835,7 @@ export class CharacterRegistry {
 
 
 
-/* style.css */
+
 /* style.css */
 * {
   margin: 0;
@@ -986,6 +1000,7 @@ canvas {
 
 
 
+
 LevelManager.js:
 // LevelManager.js
 import { CONFIG } from '../config.js';
@@ -1090,18 +1105,17 @@ export class LevelManager {
         }
 
         // Handle friendship system when leaving level 5
-        if (levelNumber !== 5 && this.friendshipInterval) {
-            clearInterval(this.friendshipInterval);
-            this.friendshipInterval = null;
-            
-            // Restart countdown only when leaving level 5
-            if (this.currentLevel === 5) {
-                const gameInstance = window.gameInstance;
-                if (gameInstance?.scoreManager) {
-                    gameInstance.scoreManager.startFriendshipCountdown();
-                }
-            }
-        }
+// In loadLevel method
+if (levelNumber !== 5) {
+    const wasInLevel5 = (this.currentLevel === 5);
+    if (this.friendshipInterval) {
+        clearInterval(this.friendshipInterval);
+        this.friendshipInterval = null;
+    }
+    if (wasInLevel5 && gameInstance?.scoreManager) {
+        gameInstance.scoreManager.startFriendshipCountdown();
+    }
+}
 
         console.log('Loading level:', {
             level: levelNumber,
@@ -1289,6 +1303,24 @@ export class LevelManager {
             });
         }
     }
+
+
+pauseFriendshipCountdown() {
+    console.log('Pausing friendship increase');
+    if (this.friendshipInterval) {
+        clearInterval(this.friendshipInterval);
+        this.friendshipInterval = null;
+    }
+}
+
+resumeFriendshipCountdown() {
+    console.log('Resuming friendship increase');
+    // Only resume if we're in level 5
+    if (this.currentLevel === 5) {
+        this.startFriendshipIncrease();
+    }
+}
+
 
     startFriendshipIncrease() {
         if (this.friendshipInterval) {
@@ -1541,6 +1573,8 @@ update(player, worldBounds, input) {
 
 
 
+
+
 AudioManager.js:
 // AudioManager.js
 import { CONFIG } from '../../config.js';
@@ -1607,6 +1641,7 @@ export class AudioManager {
         console.log('Loading sounds...');
         try {
             const soundsToLoad = [
+		['recharge', './assets/sounds/recharge.mp3'],
                 ['buzz', './assets/sounds/buzz.mp3'],
                 ['dingdong', './assets/sounds/dingdong.mp3'],
                 ['drink', './assets/sounds/drink.mp3'],
@@ -1758,6 +1793,8 @@ export class AudioManager {
 
 
 
+
+
 Camera.js:
 // Camera.js
 import { CONFIG } from '../../config.js';
@@ -1800,8 +1837,9 @@ export class Camera {
 
 
 
+
+
 Input.js:
-// Input.js
 // Input.js
 import { CONFIG } from '../../config.js';
 
@@ -1951,8 +1989,8 @@ export class InputHandler {
 
 
 
+
 Renderer.js:
-// Renderer.js
 // Renderer.js
 import { CONFIG } from '../../config.js';
 
@@ -1964,49 +2002,84 @@ export class Renderer {
         this.gameState = gameState;
         this.directions = { down: 0, left: 1, right: 2, up: 3 };
         
+        // Splash screen properties
+        this.splashScreen = null;
+        this.splashScreenReady = false;
+        this.isSplashVisible = true;
+        this.splashDimensions = {
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0
+        };
+
+   this.originalSplashDimensions = {
+        width: 1000,    // Original splash.png width
+        height: 1800    // Original splash.png height
+    };
+
+    this.splashButtons = {
+        start: {
+            x: 100 / this.originalSplashDimensions.width,
+            y: 1110 / this.originalSplashDimensions.height,
+            width: 380 / this.originalSplashDimensions.width,
+            height: 200 / this.originalSplashDimensions.height
+        },
+        instructions: {
+            x: 520 / this.originalSplashDimensions.width,
+            y: 1110 / this.originalSplashDimensions.height,
+            width: 380 / this.originalSplashDimensions.width,
+            height: 200 / this.originalSplashDimensions.height
+        }
+    };
+
+
+    this.canvas = this.ctx.canvas;
+    this.canvas.addEventListener('click', (e) => this.handleSplashClick(e));
+
+
+        // Touch controls reference
+        this.touchControls = document.getElementById('controls-container');
+        
         this.screenMessages = {
-
-	        diegoWarning: {
-        lines: ['Il tuo amico Diego', 'ha bisogno di te!'],
-        startTime: 0,
-        duration: 2000,    //
-        interval: 400,     // Flash 4 times (400ms each)
-        isActive: false
-    },
-	   diegoGameOver: {
-        lines: ['Il tuo amico Diego', 'ti ha aspettato', " invano, l'amicizia è",'rotta per sempre'],
-        startTime: 0,
-        duration: 3000,    //
-        interval: 400,     // Flash 3 times (400ms each)
-        isActive: false,
-        nextMessage: 'finalGameOver'  // Chain to existing game over message
-    },
-
-    lowLove: {
-        lines: ['Troppo poco amore', 'professore'],
-        startTime: 0,
-        duration: 2000,
-        interval: 400,
-        isActive: false,
-        nextMessage: 'finalGameOver'
-    },
-    lowEnergy: {
-        lines: ['Fame, hai bisogno', 'di pizza!'],
-        startTime: 0,
-        duration: 2000,
-        interval: 400,
-        isActive: false
-    },
-    noEnergy: {
-        lines: ['Troppa poca pizza', 'professore'],
-        startTime: 0,
-        duration: 2000,
-        interval: 400,
-        isActive: false,
-        nextMessage: 'finalGameOver'
-    },
-
-
+            diegoWarning: {
+                lines: ['Il tuo amico Diego', 'ha bisogno di te!'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            },
+            diegoGameOver: {
+                lines: ['Il tuo amico Diego', 'ti ha aspettato', " invano, l'amicizia è",'rotta per sempre'],
+                startTime: 0,
+                duration: 3000,
+                interval: 400,
+                isActive: false,
+                nextMessage: 'finalGameOver'
+            },
+            lowLove: {
+                lines: ['Troppo poco amore', 'professore'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false,
+                nextMessage: 'finalGameOver'
+            },
+            lowEnergy: {
+                lines: ['Fame, hai bisogno', 'di pizza!'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            },
+            noEnergy: {
+                lines: ['Troppa poca pizza', 'professore'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false,
+                nextMessage: 'finalGameOver'
+            },
             gameOver: {
                 lines: ['Hai beccato', 'la Suina Mala... :('],
                 startTime: 0,
@@ -2030,7 +2103,22 @@ export class Renderer {
                 duration: 800,
                 interval: 200,
                 isActive: false
-            }
+            },
+    gustoClosed: {
+        lines: ['Gusto è chiuso', 'Riprova più tardi'],
+        startTime: 0,
+        duration: 2000,
+        interval: 400,
+        isActive: false
+    },
+    chesterClosed: {
+        lines: ['Chester è chiuso', 'Riprova più tardi'],
+        startTime: 0,
+        duration: 2000,
+        interval: 400,
+        isActive: false
+    }
+
         };
 
         // Initialize new game button
@@ -2041,6 +2129,86 @@ export class Renderer {
 
         this.createNewGameButton();
         this.debug = true;
+
+        // Initialize splash screen
+        this.initializeSplashScreen();
+        
+        // Add resize listener
+        window.addEventListener('resize', () => this.handleResize());
+
+        // Initial UI state setup
+        this.updateUIVisibility();
+    }
+
+    initializeSplashScreen() {
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.assets?.sprites?.splash) {
+            this.splashScreen = gameInstance.assets.sprites.splash;
+            this.calculateSplashDimensions();
+            this.splashScreenReady = true;
+            this.updateUIVisibility();
+            console.log('Splash screen initialized with dimensions:', this.splashDimensions);
+        } else {
+            console.warn('Splash screen asset not found');
+        }
+    }
+
+    updateUIVisibility() {
+        if (this.touchControls) {
+            this.touchControls.style.display = this.isSplashVisible ? 'none' : 'flex';
+        }
+
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.scoreManager) {
+            gameInstance.scoreManager.setVisibility(!this.isSplashVisible);
+        }
+
+        if (gameInstance?.levelManager) {
+            if (this.isSplashVisible) {
+                gameInstance.levelManager.pauseFriendshipCountdown();
+            } else {
+                gameInstance.levelManager.resumeFriendshipCountdown();
+            }
+        }
+    }
+
+
+
+
+    calculateSplashDimensions() {
+        if (!this.splashScreen) return;
+
+        const canvasWidth = this.ctx.canvas.width;
+        const canvasHeight = this.ctx.canvas.height;
+        const imageRatio = this.splashScreen.width / this.splashScreen.height;
+        const canvasRatio = canvasWidth / canvasHeight;
+
+        let newWidth, newHeight;
+
+        if (canvasRatio > imageRatio) {
+            // Canvas is wider than image ratio - fit to height
+            newHeight = canvasHeight;
+            newWidth = canvasHeight * imageRatio;
+        } else {
+            // Canvas is taller than image ratio - fit to width
+            newWidth = canvasWidth;
+            newHeight = canvasWidth / imageRatio;
+        }
+
+        this.splashDimensions = {
+            width: newWidth,
+            height: newHeight,
+            x: (canvasWidth - newWidth) / 2,
+            y: (canvasHeight - newHeight) / 2
+        };
+    }
+
+
+
+    handleResize() {
+        if (this.splashScreenReady) {
+            this.calculateSplashDimensions();
+        }
     }
 
     showSuinaMalaMessage() {
@@ -2053,34 +2221,20 @@ export class Renderer {
         this.setScreenMessage('gameOver');
     }
 
-    drawBackground(background, camera) {
-        if (background) {
-            this.ctx.drawImage(
-                background,
-                camera.x, camera.y,
-                camera.width, camera.height,
-                0, 0,
-                camera.width, camera.height
-            );
-        }
+    showLowLoveMessage() {
+        console.log('Showing Low Love message');
+        this.setScreenMessage('lowLove');
     }
 
+    showLowEnergyWarning() {
+        console.log('Showing Low Energy warning');
+        this.setScreenMessage('lowEnergy');
+    }
 
-showLowLoveMessage() {
-    console.log('Showing Low Love message');
-    this.setScreenMessage('lowLove');
-}
-
-showLowEnergyWarning() {
-    console.log('Showing Low Energy warning');
-    this.setScreenMessage('lowEnergy');
-}
-
-showNoEnergyMessage() {
-    console.log('Showing No Energy message');
-    this.setScreenMessage('noEnergy');
-}
-
+    showNoEnergyMessage() {
+        console.log('Showing No Energy message');
+        this.setScreenMessage('noEnergy');
+    }
 
     createNewGameButton() {
         if (this.newGameButton.element) {
@@ -2130,6 +2284,8 @@ showNoEnergyMessage() {
         });
         window.location.reload();
     }
+
+
 
     showNewGameButton() {
         if (!this.newGameButton.element) return;
@@ -2210,10 +2366,6 @@ showNoEnergyMessage() {
         }
     }
 
-    clear() {
-        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-    }
-
     draw(player, sprites, camera) {
         this.clear();
         
@@ -2230,11 +2382,127 @@ showNoEnergyMessage() {
             this.drawPlayer(player, sprites.professore, camera);
         }
         
-        // Draw messages
-        Object.keys(this.screenMessages).forEach(type => {
-            this.drawScreenMessage(type);
-        });
+        // Only draw scores if splash is not visible
+        if (!this.isSplashVisible) {
+            // Draw messages
+            Object.keys(this.screenMessages).forEach(type => {
+                this.drawScreenMessage(type);
+            });
+        }
+
+        // Draw splash screen on top if visible
+        if (this.isSplashVisible) {
+            this.drawSplashScreen();
+        }
     }
+
+    drawBackground(background, camera) {
+        if (background) {
+            this.ctx.drawImage(
+                background,
+                camera.x, camera.y,
+                camera.width, camera.height,
+                0, 0,
+                camera.width, camera.height
+            );
+        }
+    }
+
+
+
+handleSplashClick(e) {
+    if (!this.isSplashVisible) return;
+
+    // Get click position relative to canvas
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
+    // Check START button
+    if (this.isClickInButton(x, y, this.splashButtons.start)) {
+        console.log('Start button clicked');
+        this.setSplashVisibility(false);
+        return;
+    }
+
+    // Check INSTRUCTIONS button
+    if (this.isClickInButton(x, y, this.splashButtons.instructions)) {
+        console.log('Instructions button clicked');
+        this.showInstructions();
+        return;
+    }
+}
+
+isClickInButton(x, y, button) {
+    // Convert percentage-based positions to actual screen coordinates
+    const actualX = this.splashDimensions.x + (button.x * this.splashDimensions.width);
+    const actualY = this.splashDimensions.y + (button.y * this.splashDimensions.height);
+    const actualWidth = button.width * this.splashDimensions.width;
+    const actualHeight = button.height * this.splashDimensions.height;
+
+    return x >= actualX && 
+           x <= actualX + actualWidth && 
+           y >= actualY && 
+           y <= actualY + actualHeight;
+}
+
+
+showInstructions() {
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.assets?.sprites?.instructions) {
+            this.splashScreen = gameInstance.assets.sprites.instructions;
+            this.calculateSplashDimensions();
+            this.showingInstructions = true; // New flag
+        }
+    }
+
+    handleSplashClick(e) {
+        if (!this.isSplashVisible) return;
+
+        if (this.showingInstructions) {
+            this.setSplashVisibility(false);
+            return;
+        }
+
+        // Get click position relative to canvas
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+
+        // Check START button
+        if (this.isClickInButton(x, y, this.splashButtons.start)) {
+            this.setSplashVisibility(false);
+            return;
+        }
+
+        // Check INSTRUCTIONS button
+        if (this.isClickInButton(x, y, this.splashButtons.instructions)) {
+            this.showInstructions();
+            return;
+        }
+    }
+
+    // Only draw buttons if not showing instructions
+    drawSplashScreen() {
+        if (this.splashScreenReady && this.splashScreen && this.isSplashVisible) {
+            this.ctx.drawImage(
+                this.splashScreen,
+                this.splashDimensions.x,
+                this.splashDimensions.y,
+                this.splashDimensions.width,
+                this.splashDimensions.height
+            );
+
+
+        }
+    }
+
+
+
 
     drawPlayer(player, sprites, camera) {
         if (!player) return;
@@ -2321,6 +2589,45 @@ showNoEnergyMessage() {
         });
     }
 
+
+
+
+
+
+
+
+
+
+
+    drawSplashScreen() {
+        if (this.splashScreenReady && this.splashScreen && this.isSplashVisible) {
+            this.ctx.drawImage(
+                this.splashScreen,
+                this.splashDimensions.x,
+                this.splashDimensions.y,
+                this.splashDimensions.width,
+                this.splashDimensions.height
+            );
+
+
+    }
+}
+
+
+
+
+
+
+
+
+
+    setSplashVisibility(visible) {
+        this.isSplashVisible = visible;
+
+
+this.updateUIVisibility();
+    }
+
     setFlashStartTime() {
         const startTime = performance.now();
         this.screenMessages.gameOver.startTime = startTime;
@@ -2329,13 +2636,27 @@ showNoEnergyMessage() {
         }
     }
 
+    clear() {
+        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+    }
+
     cleanup() {
+        // Remove resize listener
+        window.removeEventListener('resize', () => this.handleResize());
+        
+        // Clean up new game button
         if (this.newGameButton.element) {
             document.body.removeChild(this.newGameButton.element);
             this.newGameButton.element = null;
         }
+
+        // Reset splash screen state
+        this.splashScreenReady = false;
+        this.splashScreen = null;
+        this.isSplashVisible = false;
     }
 }
+
 
 
 
@@ -2490,7 +2811,9 @@ export class ScoreManager {
         this.energyCountdownStarted = false;
     }
 
-    checkScores() {
+
+
+checkScores() {
         const gameInstance = window.gameInstance;
         if (!gameInstance || this.isInTransition) return;
 
@@ -2507,8 +2830,7 @@ export class ScoreManager {
         }
 
         // Check Energy warnings and game over
-        if (this.scores.energy <= 30 && !this.energyWarningShown) {
-            this.energyWarningShown = true;
+        if (this.scores.energy <= 30) {
             this.startBarFlash('energy');
             if (gameInstance.renderer) {
                 gameInstance.renderer.showLowEnergyWarning();
@@ -2524,6 +2846,17 @@ export class ScoreManager {
             this.startBarFlash('energy');
             this.gameOverTriggered = true;
             this.triggerGameOver('energy');
+        }
+
+        // Check Friendship at 30
+        if (this.scores.friendship <= 30) {
+            this.startBarFlash('friendship');
+            if (gameInstance?.renderer) {
+                gameInstance.renderer.setScreenMessage('diegoWarning');
+            }
+            if (gameInstance?.audioManager) {
+                gameInstance.audioManager.playSound('dingdong');
+            }
         }
     }
 
@@ -2628,7 +2961,12 @@ startFriendshipCountdown() {
         }
     }
 
+setVisibility(visible) {
+    this.isVisible = visible;
+}
+
     draw() {
+    if (!this.isVisible) return;
         this.ctx.save();
 
         // Draw love score at top
@@ -2725,6 +3063,8 @@ startFriendshipCountdown() {
         });
     }
 }
+
+
 
 
 
@@ -2945,6 +3285,7 @@ export class ScoreAnimation {
 
 
 
+
 GameStateManager.js:
 // GameStateManager.js
 export class GameStateManager {
@@ -3071,6 +3412,8 @@ export class GameStateManager {
         }
     }
 }
+
+
 
 
 

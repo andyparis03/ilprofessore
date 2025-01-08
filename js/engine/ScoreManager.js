@@ -6,7 +6,7 @@ export class ScoreManager {
         this.ctx = ctx;
         this.scores = {
             energy: 100,    // Starting at 100
-            love: 0,        // Starting at 0
+            love: 95,        // Starting at 0
             friendship: 100  // Starting at 100
         };
         this.maxScore = 100;

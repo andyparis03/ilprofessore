@@ -79,7 +79,8 @@ export class AudioManager {
                 ['suina_fuck', './assets/sounds/suina-fuck.mp3'],
                 ['suina_evil', './assets/sounds/suina-evil.mp3'],
                 ['milly_sound', './assets/sounds/milly-sound.mp3'],
-                ['diego_sound', './assets/sounds/diego-sound.mp3']
+                ['diego_sound', './assets/sounds/diego-sound.mp3'],
+		['win', './assets/sounds/win.mp3']
             ];
 
             await Promise.all(
