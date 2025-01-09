@@ -17,7 +17,6 @@ class Game {
         
         // Core systems initialization with verified state
         this.initializationState = {
-            audio: false,
             assets: false,
             player: false,
             levelManager: false,
@@ -27,7 +26,7 @@ class Game {
         // Core components (initially null)
         this.camera = null;
         this.input = null;
-        this.audioManager = null;
+        this.audioManager = new AudioManager(); // Create but don't init
         this.scoreManager = null;
         this.gameState = null;
         this.renderer = null;
@@ -56,7 +55,6 @@ class Game {
         // Initialize core components
         this.camera = new Camera(CONFIG.CANVAS.DEFAULT_WIDTH, CONFIG.CANVAS.DEFAULT_HEIGHT);
         this.input = new InputHandler();
-        this.audioManager = new AudioManager();
         this.scoreManager = new ScoreManager(this.ctx);
         this.gameState = new GameStateManager(this);
 
@@ -90,19 +88,6 @@ class Game {
         }
     }
 
-    async initAudio() {
-        try {
-            console.log('Initializing audio system...');
-            await this.audioManager.init();
-            this.initializationState.audio = true;
-            console.log('Audio system initialized successfully');
-        } catch (error) {
-            console.error('Audio initialization failed:', error);
-            this.initializationState.audio = false;
-            throw new Error('Audio initialization failed');
-        }
-    }
-
     async loadGameAssets() {
         try {
             console.log('Loading game assets...');
@@ -127,19 +112,11 @@ class Game {
 
         try {
             console.log('Starting game initialization sequence...');
-
-            // Step 1: Initialize audio system
-            await this.initAudio();
             
-            // Verify audio initialization
-            if (!this.audioManager.initialized) {
-                throw new Error('Audio system failed to initialize properly');
-            }
-
-            // Step 2: Load game assets
+            // Step 1: Load game assets
             const assets = await this.loadGameAssets();
             
-            // Step 3: Initialize player
+            // Step 2: Initialize player
             this.player = new Player(
                 CONFIG.WORLD.WIDTH / 2,
                 CONFIG.WORLD.HEIGHT / 2,
@@ -150,7 +127,7 @@ class Game {
             );
             this.initializationState.player = true;
 
-            // Step 4: Initialize game systems
+            // Step 3: Initialize game systems
             console.log('Initializing game systems...');
             this.levelManager = new LevelManager(assets, this.gameState);
             this.initializationState.levelManager = true;
@@ -161,7 +138,7 @@ class Game {
             // Store renderer reference in gameState
             this.gameState.renderer = this.renderer;
 
-            // Step 5: Load initial level
+            // Step 4: Load initial level
             console.log('Loading initial level...');
             await this.levelManager.loadLevel(1, this.player);
 
@@ -241,7 +218,9 @@ class Game {
 
         // Update camera and audio
         this.camera.follow(this.player, CONFIG.WORLD.WIDTH, CONFIG.WORLD.HEIGHT);
-        this.audioManager.handleFootsteps(this.player, !this.player.isIdle);
+        if (this.audioManager.initialized) {
+            this.audioManager.handleFootsteps(this.player, !this.player.isIdle);
+        }
     }
 
     draw() {

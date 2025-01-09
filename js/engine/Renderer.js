@@ -32,8 +32,8 @@ export class Renderer {
         };
 
         this.originalSplashDimensions = {
-            width: 1000,    // Original splash.png width
-            height: 1800    // Original splash.png height
+            width: 1000,
+            height: 1800
         };
 
         this.splashButtons = {
@@ -54,16 +54,15 @@ export class Renderer {
         // Win screen button area
         this.winScreenButtons = {
             playAgain: {
-                x: 0.25, // 35% from left
-                y: 0.90, // 85% from top
-                width: 0.5, // 30% of screen width
-                height: 0.12 // 10% of screen height
+                x: 0.35,    // 35% from left
+                y: 0.85,    // 85% from top
+                width: 0.3, // 30% of screen width
+                height: 0.1 // 10% of screen height
             }
         };
 
         this.canvas = this.ctx.canvas;
         this.canvas.addEventListener('click', (e) => {
-
             if (this.isWinScreenVisible) {
                 this.handleWinScreenClick(e);
             } else if (this.isSplashVisible) {
@@ -173,6 +172,18 @@ export class Renderer {
         this.updateUIVisibility();
     }
 
+    async initAudio() {
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.audioManager && !gameInstance.audioManager.initialized) {
+            try {
+                await gameInstance.audioManager.init();
+                gameInstance.audioManager.playBackgroundMusic();
+            } catch (error) {
+                console.error('Failed to initialize audio:', error);
+            }
+        }
+    }
+
     initializeSplashScreen() {
         const gameInstance = window.gameInstance;
         if (gameInstance?.assets?.sprites?.splash) {
@@ -225,7 +236,7 @@ export class Renderer {
 
     showWinScreen() {
         const gameInstance = window.gameInstance;
-        if (gameInstance?.audioManager) {
+        if (gameInstance?.audioManager?.initialized) {
             // Stop background music immediately
             if (gameInstance.audioManager.currentMusicSource) {
                 gameInstance.audioManager.currentMusicSource.stop();
@@ -440,7 +451,8 @@ export class Renderer {
             const x = this.ctx.canvas.width / 2;
             const baseY = this.ctx.canvas.height / 2;
             
-            message.lines.forEach((line, index) => {
+
+message.lines.forEach((line, index) => {
                 const y = baseY + (index - (message.lines.length - 1) / 2) * 40;
                 this.ctx.strokeText(line, x, y);
                 this.ctx.fillText(line, x, y);
@@ -452,7 +464,6 @@ export class Renderer {
                 this.showNewGameButton();
             }
         }
-
     }
 
     draw(player, sprites, camera) {
@@ -487,10 +498,6 @@ export class Renderer {
                 this.winScreenDimensions.width,
                 this.winScreenDimensions.height
             );
-
-
-
-
             return; // Don't draw anything else when win screen is showing
         }
         
@@ -525,6 +532,7 @@ export class Renderer {
 
         if (this.showingInstructions) {
             this.setSplashVisibility(false);
+            this.initAudio();  // Initialize audio when leaving instructions
             return;
         }
 
@@ -538,6 +546,7 @@ export class Renderer {
         // Check START button
         if (this.isClickInButton(x, y, this.splashButtons.start)) {
             this.setSplashVisibility(false);
+            this.initAudio();  // Initialize audio when clicking start
             return;
         }
 
@@ -700,18 +709,19 @@ export class Renderer {
     }
 
     cleanup() {
-        // Remove resize listener
         window.removeEventListener('resize', () => this.handleResize());
         
-        // Clean up new game button
         if (this.newGameButton.element) {
             document.body.removeChild(this.newGameButton.element);
             this.newGameButton.element = null;
         }
 
-        // Reset splash screen state
         this.splashScreenReady = false;
         this.splashScreen = null;
         this.isSplashVisible = false;
     }
 }
+
+
+
+

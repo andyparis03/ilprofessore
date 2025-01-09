@@ -18,52 +18,55 @@ export class AudioManager {
             return this.initializationPromise;
         }
 
-        this.initializationPromise = (async () => {
-            try {
-                console.log('Starting AudioManager initialization...');
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // Create and connect gain nodes
-                this.musicGainNode = this.audioContext.createGain();
-                this.sfxGainNode = this.audioContext.createGain();
-                this.musicGainNode.connect(this.audioContext.destination);
-                this.sfxGainNode.connect(this.audioContext.destination);
+        // Return if already initialized
+        if (this.initialized) {
+            return Promise.resolve(true);
+        }
 
-                // Set initial volumes
-                this.musicGainNode.gain.setValueAtTime(CONFIG.AUDIO.MUSIC_VOLUME, this.audioContext.currentTime);
-                this.sfxGainNode.gain.setValueAtTime(CONFIG.AUDIO.SFX_VOLUME, this.audioContext.currentTime);
-
-                // Ensure audio context is resumed
-                await this.ensureAudioContextResume();
-                
-                // Load all sounds
-                await this.loadAllSounds();
-                
-                this.initialized = true;
-                console.log('AudioManager initialized successfully');
-                console.log('Available sounds:', Object.keys(this.sounds));
-
-                // Start background music if available
-                if (this.sounds['prof-theme']) {
-                    await this.playBackgroundMusic();
-                }
-
-                return true;
-            } catch (error) {
-                console.error('AudioManager initialization failed:', error);
-                this.initialized = false;
-                throw error;
-            }
-        })();
-
+        this.initializationPromise = this.performInit();
         return this.initializationPromise;
+    }
+
+    async performInit() {
+        try {
+            console.log('Starting AudioManager initialization...');
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Create and connect gain nodes
+            this.musicGainNode = this.audioContext.createGain();
+            this.sfxGainNode = this.audioContext.createGain();
+            this.musicGainNode.connect(this.audioContext.destination);
+            this.sfxGainNode.connect(this.audioContext.destination);
+
+            // Set initial volumes
+            this.musicGainNode.gain.setValueAtTime(CONFIG.AUDIO.MUSIC_VOLUME, this.audioContext.currentTime);
+            this.sfxGainNode.gain.setValueAtTime(CONFIG.AUDIO.SFX_VOLUME, this.audioContext.currentTime);
+
+            // Ensure audio context is resumed
+            await this.ensureAudioContextResume();
+            
+            // Load all sounds
+            await this.loadAllSounds();
+            
+            this.initialized = true;
+            console.log('AudioManager initialized successfully');
+            console.log('Available sounds:', Object.keys(this.sounds));
+
+            return true;
+        } catch (error) {
+            console.error('AudioManager initialization failed:', error);
+            this.initialized = false;
+            throw error;
+        } finally {
+            this.initializationPromise = null;
+        }
     }
 
     async loadAllSounds() {
         console.log('Loading sounds...');
         try {
             const soundsToLoad = [
-		['recharge', './assets/sounds/recharge.mp3'],
+                ['recharge', './assets/sounds/recharge.mp3'],
                 ['buzz', './assets/sounds/buzz.mp3'],
                 ['dingdong', './assets/sounds/dingdong.mp3'],
                 ['drink', './assets/sounds/drink.mp3'],
@@ -80,7 +83,7 @@ export class AudioManager {
                 ['suina_evil', './assets/sounds/suina-evil.mp3'],
                 ['milly_sound', './assets/sounds/milly-sound.mp3'],
                 ['diego_sound', './assets/sounds/diego-sound.mp3'],
-		['win', './assets/sounds/win.mp3']
+                ['win', './assets/sounds/win.mp3']
             ];
 
             await Promise.all(
@@ -101,7 +104,11 @@ export class AudioManager {
 
     async loadSound(key, url) {
         try {
+            console.log(`Loading sound: ${key}`);
             const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const arrayBuffer = await response.arrayBuffer();
             const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
             this.sounds[key] = audioBuffer;
@@ -109,30 +116,6 @@ export class AudioManager {
         } catch (error) {
             console.error(`Failed to load sound ${key}:`, error);
             throw error;
-        }
-    }
-
-    playBackgroundMusic() {
-        if (!this.initialized || !this.sounds['prof-theme']) {
-            console.warn('Cannot play background music - system not ready or music not loaded');
-            return;
-        }
-
-        try {
-            // Stop current music if playing
-            if (this.currentMusicSource) {
-                this.currentMusicSource.stop();
-            }
-
-            // Create new source
-            this.currentMusicSource = this.audioContext.createBufferSource();
-            this.currentMusicSource.buffer = this.sounds['prof-theme'];
-            this.currentMusicSource.loop = true;
-            this.currentMusicSource.connect(this.musicGainNode);
-            this.currentMusicSource.start(0);
-            console.log('Background music started');
-        } catch (error) {
-            console.error('Error playing background music:', error);
         }
     }
 
@@ -172,6 +155,30 @@ export class AudioManager {
             console.log(`Playing sound: ${key}`);
         } catch (error) {
             console.error(`Error playing sound ${key}:`, error);
+        }
+    }
+
+    playBackgroundMusic() {
+        if (!this.initialized || !this.sounds['prof-theme']) {
+            console.warn('Cannot play background music - system not ready or music not loaded');
+            return;
+        }
+
+        try {
+            // Stop current music if playing
+            if (this.currentMusicSource) {
+                this.currentMusicSource.stop();
+            }
+
+            // Create new source
+            this.currentMusicSource = this.audioContext.createBufferSource();
+            this.currentMusicSource.buffer = this.sounds['prof-theme'];
+            this.currentMusicSource.loop = true;
+            this.currentMusicSource.connect(this.musicGainNode);
+            this.currentMusicSource.start(0);
+            console.log('Background music started');
+        } catch (error) {
+            console.error('Error playing background music:', error);
         }
     }
 
