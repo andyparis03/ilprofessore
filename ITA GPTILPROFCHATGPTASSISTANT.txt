@@ -1,3 +1,21 @@
+"Il Professore," players is a professor on a unique mission through the city streets. The professor must collect "love points" by interacting with various Swines (pig-like creatures) that roam the urban landscape. Each interaction can either be a kiss (B button) or a more passionate approach (F button), earning different amounts of love points.
+The player can access different city areas: the Teatro, Malafama, Gusto, and Chester. In Teatro and Malafama (disco clubs), the professor encounters different types of Swines - some friendly, others mischievous. The Evil Swine is particularly dangerous; interacting wrongly with it leads to game over.
+
+Walter, the owner in Restaurant Gusto , helps restore the professor's energy by offering pizza when caught. However, Gusto is only accessible when energy is low (below 30 points). 
+
+Chester Cocktail bar hosts Diego, who drains energy but increases friendship points. Chester becomes available only when friendship levels are critical (below 30 points).
+Managing three vital stats is crucial:
+
+Energy: Decreases over time, replenished by Walter's pizza
+Love: Increases through Suine interactions
+Friendship: Constantly decreases unless maintained through Diego interactions
+
+The goal is to reach 100 love points while balancing energy and friendship. Success requires strategic timing of visits to Walter for energy boosts and Diego for friendship maintenance, all while carefully choosing which Swines to interact with and how.
+The game ends either in victory (100 love points) or defeat through various means: running out of energy, letting friendship drop to zero, or encountering the Evil Swine with the wrong approach.
+
+--------
+
+
 Il Professore - Instructions
 Il Professore e l’Amore: Aiuta il Professore a raggiungere l’obiettivo finale: accumulare 100 punti amore per vincere il gioco! Ogni interazione di successo aumenta il punteggio amore (+10 punti).
 Il Professore e i Nemici:
@@ -170,7 +188,7 @@ Ilprofessore
 
 
 
-// main.js
+main.js:
 // main.js
 import { CONFIG } from './config.js';
 import { Camera } from './js/engine/Camera.js';
@@ -190,7 +208,6 @@ class Game {
         
         // Core systems initialization with verified state
         this.initializationState = {
-            audio: false,
             assets: false,
             player: false,
             levelManager: false,
@@ -200,7 +217,7 @@ class Game {
         // Core components (initially null)
         this.camera = null;
         this.input = null;
-        this.audioManager = null;
+        this.audioManager = new AudioManager(); // Create but don't init
         this.scoreManager = null;
         this.gameState = null;
         this.renderer = null;
@@ -229,7 +246,6 @@ class Game {
         // Initialize core components
         this.camera = new Camera(CONFIG.CANVAS.DEFAULT_WIDTH, CONFIG.CANVAS.DEFAULT_HEIGHT);
         this.input = new InputHandler();
-        this.audioManager = new AudioManager();
         this.scoreManager = new ScoreManager(this.ctx);
         this.gameState = new GameStateManager(this);
 
@@ -263,19 +279,6 @@ class Game {
         }
     }
 
-    async initAudio() {
-        try {
-            console.log('Initializing audio system...');
-            await this.audioManager.init();
-            this.initializationState.audio = true;
-            console.log('Audio system initialized successfully');
-        } catch (error) {
-            console.error('Audio initialization failed:', error);
-            this.initializationState.audio = false;
-            throw new Error('Audio initialization failed');
-        }
-    }
-
     async loadGameAssets() {
         try {
             console.log('Loading game assets...');
@@ -300,19 +303,11 @@ class Game {
 
         try {
             console.log('Starting game initialization sequence...');
-
-            // Step 1: Initialize audio system
-            await this.initAudio();
             
-            // Verify audio initialization
-            if (!this.audioManager.initialized) {
-                throw new Error('Audio system failed to initialize properly');
-            }
-
-            // Step 2: Load game assets
+            // Step 1: Load game assets
             const assets = await this.loadGameAssets();
             
-            // Step 3: Initialize player
+            // Step 2: Initialize player
             this.player = new Player(
                 CONFIG.WORLD.WIDTH / 2,
                 CONFIG.WORLD.HEIGHT / 2,
@@ -323,7 +318,7 @@ class Game {
             );
             this.initializationState.player = true;
 
-            // Step 4: Initialize game systems
+            // Step 3: Initialize game systems
             console.log('Initializing game systems...');
             this.levelManager = new LevelManager(assets, this.gameState);
             this.initializationState.levelManager = true;
@@ -334,7 +329,7 @@ class Game {
             // Store renderer reference in gameState
             this.gameState.renderer = this.renderer;
 
-            // Step 5: Load initial level
+            // Step 4: Load initial level
             console.log('Loading initial level...');
             await this.levelManager.loadLevel(1, this.player);
 
@@ -414,7 +409,9 @@ class Game {
 
         // Update camera and audio
         this.camera.follow(this.player, CONFIG.WORLD.WIDTH, CONFIG.WORLD.HEIGHT);
-        this.audioManager.handleFootsteps(this.player, !this.player.isIdle);
+        if (this.audioManager.initialized) {
+            this.audioManager.handleFootsteps(this.player, !this.player.isIdle);
+        }
     }
 
     draw() {
@@ -577,14 +574,17 @@ export const CONFIG = {
 
 
 
+
 assetLoader.js:
 // AssetLoader.js
-// AssetLoader.js
 export class AssetLoader {
+    constructor() {
+        // Empty constructor as we're using static methods
+    }
+
     static async loadImage(src, fallbackSrc = null) {
-        const img = new Image();
-        img.src = src;
         return new Promise((resolve, reject) => {
+            const img = new Image();
             img.onload = () => resolve(img);
             img.onerror = () => {
                 if (fallbackSrc) {
@@ -596,12 +596,16 @@ export class AssetLoader {
                     reject(new Error(`Failed to load image: ${src}`));
                 }
             };
+            img.src = src;
         });
     }
 
     static async loadSound(audioContext, url) {
         try {
             const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const arrayBuffer = await response.arrayBuffer();
             return await audioContext.decodeAudioData(arrayBuffer);
         } catch (error) {
@@ -612,11 +616,13 @@ export class AssetLoader {
 
     static async loadAssets() {
         try {
-            const audioContext = new AudioContext(); 
+            console.log('Starting asset loading...');
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)(); 
+            
+            console.log('Loading assets...');
             const [
                 splashScreen,
-		win,
-		winscreen,
+                winScreen,
                 instructionsScreen,
                 professoreidle,
                 professorewalking,
@@ -660,64 +666,59 @@ export class AssetLoader {
                 walterwelcome,
                 diegosound,
                 millysound,
-		recharge
+                recharge,
+                win
             ] = await Promise.all([
-                this.loadImage('./assets/sprites/splash.png'),
-                this.loadImage('./assets/sprites/winscreen.png'),
-                this.loadImage('./assets/sprites/instructions.png'),
-                this.loadImage('./assets/sprites/professore/professore-idle.png'),
-                this.loadImage('./assets/sprites/professore/professore-spritesheet.png'),
-                this.loadImage('./assets/sprites/skull.png'),
-                this.loadImage('./assets/sprites/milly/milly-idle.png'),
-                this.loadImage('./assets/sprites/milly/milly-spritesheet.png'),
-                this.loadImage('./assets/sprites/milly/milly-interact.png'),
-                this.loadImage('./assets/sprites/suina1/suina1-idle.png'),
-                this.loadImage('./assets/sprites/suina1/suina1-spritesheet.png'),
-                this.loadImage('./assets/sprites/suina1/suina1-attack.png'),
-                this.loadImage('./assets/sprites/suina2/suina2-idle.png'),
-                this.loadImage('./assets/sprites/suina2/suina2-spritesheet.png'),
-                this.loadImage('./assets/sprites/suina2/suina2-attack.png'),
-                this.loadImage('./assets/sprites/suinaEvil/suinaevil-idle.png'),
-                this.loadImage('./assets/sprites/suinaEvil/suinaevil-spritesheet.png'),
-                this.loadImage('./assets/sprites/suinaEvil/suinaevil-attack.png'),
-                this.loadImage('./assets/sprites/walter/walter-idle.png'),
-                this.loadImage('./assets/sprites/walter/walter-spritesheet.png'),
-                this.loadImage('./assets/sprites/walter/walter-attack.png'),
-                this.loadImage('./assets/sprites/diego/diego-idle.png'),
-                this.loadImage('./assets/sprites/diego/diego-spritesheet.png'),
-                this.loadImage('./assets/sprites/diego/diego-attack.png'),
-                this.loadImage('./assets/sprites/background.png'),
-                this.loadImage('./assets/sprites/background2.png'),
-                this.loadImage('./assets/sprites/background3.png'),
-                this.loadImage('./assets/sprites/background4.png'),
-                this.loadImage('./assets/sprites/background5.png'),
-                this.loadSound(audioContext, './assets/sounds/prof-fuck.mp3'),
-                this.loadSound(audioContext, './assets/sounds/prof-punch.mp3'),
-                this.loadSound(audioContext, './assets/sounds/prof-smack.mp3'),
-                this.loadSound(audioContext, './assets/sounds/buzz.mp3'),
-                this.loadSound(audioContext, './assets/sounds/dingdong.mp3'),
-                this.loadSound(audioContext, './assets/sounds/drink.mp3'),
-                this.loadSound(audioContext, './assets/sounds/prof-step.mp3'),
-                this.loadSound(audioContext, './assets/sounds/prof-theme.mp3'),
-                this.loadSound(audioContext, './assets/sounds/suina-fuck.mp3'),
-                this.loadSound(audioContext, './assets/sounds/suina-sound.mp3'),
-                this.loadSound(audioContext, './assets/sounds/suina-evil.mp3'),
-                this.loadSound(audioContext, './assets/sounds/suina-walk.mp3'),
-                this.loadSound(audioContext, './assets/sounds/walter-sound.mp3'),
-                this.loadSound(audioContext, './assets/sounds/walter-welcome.mp3'),
-                this.loadSound(audioContext, './assets/sounds/diego-sound.mp3'),
-                this.loadSound(audioContext, './assets/sounds/milly-sound.mp3'),
-		this.loadSound(audioContext, './assets/sounds/win.mp3'),
-		this.loadSound(audioContext, './assets/sounds/recharge.mp3')
+                AssetLoader.loadImage('./assets/sprites/splash.png'),
+                AssetLoader.loadImage('./assets/sprites/winscreen.png'),
+                AssetLoader.loadImage('./assets/sprites/instructions.png'),
+                AssetLoader.loadImage('./assets/sprites/professore/professore-idle.png'),
+                AssetLoader.loadImage('./assets/sprites/professore/professore-spritesheet.png'),
+                AssetLoader.loadImage('./assets/sprites/skull.png'),
+                AssetLoader.loadImage('./assets/sprites/milly/milly-idle.png'),
+                AssetLoader.loadImage('./assets/sprites/milly/milly-spritesheet.png'),
+                AssetLoader.loadImage('./assets/sprites/milly/milly-interact.png'),
+                AssetLoader.loadImage('./assets/sprites/suina1/suina1-idle.png'),
+                AssetLoader.loadImage('./assets/sprites/suina1/suina1-spritesheet.png'),
+                AssetLoader.loadImage('./assets/sprites/suina1/suina1-attack.png'),
+                AssetLoader.loadImage('./assets/sprites/suina2/suina2-idle.png'),
+                AssetLoader.loadImage('./assets/sprites/suina2/suina2-spritesheet.png'),
+                AssetLoader.loadImage('./assets/sprites/suina2/suina2-attack.png'),
+                AssetLoader.loadImage('./assets/sprites/suinaEvil/suinaevil-idle.png'),
+                AssetLoader.loadImage('./assets/sprites/suinaEvil/suinaevil-spritesheet.png'),
+                AssetLoader.loadImage('./assets/sprites/suinaEvil/suinaevil-attack.png'),
+                AssetLoader.loadImage('./assets/sprites/walter/walter-idle.png'),
+                AssetLoader.loadImage('./assets/sprites/walter/walter-spritesheet.png'),
+                AssetLoader.loadImage('./assets/sprites/walter/walter-attack.png'),
+                AssetLoader.loadImage('./assets/sprites/diego/diego-idle.png'),
+                AssetLoader.loadImage('./assets/sprites/diego/diego-spritesheet.png'),
+                AssetLoader.loadImage('./assets/sprites/diego/diego-attack.png'),
+                AssetLoader.loadImage('./assets/sprites/background.png'),
+                AssetLoader.loadImage('./assets/sprites/background2.png'),
+                AssetLoader.loadImage('./assets/sprites/background3.png'),
+                AssetLoader.loadImage('./assets/sprites/background4.png'),
+                AssetLoader.loadImage('./assets/sprites/background5.png'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/prof-fuck.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/prof-punch.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/prof-smack.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/buzz.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/dingdong.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/drink.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/prof-step.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/prof-theme.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/suina-fuck.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/suina-sound.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/suina-evil.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/suina-walk.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/walter-sound.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/walter-welcome.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/diego-sound.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/milly-sound.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/recharge.mp3'),
+                AssetLoader.loadSound(audioContext, './assets/sounds/win.mp3')
             ]);
 
-console.log("Asset structure being returned:", {
-    sprites: {
-        splash: splashScreen,
-        instructions: instructionsScreen
-    }
-});
-
+            console.log('All assets loaded successfully');
 
             return {
                 sprites: {
@@ -728,9 +729,9 @@ console.log("Asset structure being returned:", {
                     suinaevil: { idle: suinaevilidle, walking: suinaevilwalking, attack: suina1attack },
                     walter: { idle: walteridle, walking: walterwalking, attack: walterattack },
                     diego: { idle: diegoidle, walking: diegowalking, attack: diegoattack },
-		    splash: splashScreen,
-		    instructions: instructionsScreen
-		    winscreen : winScreen
+                    splash: splashScreen,
+                    instructions: instructionsScreen,
+                    winscreen: winScreen
                 },
                 backgrounds: {
                     background1,
@@ -741,7 +742,6 @@ console.log("Asset structure being returned:", {
                 },
                 sounds: {
                     proffuck,
-		    win,
                     profpunch,
                     profsmack,
                     buzz,
@@ -757,7 +757,8 @@ console.log("Asset structure being returned:", {
                     walterwelcome,
                     diegosound,
                     millysound,
-		    recharge
+                    recharge,
+                    win
                 },
                 audioContext
             };
@@ -767,7 +768,6 @@ console.log("Asset structure being returned:", {
         }
     }
 }
-
 
 
 
@@ -822,6 +822,7 @@ export class CharacterRegistry {
         return state;
     }
 }
+
 
 
 
@@ -987,7 +988,6 @@ canvas {
 #controls-container {
   touch-action: none;
 }
-
 
 
 
@@ -1575,6 +1575,8 @@ update(player, worldBounds, input) {
 
 
 
+
+
 AudioManager.js:
 // AudioManager.js
 import { CONFIG } from '../../config.js';
@@ -1596,52 +1598,55 @@ export class AudioManager {
             return this.initializationPromise;
         }
 
-        this.initializationPromise = (async () => {
-            try {
-                console.log('Starting AudioManager initialization...');
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // Create and connect gain nodes
-                this.musicGainNode = this.audioContext.createGain();
-                this.sfxGainNode = this.audioContext.createGain();
-                this.musicGainNode.connect(this.audioContext.destination);
-                this.sfxGainNode.connect(this.audioContext.destination);
+        // Return if already initialized
+        if (this.initialized) {
+            return Promise.resolve(true);
+        }
 
-                // Set initial volumes
-                this.musicGainNode.gain.setValueAtTime(CONFIG.AUDIO.MUSIC_VOLUME, this.audioContext.currentTime);
-                this.sfxGainNode.gain.setValueAtTime(CONFIG.AUDIO.SFX_VOLUME, this.audioContext.currentTime);
-
-                // Ensure audio context is resumed
-                await this.ensureAudioContextResume();
-                
-                // Load all sounds
-                await this.loadAllSounds();
-                
-                this.initialized = true;
-                console.log('AudioManager initialized successfully');
-                console.log('Available sounds:', Object.keys(this.sounds));
-
-                // Start background music if available
-                if (this.sounds['prof-theme']) {
-                    await this.playBackgroundMusic();
-                }
-
-                return true;
-            } catch (error) {
-                console.error('AudioManager initialization failed:', error);
-                this.initialized = false;
-                throw error;
-            }
-        })();
-
+        this.initializationPromise = this.performInit();
         return this.initializationPromise;
+    }
+
+    async performInit() {
+        try {
+            console.log('Starting AudioManager initialization...');
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Create and connect gain nodes
+            this.musicGainNode = this.audioContext.createGain();
+            this.sfxGainNode = this.audioContext.createGain();
+            this.musicGainNode.connect(this.audioContext.destination);
+            this.sfxGainNode.connect(this.audioContext.destination);
+
+            // Set initial volumes
+            this.musicGainNode.gain.setValueAtTime(CONFIG.AUDIO.MUSIC_VOLUME, this.audioContext.currentTime);
+            this.sfxGainNode.gain.setValueAtTime(CONFIG.AUDIO.SFX_VOLUME, this.audioContext.currentTime);
+
+            // Ensure audio context is resumed
+            await this.ensureAudioContextResume();
+            
+            // Load all sounds
+            await this.loadAllSounds();
+            
+            this.initialized = true;
+            console.log('AudioManager initialized successfully');
+            console.log('Available sounds:', Object.keys(this.sounds));
+
+            return true;
+        } catch (error) {
+            console.error('AudioManager initialization failed:', error);
+            this.initialized = false;
+            throw error;
+        } finally {
+            this.initializationPromise = null;
+        }
     }
 
     async loadAllSounds() {
         console.log('Loading sounds...');
         try {
             const soundsToLoad = [
-		['recharge', './assets/sounds/recharge.mp3'],
+                ['recharge', './assets/sounds/recharge.mp3'],
                 ['buzz', './assets/sounds/buzz.mp3'],
                 ['dingdong', './assets/sounds/dingdong.mp3'],
                 ['drink', './assets/sounds/drink.mp3'],
@@ -1657,7 +1662,8 @@ export class AudioManager {
                 ['suina_fuck', './assets/sounds/suina-fuck.mp3'],
                 ['suina_evil', './assets/sounds/suina-evil.mp3'],
                 ['milly_sound', './assets/sounds/milly-sound.mp3'],
-                ['diego_sound', './assets/sounds/diego-sound.mp3']
+                ['diego_sound', './assets/sounds/diego-sound.mp3'],
+                ['win', './assets/sounds/win.mp3']
             ];
 
             await Promise.all(
@@ -1678,7 +1684,11 @@ export class AudioManager {
 
     async loadSound(key, url) {
         try {
+            console.log(`Loading sound: ${key}`);
             const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const arrayBuffer = await response.arrayBuffer();
             const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
             this.sounds[key] = audioBuffer;
@@ -1686,30 +1696,6 @@ export class AudioManager {
         } catch (error) {
             console.error(`Failed to load sound ${key}:`, error);
             throw error;
-        }
-    }
-
-    playBackgroundMusic() {
-        if (!this.initialized || !this.sounds['prof-theme']) {
-            console.warn('Cannot play background music - system not ready or music not loaded');
-            return;
-        }
-
-        try {
-            // Stop current music if playing
-            if (this.currentMusicSource) {
-                this.currentMusicSource.stop();
-            }
-
-            // Create new source
-            this.currentMusicSource = this.audioContext.createBufferSource();
-            this.currentMusicSource.buffer = this.sounds['prof-theme'];
-            this.currentMusicSource.loop = true;
-            this.currentMusicSource.connect(this.musicGainNode);
-            this.currentMusicSource.start(0);
-            console.log('Background music started');
-        } catch (error) {
-            console.error('Error playing background music:', error);
         }
     }
 
@@ -1752,6 +1738,30 @@ export class AudioManager {
         }
     }
 
+    playBackgroundMusic() {
+        if (!this.initialized || !this.sounds['prof-theme']) {
+            console.warn('Cannot play background music - system not ready or music not loaded');
+            return;
+        }
+
+        try {
+            // Stop current music if playing
+            if (this.currentMusicSource) {
+                this.currentMusicSource.stop();
+            }
+
+            // Create new source
+            this.currentMusicSource = this.audioContext.createBufferSource();
+            this.currentMusicSource.buffer = this.sounds['prof-theme'];
+            this.currentMusicSource.loop = true;
+            this.currentMusicSource.connect(this.musicGainNode);
+            this.currentMusicSource.start(0);
+            console.log('Background music started');
+        } catch (error) {
+            console.error('Error playing background music:', error);
+        }
+    }
+
     setMusicVolume(volume) {
         if (this.musicGainNode) {
             this.musicGainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
@@ -1774,6 +1784,7 @@ export class AudioManager {
         }
     }
 }
+
 
 
 
@@ -1990,6 +2001,7 @@ export class InputHandler {
 
 
 
+
 Renderer.js:
 // Renderer.js
 import { CONFIG } from '../../config.js';
@@ -2013,30 +2025,55 @@ export class Renderer {
             y: 0
         };
 
-   this.originalSplashDimensions = {
-        width: 1000,    // Original splash.png width
-        height: 1800    // Original splash.png height
-    };
+        // Win screen properties
+        this.winScreen = null;
+        this.isWinScreenVisible = false;
+        this.hasTriggeredWin = false;
+        this.winScreenDimensions = {
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0
+        };
 
-    this.splashButtons = {
-        start: {
-            x: 100 / this.originalSplashDimensions.width,
-            y: 1110 / this.originalSplashDimensions.height,
-            width: 380 / this.originalSplashDimensions.width,
-            height: 200 / this.originalSplashDimensions.height
-        },
-        instructions: {
-            x: 520 / this.originalSplashDimensions.width,
-            y: 1110 / this.originalSplashDimensions.height,
-            width: 380 / this.originalSplashDimensions.width,
-            height: 200 / this.originalSplashDimensions.height
-        }
-    };
+        this.originalSplashDimensions = {
+            width: 1000,
+            height: 1800
+        };
 
+        this.splashButtons = {
+            start: {
+                x: 100 / this.originalSplashDimensions.width,
+                y: 1110 / this.originalSplashDimensions.height,
+                width: 380 / this.originalSplashDimensions.width,
+                height: 200 / this.originalSplashDimensions.height
+            },
+            instructions: {
+                x: 520 / this.originalSplashDimensions.width,
+                y: 1110 / this.originalSplashDimensions.height,
+                width: 380 / this.originalSplashDimensions.width,
+                height: 200 / this.originalSplashDimensions.height
+            }
+        };
 
-    this.canvas = this.ctx.canvas;
-    this.canvas.addEventListener('click', (e) => this.handleSplashClick(e));
+        // Win screen button area
+        this.winScreenButtons = {
+            playAgain: {
+                x: 0.35,    // 35% from left
+                y: 0.85,    // 85% from top
+                width: 0.3, // 30% of screen width
+                height: 0.1 // 10% of screen height
+            }
+        };
 
+        this.canvas = this.ctx.canvas;
+        this.canvas.addEventListener('click', (e) => {
+            if (this.isWinScreenVisible) {
+                this.handleWinScreenClick(e);
+            } else if (this.isSplashVisible) {
+                this.handleSplashClick(e);
+            }
+        });
 
         // Touch controls reference
         this.touchControls = document.getElementById('controls-container');
@@ -2104,21 +2141,20 @@ export class Renderer {
                 interval: 200,
                 isActive: false
             },
-    gustoClosed: {
-        lines: ['Gusto è chiuso', 'Riprova più tardi'],
-        startTime: 0,
-        duration: 2000,
-        interval: 400,
-        isActive: false
-    },
-    chesterClosed: {
-        lines: ['Chester è chiuso', 'Riprova più tardi'],
-        startTime: 0,
-        duration: 2000,
-        interval: 400,
-        isActive: false
-    }
-
+            gustoClosed: {
+                lines: ['Gusto è chiuso', 'Riprova più tardi'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            },
+            chesterClosed: {
+                lines: ['Chester è chiuso', 'Riprova più tardi'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            }
         };
 
         // Initialize new game button
@@ -2130,14 +2166,27 @@ export class Renderer {
         this.createNewGameButton();
         this.debug = true;
 
-        // Initialize splash screen
+        // Initialize screens
         this.initializeSplashScreen();
+        this.initializeWinScreen();
         
         // Add resize listener
         window.addEventListener('resize', () => this.handleResize());
 
         // Initial UI state setup
         this.updateUIVisibility();
+    }
+
+    async initAudio() {
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.audioManager && !gameInstance.audioManager.initialized) {
+            try {
+                await gameInstance.audioManager.init();
+                gameInstance.audioManager.playBackgroundMusic();
+            } catch (error) {
+                console.error('Failed to initialize audio:', error);
+            }
+        }
     }
 
     initializeSplashScreen() {
@@ -2153,27 +2202,87 @@ export class Renderer {
         }
     }
 
+    initializeWinScreen() {
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.assets?.sprites?.winscreen) {
+            this.winScreen = gameInstance.assets.sprites.winscreen;
+            this.calculateWinScreenDimensions();
+            console.log('Win screen initialized with dimensions:', this.winScreenDimensions);
+        } else {
+            console.warn('Win screen asset not found');
+        }
+    }
+
+    calculateWinScreenDimensions() {
+        if (!this.winScreen) return;
+
+        const canvasWidth = this.ctx.canvas.width;
+        const canvasHeight = this.ctx.canvas.height;
+        const imageRatio = this.winScreen.width / this.winScreen.height;
+        const canvasRatio = canvasWidth / canvasHeight;
+
+        let newWidth, newHeight;
+
+        if (canvasRatio > imageRatio) {
+            newHeight = canvasHeight;
+            newWidth = canvasHeight * imageRatio;
+        } else {
+            newWidth = canvasWidth;
+            newHeight = canvasWidth / imageRatio;
+        }
+
+        this.winScreenDimensions = {
+            width: newWidth,
+            height: newHeight,
+            x: (canvasWidth - newWidth) / 2,
+            y: (canvasHeight - newHeight) / 2
+        };
+    }
+
+    showWinScreen() {
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.audioManager?.initialized) {
+            // Stop background music immediately
+            if (gameInstance.audioManager.currentMusicSource) {
+                gameInstance.audioManager.currentMusicSource.stop();
+            }
+            // Play win sound
+            gameInstance.audioManager.playSound('win');
+        }
+        this.isWinScreenVisible = true;
+        this.updateUIVisibility();
+    }
+
+    handleWinScreenClick(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+
+        if (this.isClickInButton(x, y, this.winScreenButtons.playAgain)) {
+            window.location.reload();
+        }
+    }
+
     updateUIVisibility() {
         if (this.touchControls) {
-            this.touchControls.style.display = this.isSplashVisible ? 'none' : 'flex';
+            this.touchControls.style.display = (this.isSplashVisible || this.isWinScreenVisible) ? 'none' : 'flex';
         }
 
         const gameInstance = window.gameInstance;
         if (gameInstance?.scoreManager) {
-            gameInstance.scoreManager.setVisibility(!this.isSplashVisible);
+            gameInstance.scoreManager.setVisibility(!this.isSplashVisible && !this.isWinScreenVisible);
         }
 
         if (gameInstance?.levelManager) {
-            if (this.isSplashVisible) {
+            if (this.isSplashVisible || this.isWinScreenVisible) {
                 gameInstance.levelManager.pauseFriendshipCountdown();
             } else {
                 gameInstance.levelManager.resumeFriendshipCountdown();
             }
         }
     }
-
-
-
 
     calculateSplashDimensions() {
         if (!this.splashScreen) return;
@@ -2186,11 +2295,9 @@ export class Renderer {
         let newWidth, newHeight;
 
         if (canvasRatio > imageRatio) {
-            // Canvas is wider than image ratio - fit to height
             newHeight = canvasHeight;
             newWidth = canvasHeight * imageRatio;
         } else {
-            // Canvas is taller than image ratio - fit to width
             newWidth = canvasWidth;
             newHeight = canvasWidth / imageRatio;
         }
@@ -2203,12 +2310,11 @@ export class Renderer {
         };
     }
 
-
-
     handleResize() {
         if (this.splashScreenReady) {
             this.calculateSplashDimensions();
         }
+        this.calculateWinScreenDimensions();
     }
 
     showSuinaMalaMessage() {
@@ -2285,8 +2391,6 @@ export class Renderer {
         window.location.reload();
     }
 
-
-
     showNewGameButton() {
         if (!this.newGameButton.element) return;
 
@@ -2352,7 +2456,8 @@ export class Renderer {
             const x = this.ctx.canvas.width / 2;
             const baseY = this.ctx.canvas.height / 2;
             
-            message.lines.forEach((line, index) => {
+
+message.lines.forEach((line, index) => {
                 const y = baseY + (index - (message.lines.length - 1) / 2) * 40;
                 this.ctx.strokeText(line, x, y);
                 this.ctx.fillText(line, x, y);
@@ -2381,6 +2486,25 @@ export class Renderer {
         if (player && sprites.professore) {
             this.drawPlayer(player, sprites.professore, camera);
         }
+
+        // Check for win condition
+        const gameInstance = window.gameInstance;
+        if (!this.hasTriggeredWin && gameInstance?.scoreManager?.scores?.love >= 100) {
+            this.showWinScreen();
+            this.hasTriggeredWin = true;
+        }
+
+        // Draw win screen if visible
+        if (this.isWinScreenVisible && this.winScreen) {
+            this.ctx.drawImage(
+                this.winScreen,
+                this.winScreenDimensions.x,
+                this.winScreenDimensions.y,
+                this.winScreenDimensions.width,
+                this.winScreenDimensions.height
+            );
+            return; // Don't draw anything else when win screen is showing
+        }
         
         // Only draw scores if splash is not visible
         if (!this.isSplashVisible) {
@@ -2408,61 +2532,12 @@ export class Renderer {
         }
     }
 
-
-
-handleSplashClick(e) {
-    if (!this.isSplashVisible) return;
-
-    // Get click position relative to canvas
-    const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
-    const x = (e.clientX - rect.left) * scaleX;
-    const y = (e.clientY - rect.top) * scaleY;
-
-    // Check START button
-    if (this.isClickInButton(x, y, this.splashButtons.start)) {
-        console.log('Start button clicked');
-        this.setSplashVisibility(false);
-        return;
-    }
-
-    // Check INSTRUCTIONS button
-    if (this.isClickInButton(x, y, this.splashButtons.instructions)) {
-        console.log('Instructions button clicked');
-        this.showInstructions();
-        return;
-    }
-}
-
-isClickInButton(x, y, button) {
-    // Convert percentage-based positions to actual screen coordinates
-    const actualX = this.splashDimensions.x + (button.x * this.splashDimensions.width);
-    const actualY = this.splashDimensions.y + (button.y * this.splashDimensions.height);
-    const actualWidth = button.width * this.splashDimensions.width;
-    const actualHeight = button.height * this.splashDimensions.height;
-
-    return x >= actualX && 
-           x <= actualX + actualWidth && 
-           y >= actualY && 
-           y <= actualY + actualHeight;
-}
-
-
-showInstructions() {
-        const gameInstance = window.gameInstance;
-        if (gameInstance?.assets?.sprites?.instructions) {
-            this.splashScreen = gameInstance.assets.sprites.instructions;
-            this.calculateSplashDimensions();
-            this.showingInstructions = true; // New flag
-        }
-    }
-
     handleSplashClick(e) {
         if (!this.isSplashVisible) return;
 
         if (this.showingInstructions) {
             this.setSplashVisibility(false);
+            this.initAudio();  // Initialize audio when leaving instructions
             return;
         }
 
@@ -2476,6 +2551,7 @@ showInstructions() {
         // Check START button
         if (this.isClickInButton(x, y, this.splashButtons.start)) {
             this.setSplashVisibility(false);
+            this.initAudio();  // Initialize audio when clicking start
             return;
         }
 
@@ -2486,7 +2562,43 @@ showInstructions() {
         }
     }
 
-    // Only draw buttons if not showing instructions
+    isClickInButton(x, y, button) {
+        // For splash screen buttons
+        if (this.isSplashVisible) {
+            const actualX = this.splashDimensions.x + (button.x * this.splashDimensions.width);
+            const actualY = this.splashDimensions.y + (button.y * this.splashDimensions.height);
+            const actualWidth = button.width * this.splashDimensions.width;
+            const actualHeight = button.height * this.splashDimensions.height;
+
+            return x >= actualX && 
+                   x <= actualX + actualWidth && 
+                   y >= actualY && 
+                   y <= actualY + actualHeight;
+        }
+        // For win screen buttons
+        else if (this.isWinScreenVisible) {
+            const actualX = this.winScreenDimensions.x + (button.x * this.winScreenDimensions.width);
+            const actualY = this.winScreenDimensions.y + (button.y * this.winScreenDimensions.height);
+            const actualWidth = button.width * this.winScreenDimensions.width;
+            const actualHeight = button.height * this.winScreenDimensions.height;
+
+            return x >= actualX && 
+                   x <= actualX + actualWidth && 
+                   y >= actualY && 
+                   y <= actualY + actualHeight;
+        }
+        return false;
+    }
+
+    showInstructions() {
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.assets?.sprites?.instructions) {
+            this.splashScreen = gameInstance.assets.sprites.instructions;
+            this.calculateSplashDimensions();
+            this.showingInstructions = true;
+        }
+    }
+
     drawSplashScreen() {
         if (this.splashScreenReady && this.splashScreen && this.isSplashVisible) {
             this.ctx.drawImage(
@@ -2496,13 +2608,13 @@ showInstructions() {
                 this.splashDimensions.width,
                 this.splashDimensions.height
             );
-
-
         }
     }
 
-
-
+    setSplashVisibility(visible) {
+        this.isSplashVisible = visible;
+        this.updateUIVisibility();
+    }
 
     drawPlayer(player, sprites, camera) {
         if (!player) return;
@@ -2589,45 +2701,6 @@ showInstructions() {
         });
     }
 
-
-
-
-
-
-
-
-
-
-
-    drawSplashScreen() {
-        if (this.splashScreenReady && this.splashScreen && this.isSplashVisible) {
-            this.ctx.drawImage(
-                this.splashScreen,
-                this.splashDimensions.x,
-                this.splashDimensions.y,
-                this.splashDimensions.width,
-                this.splashDimensions.height
-            );
-
-
-    }
-}
-
-
-
-
-
-
-
-
-
-    setSplashVisibility(visible) {
-        this.isSplashVisible = visible;
-
-
-this.updateUIVisibility();
-    }
-
     setFlashStartTime() {
         const startTime = performance.now();
         this.screenMessages.gameOver.startTime = startTime;
@@ -2641,21 +2714,19 @@ this.updateUIVisibility();
     }
 
     cleanup() {
-        // Remove resize listener
         window.removeEventListener('resize', () => this.handleResize());
         
-        // Clean up new game button
         if (this.newGameButton.element) {
             document.body.removeChild(this.newGameButton.element);
             this.newGameButton.element = null;
         }
 
-        // Reset splash screen state
         this.splashScreenReady = false;
         this.splashScreen = null;
         this.isSplashVisible = false;
     }
 }
+
 
 
 
@@ -3275,6 +3346,7 @@ export class ScoreAnimation {
         }
     }
 }
+
 
 
 

@@ -4,6 +4,7 @@ import { CONFIG } from '../../config.js';
 export class Renderer {
     constructor(ctx, levelManager, gameState) {
         console.log('Initializing Renderer');
+	this.hasShownArrow = false;
         this.ctx = ctx;
         this.levelManager = levelManager;
         this.gameState = gameState;
@@ -73,84 +74,84 @@ export class Renderer {
         // Touch controls reference
         this.touchControls = document.getElementById('controls-container');
         
-        this.screenMessages = {
-            diegoWarning: {
-                lines: ['Il tuo amico Diego', 'ha bisogno di te!'],
-                startTime: 0,
-                duration: 2000,
-                interval: 400,
-                isActive: false
-            },
-            diegoGameOver: {
-                lines: ['Il tuo amico Diego', 'ti ha aspettato', " invano, l'amicizia è",'rotta per sempre'],
-                startTime: 0,
-                duration: 3000,
-                interval: 400,
-                isActive: false,
-                nextMessage: 'finalGameOver'
-            },
-            lowLove: {
-                lines: ['Troppo poco amore', 'professore'],
-                startTime: 0,
-                duration: 2000,
-                interval: 400,
-                isActive: false,
-                nextMessage: 'finalGameOver'
-            },
-            lowEnergy: {
-                lines: ['Fame, hai bisogno', 'di pizza!'],
-                startTime: 0,
-                duration: 2000,
-                interval: 400,
-                isActive: false
-            },
-            noEnergy: {
-                lines: ['Troppa poca pizza', 'professore'],
-                startTime: 0,
-                duration: 2000,
-                interval: 400,
-                isActive: false,
-                nextMessage: 'finalGameOver'
-            },
-            gameOver: {
-                lines: ['Hai beccato', 'la Suina Mala... :('],
-                startTime: 0,
-                duration: 2000,
-                interval: 400,
-                isActive: false,
-                nextMessage: 'finalGameOver'
-            },
-            finalGameOver: {
-                lines: ['GAME OVER'],
-                startTime: 0,
-                duration: Infinity,
-                interval: 0,
-                isActive: false,
-                isPermanent: true,
-                showNewGameButton: true
-            },
-            suinaMala: {
-                lines: ['Suina mala!'],
-                startTime: 0,
-                duration: 800,
-                interval: 200,
-                isActive: false
-            },
-            gustoClosed: {
-                lines: ['Gusto è chiuso', 'Riprova più tardi'],
-                startTime: 0,
-                duration: 2000,
-                interval: 400,
-                isActive: false
-            },
-            chesterClosed: {
-                lines: ['Chester è chiuso', 'Riprova più tardi'],
-                startTime: 0,
-                duration: 2000,
-                interval: 400,
-                isActive: false
-            }
-        };
+this.screenMessages = {
+        diegoWarning: {
+            lines: ['Your friend Diego', 'needs your help', 'at the Pub!'],
+            startTime: 0,
+            duration: 2000,
+            interval: 400,
+            isActive: false
+        },
+        diegoGameOver: {
+            lines: ['Your friend Diego', 'waited for you', "in vain, friendship is", 'broken forever'],
+            startTime: 0,
+            duration: 3000,
+            interval: 400,
+            isActive: false,
+            nextMessage: 'finalGameOver'
+        },
+        lowLove: {
+            lines: ['Too little love', 'score, Professor'],
+            startTime: 0,
+            duration: 2000,
+            interval: 400,
+            isActive: false,
+            nextMessage: 'finalGameOver'
+        },
+        lowEnergy: {
+            lines: ['Hungry, you need', 'pizza!', 'go to Restaurant!'],
+            startTime: 0,
+            duration: 2000,
+            interval: 400,
+            isActive: false
+        },
+        noEnergy: {
+            lines: ['Too little energy', 'score, Professor'],
+            startTime: 0,
+            duration: 2000,
+            interval: 400,
+            isActive: false,
+            nextMessage: 'finalGameOver'
+        },
+        gameOver: {
+            lines: ['You caught', 'the Evil Swine... :('],
+            startTime: 0,
+            duration: 2000,
+            interval: 400,
+            isActive: false,
+            nextMessage: 'finalGameOver'
+        },
+        finalGameOver: {
+            lines: ['GAME OVER'],
+            startTime: 0,
+            duration: Infinity,
+            interval: 0,
+            isActive: false,
+            isPermanent: true,
+            showNewGameButton: true
+        },
+        suinaMala: {
+            lines: ['Evil Swine!'],
+            startTime: 0,
+            duration: 800,
+            interval: 200,
+            isActive: false
+        },
+        gustoClosed: {
+            lines: ['Restaurant is closed', 'Try again later'],
+            startTime: 0,
+            duration: 2000,
+            interval: 400,
+            isActive: false
+        },
+        chesterClosed: {
+            lines: ['Pub is closed', 'Try again later'],
+            startTime: 0,
+            duration: 2000,
+            interval: 400,
+            isActive: false
+        }
+    };
 
         // Initialize new game button
         this.newGameButton = {
@@ -525,7 +526,33 @@ message.lines.forEach((line, index) => {
                 camera.width, camera.height
             );
         }
+   
+
+
+
+
+
+if (this.levelManager?.currentLevel === 1 && !this.hasShownArrow) {
+    const currentTime = performance.now();
+    const isVisible = Math.floor(currentTime / 500) % 2 === 0;
+    
+    if (isVisible) {
+        this.ctx.save();
+        this.ctx.font = 'bold 48px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('↖️', 100, 100);
+        this.ctx.restore();
     }
+}
+ }
+
+
+
+
+
+
+
 
     handleSplashClick(e) {
         if (!this.isSplashVisible) return;

@@ -100,6 +100,21 @@ export class LevelManager {
             return;
         }
 
+
+
+    if (this.currentLevel === 1 && levelNumber !== 1) {
+        if (window.gameInstance?.renderer) {
+            window.gameInstance.renderer.hasShownArrow = true;
+        }
+    }
+    
+    await this.completeTransition();
+
+
+
+
+
+
         // Handle friendship system when leaving level 5
 // In loadLevel method
 if (levelNumber !== 5) {
@@ -239,8 +254,21 @@ if (levelNumber !== 5) {
             this.player.y = CONFIG.WORLD.HEIGHT / 2;
         }
 
+
+
         this.player.frame = this.player.frame % this.player.totalFrames;
-    }
+  
+
+  }
+
+
+
+
+
+
+
+
+
 
     async completeTransition() {
         return new Promise((resolve) => {
