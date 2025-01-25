@@ -42,9 +42,18 @@ export class AudioManager {
             this.musicGainNode.gain.setValueAtTime(CONFIG.AUDIO.MUSIC_VOLUME, this.audioContext.currentTime);
             this.sfxGainNode.gain.setValueAtTime(CONFIG.AUDIO.SFX_VOLUME, this.audioContext.currentTime);
 
-            // Ensure audio context is resumed
-            await this.ensureAudioContextResume();
-            
+            // Add user interaction listeners for audio unlock
+            const unlockAudio = () => {
+                if (this.audioContext?.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+                document.removeEventListener('click', unlockAudio);
+                document.removeEventListener('touchstart', unlockAudio);
+            };
+
+            document.addEventListener('click', unlockAudio);
+            document.addEventListener('touchstart', unlockAudio);
+
             // Load all sounds
             await this.loadAllSounds();
             
@@ -119,31 +128,9 @@ export class AudioManager {
         }
     }
 
-    async ensureAudioContextResume() {
-        if (this.audioContext.state === 'suspended') {
-            return new Promise((resolve) => {
-                const resumeAudio = async () => {
-                    await this.audioContext.resume();
-                    window.removeEventListener('click', resumeAudio);
-                    window.removeEventListener('keydown', resumeAudio);
-                    resolve();
-                };
-
-                window.addEventListener('click', resumeAudio);
-                window.addEventListener('keydown', resumeAudio);
-            });
-        }
-        return Promise.resolve();
-    }
-
     playSound(key, type = 'sfx') {
-        if (!this.initialized) {
-            console.warn('AudioManager not initialized. Cannot play sound:', key);
-            return;
-        }
-
-        if (!this.sounds[key]) {
-            console.warn(`Sound not found: ${key}. Available sounds:`, Object.keys(this.sounds));
+        if (!this.initialized || !this.sounds[key]) {
+            console.warn(`Cannot play sound: ${key}`);
             return;
         }
 
@@ -160,17 +147,15 @@ export class AudioManager {
 
     playBackgroundMusic() {
         if (!this.initialized || !this.sounds['prof-theme']) {
-            console.warn('Cannot play background music - system not ready or music not loaded');
+            console.warn('Cannot play background music - system not ready');
             return;
         }
 
         try {
-            // Stop current music if playing
             if (this.currentMusicSource) {
                 this.currentMusicSource.stop();
             }
 
-            // Create new source
             this.currentMusicSource = this.audioContext.createBufferSource();
             this.currentMusicSource.buffer = this.sounds['prof-theme'];
             this.currentMusicSource.loop = true;
