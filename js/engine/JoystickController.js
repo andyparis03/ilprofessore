@@ -9,7 +9,8 @@ export class JoystickController {
         this.position = { x: 0, y: 0 };
         this.vector = { x: 0, y: 0 };
         this.active = false;
-        this.maxDistance = 40;
+        this.maxDistance = 80;
+	this.sensitivity = 2;
         this.init();
     }
 
@@ -102,11 +103,11 @@ export class JoystickController {
 
         this.knob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
 
-        this.vector = {
-            x: distance > 0 ? (knobX / this.maxDistance) : 0,
-            y: distance > 0 ? (knobY / this.maxDistance) : 0
-        };
-    }
+    this.vector = {
+        x: distance > 0 ? (knobX / this.maxDistance) * this.sensitivity : 0,
+        y: distance > 0 ? (knobY / this.maxDistance) * this.sensitivity : 0
+    };
+}
 
     getInput() {
         return {
