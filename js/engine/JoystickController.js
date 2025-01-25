@@ -14,7 +14,27 @@ export class JoystickController {
         this.sensitivity = 1.5;
 	this.visible = false;
         this.init();
+        this.hideControls(); // Initially hide
     }
+
+
+
+    showControls() {
+        this.visible = true;
+        this.joystickContainer.style.display = 'block';
+        this.joystickBoundary.style.display = 'block';
+    }
+
+    hideControls() {
+        this.visible = false;
+        this.joystickContainer.style.display = 'none';
+        this.joystickBoundary.style.display = 'none';
+    }
+
+
+
+
+
 
     init() {
         this.joystickContainer = document.createElement('div');

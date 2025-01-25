@@ -423,13 +423,24 @@ this.screenMessages = {
 
 setSplashVisibility(visible) {
     this.isSplashVisible = visible;
-    if (!visible) {
-        // Show controls
-        document.getElementById('joystick-zone').style.display = 'block';
-        document.getElementById('action-container').style.display = 'flex';
+    
+    // Control mobile elements visibility
+    const mobileControls = document.getElementById('mobile-controls');
+    if (mobileControls) {
+        mobileControls.style.display = visible ? 'none' : 'block';
     }
-}
+    
+    const gameInstance = window.gameInstance;
+    if (gameInstance?.input?.joystick) {
+        if (visible) {
+            gameInstance.input.joystick.hideControls();
+        } else {
+            gameInstance.input.joystick.showControls();
+        }
+    }
 
+    this.updateUIVisibility();
+}
 
 
 
