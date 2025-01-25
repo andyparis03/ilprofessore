@@ -12,21 +12,34 @@ export class JoystickController {
         this.active = false;
         this.maxDistance = 60;
         this.sensitivity = 1.5;
-        this.visible = false;
-
-        this.createElements();
+	this.visible = false;
         this.init();
-        this.hideControls();
+        this.hideControls(); // Initially hide
     }
 
-    createElements() {
-        this.joystickContainer = document.createElement('div');
-        this.joystickBoundary = document.createElement('div');
-        this.joystick = document.createElement('div');
-        this.knob = document.createElement('div');
+
+
+    showControls() {
+        this.visible = true;
+        this.joystickContainer.style.display = 'block';
+        this.joystickBoundary.style.display = 'block';
     }
+
+    hideControls() {
+        this.visible = false;
+        this.joystickContainer.style.display = 'none';
+        this.joystickBoundary.style.display = 'none';
+    }
+
+
+
+
+
 
     init() {
+    	this.joystickContainer.style.display = 'none';
+    	this.joystickBoundary.style.display = 'none';
+        this.joystickContainer = document.createElement('div');
         this.joystickContainer.id = 'joystick-zone';
         this.joystickContainer.style.cssText = `
             position: fixed;
@@ -39,11 +52,15 @@ export class JoystickController {
             pointer-events: auto;
         `;
 
+        // Create visible boundary
+        this.joystickBoundary = document.createElement('div');
         this.joystickBoundary.className = 'joystick-boundary';
-        
+
+        this.joystick = document.createElement('div');
         this.joystick.className = 'joystick-base';
         this.joystick.style.display = 'none';
 
+        this.knob = document.createElement('div');
         this.knob.className = 'joystick-knob';
 
         this.joystick.appendChild(this.knob);
@@ -52,18 +69,6 @@ export class JoystickController {
         document.body.appendChild(this.joystickContainer);
 
         this.setupEventListeners();
-    }
-
-    showControls() {
-        this.visible = true;
-        this.joystickContainer.style.display = 'block';
-        this.joystickBoundary.style.display = 'block';
-    }
-
-    hideControls() {
-        this.visible = false;
-        this.joystickContainer.style.display = 'none';
-        this.joystickBoundary.style.display = 'none';
     }
 
     setupEventListeners() {
@@ -138,11 +143,5 @@ export class JoystickController {
             active: this.active,
             vector: this.vector
         };
-    }
-
-    cleanup() {
-        if (this.joystickContainer) {
-            this.joystickContainer.remove();
-        }
     }
 }

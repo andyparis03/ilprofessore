@@ -163,6 +163,7 @@ Ilprofessore
 │
 ├───js
 │   └───engine
+│	    JoystickController.js
 │           AudioManager.js
 │           Camera.js
 │           GameStateManager.js
@@ -480,10 +481,19 @@ startGame();
 
 
 
-index.html:
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FH638KSG7B"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FH638KSG7B');
+</script>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Il Professore Game</title>
@@ -491,24 +501,21 @@ index.html:
 </head>
 <body>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
-	<button id="back-button" type="button">Exit</button>
-  <div id="controls-container">
-    <div id="controls">
-      <div class="action-buttons">
-        <button type="button" id="bacio" class="action-btn left">B</button>
-        <button type="button" id="fuck" class="action-btn right">F</button>
-      </div>
-      <div class="direction-buttons">
-        <button type="button" id="left">←</button>
-        <button type="button" id="up">↑</button>
-        <button type="button" id="down">↓</button>
-        <button type="button" id="right">→</button>
-      </div>
+  <button id="back-button" type="button">Exit</button>
+  
+  <div id="mobile-controls">
+    <div id="action-container">
+      <button type="button" id="bacio" class="action-btn">B</button>
+      <button type="button" id="fuck" class="action-btn">F</button>
     </div>
   </div>
+
   <script src="./main.js" type="module"></script>
 </body>
 </html>
+
+
+
 
 
 
@@ -837,7 +844,6 @@ export class CharacterRegistry {
 
 
 
-/* style.css */
 * {
   margin: 0;
   padding: 0;
@@ -848,6 +854,8 @@ html, body {
   overflow: hidden;
   height: 100%;
   width: 100%;
+  position: fixed;
+  touch-action: none;
 }
 
 canvas {
@@ -859,19 +867,6 @@ canvas {
   background-color: #f0f0f0;
 }
 
-@media (max-width: 768px) {
-  canvas {
-    width: 100%;
-    height: 100%;
-    position: fixed;
-    top: 0;
-    left: 0;
-    transform: none;
-  }
-}
-
-
-/* Back button styling */
 #back-button {
   position: fixed;
   top: 20px;
@@ -884,109 +879,122 @@ canvas {
   font-size: 16px;
   cursor: pointer;
   z-index: 1000;
-  transition: all 0.3s ease;
-  display: none; /* Initially hidden */
+  display: none;
 }
 
 #back-button:hover {
   background-color: rgba(0, 0, 0, 0.7);
 }
 
+/* Mobile Controls */
+#mobile-controls {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 40vh;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+#action-container {
+  display: none; 
+  position: absolute;
+  right: 15px;
+  bottom: 40px;
+  display: flex;
+  gap: 15px;
+  pointer-events: auto;
+}
+
+.action-btn {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(76, 175, 80, 0.8);
+  border: none;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  pointer-events: auto;
+}
+
+.action-btn:active,
+.action-btn.active {
+  transform: scale(0.9);
+  background: rgba(56, 142, 60, 0.9);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Joystick Styles */
+#joystick-zone {
+  position: relative;
+}
+
+.joystick-boundary {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  pointer-events: none;
+  left: 5px;
+  bottom: 5px;
+}
+
+.joystick-base {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.joystick-knob {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
 @media (max-width: 768px) {
+  canvas {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: none;
+  }
+
   #back-button {
     top: 10px;
     left: 10px;
     padding: 8px 16px;
     font-size: 14px;
   }
-}
 
-
-#controls-container {
-  position: fixed;
-  bottom: 20px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  z-index: 10;
-  pointer-events: none;
-}
-
-#controls {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-  pointer-events: auto;
-}
-
-.action-buttons {
-  position: absolute;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 5px; /* 5px padding from screen edges */
-  bottom: 80px; /* Position above direction buttons */
-}
-
-.direction-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 5px;
-  padding: 0 20px;
-}
-
-#controls button {
-  width: 70px;
-  height: 70px;
-  font-size: 24px;
-  border: none;
-  border-radius: 50%;
-  background-color: rgba(51, 51, 51, 0.8);
-  color: white;
-  transition: all 0.2s ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-#controls .action-btn {
-  width: 60px;
-  height: 60px;
-  font-weight: bold;
-  background-color: rgba(76, 175, 80, 0.8);  /* Green tint for action buttons */
-}
-
-#controls button:active,
-#controls button.active {
-  transform: scale(0.9);
-  background-color: rgba(76, 76, 76, 0.9);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-#controls .action-btn:active,
-#controls .action-btn.active {
-  background-color: rgba(56, 142, 60, 0.9);  /* Darker green when pressed */
-}
-
-@media (min-width: 769px) {
-  #controls-container {
-    display: none;
+  #mobile-controls {
+    display: block;
   }
 }
 
-/* Prevent text selection on mobile */
-#controls button {
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-}
-
-/* Ensure buttons don't cause scrolling on iOS */
-#controls-container {
-  touch-action: none;
+@media (min-width: 769px) {
+  #mobile-controls {
+    display: none;
+  }
 }
 
 
@@ -1577,7 +1585,6 @@ update(player, worldBounds, input) {
 
 
 
-AudioManager.js:
 // AudioManager.js
 import { CONFIG } from '../../config.js';
 
@@ -1622,9 +1629,18 @@ export class AudioManager {
             this.musicGainNode.gain.setValueAtTime(CONFIG.AUDIO.MUSIC_VOLUME, this.audioContext.currentTime);
             this.sfxGainNode.gain.setValueAtTime(CONFIG.AUDIO.SFX_VOLUME, this.audioContext.currentTime);
 
-            // Ensure audio context is resumed
-            await this.ensureAudioContextResume();
-            
+            // Add user interaction listeners for audio unlock
+            const unlockAudio = () => {
+                if (this.audioContext?.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+                document.removeEventListener('click', unlockAudio);
+                document.removeEventListener('touchstart', unlockAudio);
+            };
+
+            document.addEventListener('click', unlockAudio);
+            document.addEventListener('touchstart', unlockAudio);
+
             // Load all sounds
             await this.loadAllSounds();
             
@@ -1699,31 +1715,9 @@ export class AudioManager {
         }
     }
 
-    async ensureAudioContextResume() {
-        if (this.audioContext.state === 'suspended') {
-            return new Promise((resolve) => {
-                const resumeAudio = async () => {
-                    await this.audioContext.resume();
-                    window.removeEventListener('click', resumeAudio);
-                    window.removeEventListener('keydown', resumeAudio);
-                    resolve();
-                };
-
-                window.addEventListener('click', resumeAudio);
-                window.addEventListener('keydown', resumeAudio);
-            });
-        }
-        return Promise.resolve();
-    }
-
     playSound(key, type = 'sfx') {
-        if (!this.initialized) {
-            console.warn('AudioManager not initialized. Cannot play sound:', key);
-            return;
-        }
-
-        if (!this.sounds[key]) {
-            console.warn(`Sound not found: ${key}. Available sounds:`, Object.keys(this.sounds));
+        if (!this.initialized || !this.sounds[key]) {
+            console.warn(`Cannot play sound: ${key}`);
             return;
         }
 
@@ -1740,17 +1734,15 @@ export class AudioManager {
 
     playBackgroundMusic() {
         if (!this.initialized || !this.sounds['prof-theme']) {
-            console.warn('Cannot play background music - system not ready or music not loaded');
+            console.warn('Cannot play background music - system not ready');
             return;
         }
 
         try {
-            // Stop current music if playing
             if (this.currentMusicSource) {
                 this.currentMusicSource.stop();
             }
 
-            // Create new source
             this.currentMusicSource = this.audioContext.createBufferSource();
             this.currentMusicSource.buffer = this.sounds['prof-theme'];
             this.currentMusicSource.loop = true;
@@ -1784,6 +1776,8 @@ export class AudioManager {
         }
     }
 }
+
+
 
 
 
@@ -1850,9 +1844,9 @@ export class Camera {
 
 
 
-Input.js:
 // Input.js
 import { CONFIG } from '../../config.js';
+import { JoystickController } from './JoystickController.js';
 
 export class InputHandler {
     constructor() {
@@ -1861,64 +1855,29 @@ export class InputHandler {
             ArrowDown: false,
             ArrowLeft: false,
             ArrowRight: false,
-            KeyF: false,  // Added F key
-            KeyB: false   // Added B key
+            KeyF: false,
+            KeyB: false
         };
 
         this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
             /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        this.touchState = {};
-        this.setupEventListeners();
-    }
-
-    setupEventListeners() {
-        // Keyboard events
-        window.addEventListener('keydown', (e) => this.setKey(e.code, true));
-        window.addEventListener('keyup', (e) => this.setKey(e.code, false));
-
+        this.joystick = null;
+        
         if (this.isMobile) {
-            this.setupTouchControls();
+            this.joystick = new JoystickController();
+            this.setupMobileControls();
+        } else {
+            this.setupKeyboardControls();
         }
     }
 
-    setupTouchControls() {
-        // Direction buttons
-        const directions = ['up', 'down', 'left', 'right'];
-        directions.forEach((dir) => {
-            const element = document.getElementById(dir);
-            if (element) {
-                // Touch events
-                element.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    this.handleDirectionTouch(e, dir, true);
-                });
-                element.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    this.handleDirectionTouch(e, dir, false);
-                });
-                element.addEventListener('touchcancel', (e) => {
-                    e.preventDefault();
-                    this.handleDirectionTouch(e, dir, false);
-                });
+    setupKeyboardControls() {
+        window.addEventListener('keydown', (e) => this.setKey(e.code, true));
+        window.addEventListener('keyup', (e) => this.setKey(e.code, false));
+    }
 
-                // Mouse events
-                element.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    this.handleDirectionTouch(e, dir, true);
-                });
-                element.addEventListener('mouseup', (e) => {
-                    e.preventDefault();
-                    this.handleDirectionTouch(e, dir, false);
-                });
-                element.addEventListener('mouseleave', (e) => {
-                    e.preventDefault();
-                    this.handleDirectionTouch(e, dir, false);
-                });
-            }
-        });
-
-        // Action buttons
+    setupMobileControls() {
         const actionButtons = {
             'bacio': 'KeyB',
             'fuck': 'KeyF'
@@ -1927,54 +1886,23 @@ export class InputHandler {
         Object.entries(actionButtons).forEach(([buttonId, keyCode]) => {
             const element = document.getElementById(buttonId);
             if (element) {
-                // Touch events
-                element.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    this.handleActionTouch(keyCode, true);
-                    element.classList.add('active');
-                });
-                element.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    this.handleActionTouch(keyCode, false);
-                    element.classList.remove('active');
-                });
-                element.addEventListener('touchcancel', (e) => {
-                    e.preventDefault();
-                    this.handleActionTouch(keyCode, false);
-                    element.classList.remove('active');
+                ['touchstart', 'mousedown'].forEach(eventType => {
+                    element.addEventListener(eventType, (e) => {
+                        e.preventDefault();
+                        this.setKey(keyCode, true);
+                        element.classList.add('active');
+                    });
                 });
 
-                // Mouse events
-                element.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    this.handleActionTouch(keyCode, true);
-                    element.classList.add('active');
-                });
-                element.addEventListener('mouseup', (e) => {
-                    e.preventDefault();
-                    this.handleActionTouch(keyCode, false);
-                    element.classList.remove('active');
-                });
-                element.addEventListener('mouseleave', (e) => {
-                    e.preventDefault();
-                    this.handleActionTouch(keyCode, false);
-                    element.classList.remove('active');
+                ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(eventType => {
+                    element.addEventListener(eventType, (e) => {
+                        e.preventDefault();
+                        this.setKey(keyCode, false);
+                        element.classList.remove('active');
+                    });
                 });
             }
         });
-    }
-
-    handleDirectionTouch(event, direction, isPressed) {
-        const key = `Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`;
-        this.setKey(key, isPressed);
-        const element = document.getElementById(direction);
-        if (element) {
-            element.classList.toggle('active', isPressed);
-        }
-    }
-
-    handleActionTouch(keyCode, isPressed) {
-        this.setKey(keyCode, isPressed);
     }
 
     setKey(key, value) {
@@ -1983,9 +1911,194 @@ export class InputHandler {
         }
     }
 
+    getMovementVector() {
+        if (this.isMobile && this.joystick) {
+            const joystickInput = this.joystick.getInput();
+            return joystickInput.active ? joystickInput.vector : { x: 0, y: 0 };
+        }
+
+        const vector = { x: 0, y: 0 };
+        if (this.keys.ArrowRight) vector.x += 1;
+        if (this.keys.ArrowLeft) vector.x -= 1;
+        if (this.keys.ArrowDown) vector.y += 1;
+        if (this.keys.ArrowUp) vector.y -= 1;
+
+        if (vector.x !== 0 && vector.y !== 0) {
+            const magnitude = Math.sqrt(2);
+            vector.x /= magnitude;
+            vector.y /= magnitude;
+        }
+
+        return vector;
+    }
+
     isMoving() {
-        return this.keys.ArrowUp || this.keys.ArrowDown || 
-               this.keys.ArrowLeft || this.keys.ArrowRight;
+        const vector = this.getMovementVector();
+        return vector.x !== 0 || vector.y !== 0;
+    }
+
+    cleanup() {
+        if (this.joystick) {
+            this.joystick.joystickContainer.remove();
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+// JoystickController.js
+export class JoystickController {
+    constructor() {
+        this.joystickContainer = null;
+        this.joystickBoundary = null;
+        this.joystick = null;
+        this.knob = null;
+        this.touchId = null;
+        this.origin = { x: 0, y: 0 };
+        this.position = { x: 0, y: 0 };
+        this.vector = { x: 0, y: 0 };
+        this.active = false;
+        this.maxDistance = 60;
+        this.sensitivity = 1.5;
+	this.visible = false;
+        this.init();
+        this.hideControls(); // Initially hide
+    }
+
+
+
+    showControls() {
+        this.visible = true;
+        this.joystickContainer.style.display = 'block';
+        this.joystickBoundary.style.display = 'block';
+    }
+
+    hideControls() {
+        this.visible = false;
+        this.joystickContainer.style.display = 'none';
+        this.joystickBoundary.style.display = 'none';
+    }
+
+
+
+
+
+
+    init() {
+    	this.joystickContainer.style.display = 'none';
+    	this.joystickBoundary.style.display = 'none';
+        this.joystickContainer = document.createElement('div');
+        this.joystickContainer.id = 'joystick-zone';
+        this.joystickContainer.style.cssText = `
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 50%;
+            height: 40vh;
+            z-index: 1000;
+            touch-action: none;
+            pointer-events: auto;
+        `;
+
+        // Create visible boundary
+        this.joystickBoundary = document.createElement('div');
+        this.joystickBoundary.className = 'joystick-boundary';
+
+        this.joystick = document.createElement('div');
+        this.joystick.className = 'joystick-base';
+        this.joystick.style.display = 'none';
+
+        this.knob = document.createElement('div');
+        this.knob.className = 'joystick-knob';
+
+        this.joystick.appendChild(this.knob);
+        this.joystickContainer.appendChild(this.joystickBoundary);
+        this.joystickContainer.appendChild(this.joystick);
+        document.body.appendChild(this.joystickContainer);
+
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        ['touchstart', 'mousedown'].forEach(eventType => {
+            this.joystickContainer.addEventListener(eventType, (e) => {
+                e.preventDefault();
+                this.handleStart(eventType === 'touchstart' ? e.touches[0] : e);
+            });
+        });
+
+        ['touchmove', 'mousemove'].forEach(eventType => {
+            this.joystickContainer.addEventListener(eventType, (e) => {
+                e.preventDefault();
+                if (this.active) {
+                    this.handleMove(eventType === 'touchmove' ? e.touches[0] : e);
+                }
+            });
+        });
+
+        ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(eventType => {
+            this.joystickContainer.addEventListener(eventType, (e) => {
+                e.preventDefault();
+                this.handleEnd();
+            });
+        });
+    }
+
+    handleStart(event) {
+        if (!this.active) {
+            this.active = true;
+            this.origin.x = event.clientX;
+            this.origin.y = event.clientY;
+            
+            this.joystick.style.display = 'block';
+            this.joystick.style.left = `${this.origin.x - 60}px`;
+            this.joystick.style.top = `${this.origin.y - 60}px`;
+            
+            this.updateJoystickState(event.clientX, event.clientY);
+        }
+    }
+
+    handleMove(event) {
+        this.updateJoystickState(event.clientX, event.clientY);
+    }
+
+    handleEnd() {
+        this.active = false;
+        this.vector = { x: 0, y: 0 };
+        this.joystick.style.display = 'none';
+        this.knob.style.transform = 'translate(-50%, -50%)';
+    }
+
+    updateJoystickState(clientX, clientY) {
+        const dx = clientX - this.origin.x;
+        const dy = clientY - this.origin.y;
+        const distance = Math.min(Math.hypot(dx, dy), this.maxDistance);
+        const angle = Math.atan2(dy, dx);
+
+        const knobX = Math.cos(angle) * distance;
+        const knobY = Math.sin(angle) * distance;
+
+        this.knob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
+
+        this.vector = {
+            x: distance > 0 ? (knobX / this.maxDistance) * this.sensitivity : 0,
+            y: distance > 0 ? (knobY / this.maxDistance) * this.sensitivity : 0
+        };
+    }
+
+    getInput() {
+        return {
+            active: this.active,
+            vector: this.vector
+        };
     }
 }
 
@@ -2002,13 +2115,13 @@ export class InputHandler {
 
 
 
-Renderer.js:
 // Renderer.js
 import { CONFIG } from '../../config.js';
 
 export class Renderer {
     constructor(ctx, levelManager, gameState) {
         console.log('Initializing Renderer');
+	this.hasShownArrow = false;
         this.ctx = ctx;
         this.levelManager = levelManager;
         this.gameState = gameState;
@@ -2080,7 +2193,7 @@ export class Renderer {
         
 this.screenMessages = {
         diegoWarning: {
-            lines: ['Your friend Diego', 'needs your help!'],
+            lines: ['Your friend Diego', 'needs your help', 'at the Pub!'],
             startTime: 0,
             duration: 2000,
             interval: 400,
@@ -2103,7 +2216,7 @@ this.screenMessages = {
             nextMessage: 'finalGameOver'
         },
         lowEnergy: {
-            lines: ['Hungry, you need', 'pizza!'],
+            lines: ['Hungry, you need', 'pizza!', 'go to Restaurant!'],
             startTime: 0,
             duration: 2000,
             interval: 400,
@@ -2424,6 +2537,31 @@ this.screenMessages = {
         message.isActive = true;
     }
 
+
+// In setSplashVisibility method
+setSplashVisibility(visible) {
+    this.isSplashVisible = visible;
+    
+    // Show/hide mobile controls
+    const actionContainer = document.getElementById('action-container');
+    if (actionContainer) {
+        actionContainer.style.display = visible ? 'none' : 'flex';
+    }
+    
+    // Show/hide joystick
+    const gameInstance = window.gameInstance;
+    if (gameInstance?.input?.joystick) {
+        if (visible) {
+            gameInstance.input.joystick.hide();
+        } else {
+            gameInstance.input.joystick.show();
+        }
+    }
+    
+    this.updateUIVisibility();
+}
+
+
     drawScreenMessage(type) {
         const message = this.screenMessages[type];
         if (!message || !message.isActive) return;
@@ -2530,7 +2668,33 @@ message.lines.forEach((line, index) => {
                 camera.width, camera.height
             );
         }
+   
+
+
+
+
+
+if (this.levelManager?.currentLevel === 1 && !this.hasShownArrow) {
+    const currentTime = performance.now();
+    const isVisible = Math.floor(currentTime / 500) % 2 === 0;
+    
+    if (isVisible) {
+        this.ctx.save();
+        this.ctx.font = 'bold 48px Arial';
+        this.ctx.fillStyle = 'white';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('↖️', 100, 200);
+        this.ctx.restore();
     }
+}
+ }
+
+
+
+
+
+
+
 
     handleSplashClick(e) {
         if (!this.isSplashVisible) return;
@@ -2726,6 +2890,9 @@ message.lines.forEach((line, index) => {
         this.isSplashVisible = false;
     }
 }
+
+
+
 
 
 
@@ -3636,7 +3803,6 @@ update(player, worldBounds, input) {
 
 
 
-Player.js:
 // Player.js
 import { CONFIG } from '../config.js';
 import { BaseCharacter } from './BaseCharacter.js';
@@ -3733,7 +3899,6 @@ export class Player extends BaseCharacter {
 
 
 updateBehavior(input, worldBounds, deltaTime) {
-    // If player is frozen, don't process any movement
     if (this.freeze) {
         this.velocity = { x: 0, y: 0 };
         this.movementBuffer = { x: 0, y: 0 };
@@ -3741,36 +3906,23 @@ updateBehavior(input, worldBounds, deltaTime) {
         return;
     }
 
-    // Store current input for state preservation
     this.currentInput = { ...input.keys };
     
-    const moving = input.isMoving();
-    this.isIdle = !moving;
+    const movementVector = input.getMovementVector();
+    this.isIdle = movementVector.x === 0 && movementVector.y === 0;
 
-    if (moving) {
+    if (!this.isIdle) {
         const adjustedSpeed = this.speed * deltaTime;
-        const keys = input.keys;
         
-        // Reset velocity
-        this.velocity.x = 0;
-        this.velocity.y = 0;
+        // Calculate velocity based on movement vector
+        this.velocity.x = movementVector.x * adjustedSpeed;
+        this.velocity.y = movementVector.y * adjustedSpeed;
 
-        // Calculate velocity based on input
-        if (keys.ArrowRight) {
-            this.velocity.x = adjustedSpeed;
-            this.direction = 'right';
-        }
-        if (keys.ArrowLeft) {
-            this.velocity.x = -adjustedSpeed;
-            this.direction = 'left';
-        }
-        if (keys.ArrowDown) {
-            this.velocity.y = adjustedSpeed;
-            this.direction = 'down';
-        }
-        if (keys.ArrowUp) {
-            this.velocity.y = -adjustedSpeed;
-            this.direction = 'up';
+        // Update direction based on movement
+        if (Math.abs(movementVector.x) > Math.abs(movementVector.y)) {
+            this.direction = movementVector.x > 0 ? 'right' : 'left';
+        } else {
+            this.direction = movementVector.y > 0 ? 'down' : 'up';
         }
 
         // Add to movement buffer
@@ -3797,9 +3949,8 @@ updateBehavior(input, worldBounds, deltaTime) {
         this.movementBuffer.x = 0;
         this.movementBuffer.y = 0;
     }
- }
 }
-
+}
 
 
 

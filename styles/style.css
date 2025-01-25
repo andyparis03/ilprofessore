@@ -53,10 +53,10 @@ canvas {
 }
 
 #action-container {
+  display: none; 
   position: absolute;
   right: 15px;
   bottom: 40px;
-  display: flex;
   gap: 15px;
   pointer-events: auto;
 }
