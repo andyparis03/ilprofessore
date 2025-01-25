@@ -9,37 +9,31 @@ export class JoystickController {
         this.position = { x: 0, y: 0 };
         this.vector = { x: 0, y: 0 };
         this.active = false;
-        this.maxDistance = 40;
+        this.maxDistance = 80;
+	this.sensitivity = 2;
         this.init();
     }
 
-    init() {
-        this.joystickContainer = document.createElement('div');
-        this.joystickContainer.className = 'joystick-container';
-        this.joystickContainer.style.cssText = `
-            position: fixed;
-            left: 0;
-            bottom: 0;
-            width: 50%;
-            height: 40vh;
-            z-index: 1000;
-            touch-action: none;
-            pointer-events: auto;
-        `;
 
-        this.joystick = document.createElement('div');
-        this.joystick.className = 'joystick-base';
-        this.joystick.style.display = 'none';
 
-        this.knob = document.createElement('div');
-        this.knob.className = 'joystick-knob';
+init() {
+    this.joystickContainer = document.createElement('div');
+    this.joystickContainer.id = 'joystick-zone';
+    
+    this.joystick = document.createElement('div');
+    this.joystick.className = 'joystick-base';
+    
+    this.knob = document.createElement('div');
+    this.knob.className = 'joystick-knob';
+    
+    this.joystick.appendChild(this.knob);
+    this.joystickContainer.appendChild(this.joystick);
+    document.body.appendChild(this.joystickContainer);
+    
+    this.setupEventListeners();
+}
 
-        this.joystick.appendChild(this.knob);
-        this.joystickContainer.appendChild(this.joystick);
-        document.body.appendChild(this.joystickContainer);
 
-        this.setupEventListeners();
-    }
 
     setupEventListeners() {
         ['touchstart', 'mousedown'].forEach(eventType => {
@@ -102,11 +96,11 @@ export class JoystickController {
 
         this.knob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
 
-        this.vector = {
-            x: distance > 0 ? (knobX / this.maxDistance) : 0,
-            y: distance > 0 ? (knobY / this.maxDistance) : 0
-        };
-    }
+    this.vector = {
+        x: distance > 0 ? (knobX / this.maxDistance) * this.sensitivity : 0,
+        y: distance > 0 ? (knobY / this.maxDistance) * this.sensitivity : 0
+    };
+}
 
     getInput() {
         return {
