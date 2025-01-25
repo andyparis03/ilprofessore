@@ -1,5 +1,6 @@
 // Input.js
 import { CONFIG } from '../../config.js';
+import { JoystickController } from './JoystickController.js';
 
 export class InputHandler {
     constructor() {
@@ -8,64 +9,29 @@ export class InputHandler {
             ArrowDown: false,
             ArrowLeft: false,
             ArrowRight: false,
-            KeyF: false,  // Added F key
-            KeyB: false   // Added B key
+            KeyF: false,
+            KeyB: false
         };
 
         this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
             /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        this.touchState = {};
-        this.setupEventListeners();
-    }
-
-    setupEventListeners() {
-        // Keyboard events
-        window.addEventListener('keydown', (e) => this.setKey(e.code, true));
-        window.addEventListener('keyup', (e) => this.setKey(e.code, false));
-
+        this.joystick = null;
+        
         if (this.isMobile) {
-            this.setupTouchControls();
+            this.joystick = new JoystickController();
+            this.setupMobileControls();
+        } else {
+            this.setupKeyboardControls();
         }
     }
 
-    setupTouchControls() {
-        // Direction buttons
-        const directions = ['up', 'down', 'left', 'right'];
-        directions.forEach((dir) => {
-            const element = document.getElementById(dir);
-            if (element) {
-                // Touch events
-                element.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    this.handleDirectionTouch(e, dir, true);
-                });
-                element.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    this.handleDirectionTouch(e, dir, false);
-                });
-                element.addEventListener('touchcancel', (e) => {
-                    e.preventDefault();
-                    this.handleDirectionTouch(e, dir, false);
-                });
+    setupKeyboardControls() {
+        window.addEventListener('keydown', (e) => this.setKey(e.code, true));
+        window.addEventListener('keyup', (e) => this.setKey(e.code, false));
+    }
 
-                // Mouse events
-                element.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    this.handleDirectionTouch(e, dir, true);
-                });
-                element.addEventListener('mouseup', (e) => {
-                    e.preventDefault();
-                    this.handleDirectionTouch(e, dir, false);
-                });
-                element.addEventListener('mouseleave', (e) => {
-                    e.preventDefault();
-                    this.handleDirectionTouch(e, dir, false);
-                });
-            }
-        });
-
-        // Action buttons
+    setupMobileControls() {
         const actionButtons = {
             'bacio': 'KeyB',
             'fuck': 'KeyF'
@@ -74,54 +40,23 @@ export class InputHandler {
         Object.entries(actionButtons).forEach(([buttonId, keyCode]) => {
             const element = document.getElementById(buttonId);
             if (element) {
-                // Touch events
-                element.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    this.handleActionTouch(keyCode, true);
-                    element.classList.add('active');
-                });
-                element.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    this.handleActionTouch(keyCode, false);
-                    element.classList.remove('active');
-                });
-                element.addEventListener('touchcancel', (e) => {
-                    e.preventDefault();
-                    this.handleActionTouch(keyCode, false);
-                    element.classList.remove('active');
+                ['touchstart', 'mousedown'].forEach(eventType => {
+                    element.addEventListener(eventType, (e) => {
+                        e.preventDefault();
+                        this.setKey(keyCode, true);
+                        element.classList.add('active');
+                    });
                 });
 
-                // Mouse events
-                element.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    this.handleActionTouch(keyCode, true);
-                    element.classList.add('active');
-                });
-                element.addEventListener('mouseup', (e) => {
-                    e.preventDefault();
-                    this.handleActionTouch(keyCode, false);
-                    element.classList.remove('active');
-                });
-                element.addEventListener('mouseleave', (e) => {
-                    e.preventDefault();
-                    this.handleActionTouch(keyCode, false);
-                    element.classList.remove('active');
+                ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(eventType => {
+                    element.addEventListener(eventType, (e) => {
+                        e.preventDefault();
+                        this.setKey(keyCode, false);
+                        element.classList.remove('active');
+                    });
                 });
             }
         });
-    }
-
-    handleDirectionTouch(event, direction, isPressed) {
-        const key = `Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`;
-        this.setKey(key, isPressed);
-        const element = document.getElementById(direction);
-        if (element) {
-            element.classList.toggle('active', isPressed);
-        }
-    }
-
-    handleActionTouch(keyCode, isPressed) {
-        this.setKey(keyCode, isPressed);
     }
 
     setKey(key, value) {
@@ -130,8 +65,35 @@ export class InputHandler {
         }
     }
 
+    getMovementVector() {
+        if (this.isMobile && this.joystick) {
+            const joystickInput = this.joystick.getInput();
+            return joystickInput.active ? joystickInput.vector : { x: 0, y: 0 };
+        }
+
+        const vector = { x: 0, y: 0 };
+        if (this.keys.ArrowRight) vector.x += 1;
+        if (this.keys.ArrowLeft) vector.x -= 1;
+        if (this.keys.ArrowDown) vector.y += 1;
+        if (this.keys.ArrowUp) vector.y -= 1;
+
+        if (vector.x !== 0 && vector.y !== 0) {
+            const magnitude = Math.sqrt(2);
+            vector.x /= magnitude;
+            vector.y /= magnitude;
+        }
+
+        return vector;
+    }
+
     isMoving() {
-        return this.keys.ArrowUp || this.keys.ArrowDown || 
-               this.keys.ArrowLeft || this.keys.ArrowRight;
+        const vector = this.getMovementVector();
+        return vector.x !== 0 || vector.y !== 0;
+    }
+
+    cleanup() {
+        if (this.joystick) {
+            this.joystick.joystickContainer.remove();
+        }
     }
 }

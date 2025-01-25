@@ -541,7 +541,7 @@ if (this.levelManager?.currentLevel === 1 && !this.hasShownArrow) {
         this.ctx.font = 'bold 48px Arial';
         this.ctx.fillStyle = 'white';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('↖️', 100, 100);
+        this.ctx.fillText('↖️', 100, 200);
         this.ctx.restore();
     }
 }

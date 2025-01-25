@@ -94,7 +94,6 @@ export class Player extends BaseCharacter {
 
 
 updateBehavior(input, worldBounds, deltaTime) {
-    // If player is frozen, don't process any movement
     if (this.freeze) {
         this.velocity = { x: 0, y: 0 };
         this.movementBuffer = { x: 0, y: 0 };
@@ -102,36 +101,23 @@ updateBehavior(input, worldBounds, deltaTime) {
         return;
     }
 
-    // Store current input for state preservation
     this.currentInput = { ...input.keys };
     
-    const moving = input.isMoving();
-    this.isIdle = !moving;
+    const movementVector = input.getMovementVector();
+    this.isIdle = movementVector.x === 0 && movementVector.y === 0;
 
-    if (moving) {
+    if (!this.isIdle) {
         const adjustedSpeed = this.speed * deltaTime;
-        const keys = input.keys;
         
-        // Reset velocity
-        this.velocity.x = 0;
-        this.velocity.y = 0;
+        // Calculate velocity based on movement vector
+        this.velocity.x = movementVector.x * adjustedSpeed;
+        this.velocity.y = movementVector.y * adjustedSpeed;
 
-        // Calculate velocity based on input
-        if (keys.ArrowRight) {
-            this.velocity.x = adjustedSpeed;
-            this.direction = 'right';
-        }
-        if (keys.ArrowLeft) {
-            this.velocity.x = -adjustedSpeed;
-            this.direction = 'left';
-        }
-        if (keys.ArrowDown) {
-            this.velocity.y = adjustedSpeed;
-            this.direction = 'down';
-        }
-        if (keys.ArrowUp) {
-            this.velocity.y = -adjustedSpeed;
-            this.direction = 'up';
+        // Update direction based on movement
+        if (Math.abs(movementVector.x) > Math.abs(movementVector.y)) {
+            this.direction = movementVector.x > 0 ? 'right' : 'left';
+        } else {
+            this.direction = movementVector.y > 0 ? 'down' : 'up';
         }
 
         // Add to movement buffer
