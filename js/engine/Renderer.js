@@ -420,6 +420,19 @@ this.screenMessages = {
         message.isActive = true;
     }
 
+
+setSplashVisibility(visible) {
+    this.isSplashVisible = visible;
+    if (!visible) {
+        // Show controls
+        document.getElementById('joystick-zone').style.display = 'block';
+        document.getElementById('action-container').style.display = 'flex';
+    }
+}
+
+
+
+
     drawScreenMessage(type) {
         const message = this.screenMessages[type];
         if (!message || !message.isActive) return;

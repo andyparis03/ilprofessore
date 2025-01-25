@@ -12,6 +12,7 @@ export class JoystickController {
         this.active = false;
         this.maxDistance = 60;
         this.sensitivity = 1.5;
+	this.visible = false;
         this.init();
     }
 

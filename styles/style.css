@@ -54,10 +54,10 @@ canvas {
 
 #action-container {
   position: absolute;
-  right: 40px;
+  right: 15px;
   bottom: 40px;
   display: flex;
-  gap: 10px;
+  gap: 15px;
   pointer-events: auto;
 }
 
@@ -95,8 +95,8 @@ canvas {
   border: 2px dashed rgba(255, 255, 255, 0.4);
   border-radius: 50%;
   pointer-events: none;
-  left: 30px;
-  bottom: 30px;
+  left: 5px;
+  bottom: 5px;
 }
 
 .joystick-base {
