@@ -1,40 +1,40 @@
 // Input.js
 import { CONFIG } from '../../config.js';
+import { JoystickController } from './JoystickController.js';
 
 export class InputHandler {
-    constructor() {
-        this.keys = {
-            ArrowUp: false,
-            ArrowDown: false,
-            ArrowLeft: false,
-            ArrowRight: false,
-            KeyF: false,  // Added F key
-            KeyB: false   // Added B key
-        };
+constructor() {
+    this.keys = {
+        ArrowUp: false,
+        ArrowDown: false,
+        ArrowLeft: false,
+        ArrowRight: false,
+        KeyF: false,
+        KeyB: false
+    };
 
-        this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
-            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
+        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        this.touchState = {};
-        this.setupEventListeners();
-    }
+    // Always set up keyboard controls
+    this.setupKeyboardControls();
+    
 
-    setupEventListeners() {
-        // Keyboard events
-        window.addEventListener('keydown', (e) => this.setKey(e.code, true));
-        window.addEventListener('keyup', (e) => this.setKey(e.code, false));
 
+    // Set up mobile controls only if needed
     if (this.isMobile) {
         this.joystick = new JoystickController();
         this.setupMobileControls();
     }
- }
+}
     
 
     setupKeyboardControls() {
         window.addEventListener('keydown', (e) => this.setKey(e.code, true));
         window.addEventListener('keyup', (e) => this.setKey(e.code, false));
     }
+
+
 
     setupMobileControls() {
         const actionButtons = {
