@@ -175,6 +175,8 @@ export class Renderer {
         window.addEventListener('resize', () => this.handleResize());
     }
 
+
+
     updateUIVisibility() {
         const shouldShowControls = !this.isSplashVisible && !this.isWinScreenVisible;
         
@@ -186,6 +188,20 @@ export class Renderer {
             if (this.mobileControls) {
                 this.mobileControls.style.display = shouldShowControls ? 'block' : 'none';
             }
+
+        // Add joystick control here
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.input?.joystick) {
+    if (shouldShowControls) {
+        gameInstance.input.joystick.showControls();
+    } else {
+        gameInstance.input.joystick.hideControls();
+    }
+        }
+
+
+
+
         }
 
         const gameInstance = window.gameInstance;
@@ -201,6 +217,8 @@ export class Renderer {
             }
         }
     }
+
+
 
     async initAudio() {
         const gameInstance = window.gameInstance;

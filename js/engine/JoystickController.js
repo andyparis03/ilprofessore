@@ -55,16 +55,21 @@ export class JoystickController {
     }
 
     showControls() {
-        this.visible = true;
-        this.joystickContainer.style.display = 'block';
-        this.joystickBoundary.style.display = 'block';
+        if (this.joystickContainer && this.joystickBoundary) {
+            this.joystickContainer.style.display = 'block';
+            this.joystickBoundary.style.display = 'block';
+            this.visible = true;
+        }
     }
 
     hideControls() {
-        this.visible = false;
-        this.joystickContainer.style.display = 'none';
-        this.joystickBoundary.style.display = 'none';
+        if (this.joystickContainer && this.joystickBoundary) {
+            this.joystickContainer.style.display = 'none';
+            this.joystickBoundary.style.display = 'none';
+            this.visible = false;
+        }
     }
+
 
     setupEventListeners() {
         ['touchstart', 'mousedown'].forEach(eventType => {
