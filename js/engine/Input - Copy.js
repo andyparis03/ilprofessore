@@ -1,5 +1,6 @@
 // Input.js
 import { CONFIG } from '../../config.js';
+import { JoystickController } from './JoystickController.js';
 
 export class InputHandler {
     constructor() {
@@ -8,28 +9,22 @@ export class InputHandler {
             ArrowDown: false,
             ArrowLeft: false,
             ArrowRight: false,
-            KeyF: false,  // Added F key
-            KeyB: false   // Added B key
+            KeyF: false,
+            KeyB: false
         };
 
         this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
             /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        this.touchState = {};
-        this.setupEventListeners();
-    }
+        this.joystick = null;
+        
+    this.setupKeyboardControls();
 
-    setupEventListeners() {
-        // Keyboard events
-        window.addEventListener('keydown', (e) => this.setKey(e.code, true));
-        window.addEventListener('keyup', (e) => this.setKey(e.code, false));
-
-    if (this.isMobile) {
-        this.joystick = new JoystickController();
-        this.setupMobileControls();
+        if (this.isMobile) {
+            this.joystick = new JoystickController();
+            this.setupMobileControls();
+        }
     }
- }
-    
 
     setupKeyboardControls() {
         window.addEventListener('keydown', (e) => this.setKey(e.code, true));
