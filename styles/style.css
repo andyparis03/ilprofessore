@@ -24,8 +24,8 @@ canvas {
 
 #back-button {
   position: fixed;
-  top: 20px;
-  left: 20px;
+  right: 15px;
+  bottom: 60px;
   padding: 10px 20px;
   background-color: rgba(0, 0, 0, 0.5);
   color: white;
@@ -57,7 +57,7 @@ canvas {
   display: none; 
   position: absolute;
   right: 15px;
-  bottom: 40px;
+  bottom: 10px;
   gap: 15px;
   pointer-events: auto;
 }
