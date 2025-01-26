@@ -24,8 +24,8 @@ canvas {
 
 #back-button {
   position: fixed;
-  right: 15px;
-  bottom: 125px;
+  top: 500px;
+  left: 800px;
   padding: 10px 20px;
   background-color: rgba(0, 0, 0, 0.5);
   color: white;
@@ -35,6 +35,13 @@ canvas {
   cursor: pointer;
   z-index: 1000;
   display: none;
+    background-color: transparent;
+    border: none;
+}
+
+#back-button img {
+    width: auto;
+    height: auto;
 }
 
 #back-button:hover {
@@ -134,10 +141,15 @@ canvas {
   }
 
   #back-button {
-    top: 10px;
-    left: 10px;
-    padding: 8px 16px;
-    font-size: 14px;
+        bottom: 80px;  
+        right: 0px;    
+        left: auto;    
+        top: auto;      
+        padding: 8px 16px;
+        font-size: 14px;
+
+ 
+
   }
 
   #mobile-controls {
