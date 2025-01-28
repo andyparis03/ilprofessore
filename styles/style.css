@@ -77,14 +77,22 @@ canvas {
 
 #punch {
   position: absolute;
-  bottom: 80px; /* Height of button (70px) + gap (15px) */
-  right: 80px;
+  bottom: 80px; 
+  right: 0px; 
 }
 
 #fuck {
-  margin-left: 85px; /* Width of button (70px) + gap (15px) */
+  margin-left: 85px; 
 }
 
+#back-button {
+        bottom: 90px;  
+        right: 80px;    
+        left: auto;    
+        top: auto;      
+        padding: 8px 16px;
+        font-size: 14px;
+}
 
 .action-btn {
   width: 70px;
@@ -157,17 +165,10 @@ canvas {
     transform: none;
   }
 
-  #back-button {
-        bottom: 100px;  
-        right: 0px;    
-        left: auto;    
-        top: auto;      
-        padding: 8px 16px;
-        font-size: 14px;
 
  
 
-  }
+
 
   #mobile-controls {
     display: block;
