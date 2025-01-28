@@ -34,7 +34,14 @@ Buona fortuna, Professore!
 
 >>>>>tell me if you find bugs or discrepancies or inconsistency <<<<<<
 
-
+//////////////////////////////////////
+IMPORTANT notice to you Calude coding assistant: recently I noted, as the code get bigger and complex, that you are loosing your ability to focus on the original code and do not stick with the original project. For example sometimes you are creating new methods and variables that are not connected with the other modules and this makes the game malfunction. Do not change name to existing methods that works fine! Please stick with the original plan and code, always doublecheck that everything is consistent. No need to create new methods or new logics if the actual ones are already working fine. Always doublecheck if the method (or similar methods) that you are creating or improving are already exsisting and working fine. Stick to the plan, don't go off track of the existing code, be consistent, cosider the project as a whole, when coding a change or modification always check the integrity and consistency between all modules!
+Remember to: Keep all existing functionality intact,
+Use consistent naming conventions with current code,
+Maintain compatibility with all modules,
+Not duplicate any existing methods,
+Preserve the current event handling patterns.
+///////////////////////////////////
 
 
 Coding a videogame in javascript, html5 and css: find below in text the tree structure (TREEilprofessore) and I attached to this chat all the modules that compose a videogame called "IL PROFESSORE" is an action adventure with elements of top-down puzzle platformer. "Il Professore" is the protagonist of the game. "Il Professore" Is a Player Character in the style of Mario bros. 
@@ -128,6 +135,8 @@ Ilprofessore
 │       ├───professore
 │       │       professore-idle.png
 │       │       professore-spritesheet.png
+│       │   	professore-punchR.png
+│       │   	professore-punchL.png
 │       │
 │       ├───suina1
 │       │       suina1-attack.png
@@ -145,6 +154,7 @@ Ilprofessore
 │       │       suinaevil-attack.png
 │       │       suinaevil-idle.png
 │       │       suinaevil-spritesheet.png
+│       │       suinaevil-punch.png
 │       │
 │       └───walter
 │               walter-attack.png
@@ -481,6 +491,7 @@ startGame();
 
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -495,13 +506,16 @@ startGame();
 </script>
 
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1, viewport-fit=cover">
   <title>Il Professore Game</title>
   <link rel="stylesheet" href="./styles/style.css">
 </head>
 <body>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
-  <button id="back-button" type="button">Exit</button>
+
+<button id="back-button" type="button">
+    <img src="./assets/sprites/exit.png" alt="Exit">
+</button>
   
   <div id="mobile-controls">
     <div id="action-container">
@@ -513,6 +527,7 @@ startGame();
   <script src="./main.js" type="module"></script>
 </body>
 </html>
+
 
 
 
@@ -568,6 +583,7 @@ export const CONFIG = {
         5: { name: 'Chester', backgroundKey: 'background5' }
     }
 };
+
 
 
 
@@ -843,7 +859,7 @@ export class CharacterRegistry {
 
 
 
-
+style.css:
 * {
   margin: 0;
   padding: 0;
@@ -856,6 +872,7 @@ html, body {
   width: 100%;
   position: fixed;
   touch-action: none;
+  overscroll-behavior: none;
 }
 
 canvas {
@@ -869,8 +886,8 @@ canvas {
 
 #back-button {
   position: fixed;
-  top: 20px;
-  left: 20px;
+  top: 500px;
+  left: 800px;
   padding: 10px 20px;
   background-color: rgba(0, 0, 0, 0.5);
   color: white;
@@ -880,6 +897,13 @@ canvas {
   cursor: pointer;
   z-index: 1000;
   display: none;
+    background-color: transparent;
+    border: none;
+}
+
+#back-button img {
+    width: auto;
+    height: auto;
 }
 
 #back-button:hover {
@@ -902,8 +926,7 @@ canvas {
   display: none; 
   position: absolute;
   right: 15px;
-  bottom: 40px;
-  display: flex;
+  bottom: 10px;
   gap: 15px;
   pointer-events: auto;
 }
@@ -980,10 +1003,15 @@ canvas {
   }
 
   #back-button {
-    top: 10px;
-    left: 10px;
-    padding: 8px 16px;
-    font-size: 14px;
+        bottom: 100px;  
+        right: 0px;    
+        left: auto;    
+        top: auto;      
+        padding: 8px 16px;
+        font-size: 14px;
+
+ 
+
   }
 
   #mobile-controls {
@@ -996,7 +1024,6 @@ canvas {
     display: none;
   }
 }
-
 
 
 
@@ -1845,37 +1872,43 @@ export class Camera {
 
 
 // Input.js
+// Input.js
 import { CONFIG } from '../../config.js';
 import { JoystickController } from './JoystickController.js';
 
 export class InputHandler {
-    constructor() {
-        this.keys = {
-            ArrowUp: false,
-            ArrowDown: false,
-            ArrowLeft: false,
-            ArrowRight: false,
-            KeyF: false,
-            KeyB: false
-        };
+constructor() {
+    this.keys = {
+        ArrowUp: false,
+        ArrowDown: false,
+        ArrowLeft: false,
+        ArrowRight: false,
+        KeyF: false,
+        KeyB: false
+    };
 
-        this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
-            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
+        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        this.joystick = null;
-        
-        if (this.isMobile) {
-            this.joystick = new JoystickController();
-            this.setupMobileControls();
-        } else {
-            this.setupKeyboardControls();
-        }
+    // Always set up keyboard controls
+    this.setupKeyboardControls();
+    
+
+
+    // Set up mobile controls only if needed
+    if (this.isMobile) {
+        this.joystick = new JoystickController();
+        this.setupMobileControls();
     }
+}
+    
 
     setupKeyboardControls() {
         window.addEventListener('keydown', (e) => this.setKey(e.code, true));
         window.addEventListener('keyup', (e) => this.setKey(e.code, false));
     }
+
+
 
     setupMobileControls() {
         const actionButtons = {
@@ -1954,6 +1987,8 @@ export class InputHandler {
 
 
 
+
+// JoystickController.js
 // JoystickController.js
 export class JoystickController {
     constructor() {
@@ -1968,34 +2003,21 @@ export class JoystickController {
         this.active = false;
         this.maxDistance = 60;
         this.sensitivity = 1.5;
-	this.visible = false;
-        this.init();
-        this.hideControls(); // Initially hide
-    }
-
-
-
-    showControls() {
-        this.visible = true;
-        this.joystickContainer.style.display = 'block';
-        this.joystickBoundary.style.display = 'block';
-    }
-
-    hideControls() {
         this.visible = false;
-        this.joystickContainer.style.display = 'none';
-        this.joystickBoundary.style.display = 'none';
+
+        this.createElements();
+        this.init();
+        this.hideControls();
     }
 
-
-
-
-
+    createElements() {
+        this.joystickContainer = document.createElement('div');
+        this.joystickBoundary = document.createElement('div');
+        this.joystick = document.createElement('div');
+        this.knob = document.createElement('div');
+    }
 
     init() {
-    	this.joystickContainer.style.display = 'none';
-    	this.joystickBoundary.style.display = 'none';
-        this.joystickContainer = document.createElement('div');
         this.joystickContainer.id = 'joystick-zone';
         this.joystickContainer.style.cssText = `
             position: fixed;
@@ -2008,15 +2030,11 @@ export class JoystickController {
             pointer-events: auto;
         `;
 
-        // Create visible boundary
-        this.joystickBoundary = document.createElement('div');
         this.joystickBoundary.className = 'joystick-boundary';
-
-        this.joystick = document.createElement('div');
+        
         this.joystick.className = 'joystick-base';
         this.joystick.style.display = 'none';
 
-        this.knob = document.createElement('div');
         this.knob.className = 'joystick-knob';
 
         this.joystick.appendChild(this.knob);
@@ -2026,6 +2044,23 @@ export class JoystickController {
 
         this.setupEventListeners();
     }
+
+    showControls() {
+        if (this.joystickContainer && this.joystickBoundary) {
+            this.joystickContainer.style.display = 'block';
+            this.joystickBoundary.style.display = 'block';
+            this.visible = true;
+        }
+    }
+
+    hideControls() {
+        if (this.joystickContainer && this.joystickBoundary) {
+            this.joystickContainer.style.display = 'none';
+            this.joystickBoundary.style.display = 'none';
+            this.visible = false;
+        }
+    }
+
 
     setupEventListeners() {
         ['touchstart', 'mousedown'].forEach(eventType => {
@@ -2100,6 +2135,12 @@ export class JoystickController {
             vector: this.vector
         };
     }
+
+    cleanup() {
+        if (this.joystickContainer) {
+            this.joystickContainer.remove();
+        }
+    }
 }
 
 
@@ -2115,17 +2156,28 @@ export class JoystickController {
 
 
 
+
+
+// Renderer.js
 // Renderer.js
 import { CONFIG } from '../../config.js';
 
 export class Renderer {
     constructor(ctx, levelManager, gameState) {
         console.log('Initializing Renderer');
-	this.hasShownArrow = false;
+        this.hasShownArrow = false;
         this.ctx = ctx;
         this.levelManager = levelManager;
         this.gameState = gameState;
         this.directions = { down: 0, left: 1, right: 2, up: 3 };
+        
+        // Mobile controls references
+        this.actionContainer = document.getElementById('action-container');
+        this.mobileControls = document.getElementById('mobile-controls');
+        
+        // Initialize controls as hidden
+        if (this.actionContainer) this.actionContainer.style.display = 'none';
+        if (this.mobileControls) this.mobileControls.style.display = 'none';
         
         // Splash screen properties
         this.splashScreen = null;
@@ -2187,88 +2239,85 @@ export class Renderer {
                 this.handleSplashClick(e);
             }
         });
-
-        // Touch controls reference
-        this.touchControls = document.getElementById('controls-container');
         
-this.screenMessages = {
-        diegoWarning: {
-            lines: ['Your friend Diego', 'needs your help', 'at the Pub!'],
-            startTime: 0,
-            duration: 2000,
-            interval: 400,
-            isActive: false
-        },
-        diegoGameOver: {
-            lines: ['Your friend Diego', 'waited for you', "in vain, friendship is", 'broken forever'],
-            startTime: 0,
-            duration: 3000,
-            interval: 400,
-            isActive: false,
-            nextMessage: 'finalGameOver'
-        },
-        lowLove: {
-            lines: ['Too little love', 'score, Professor'],
-            startTime: 0,
-            duration: 2000,
-            interval: 400,
-            isActive: false,
-            nextMessage: 'finalGameOver'
-        },
-        lowEnergy: {
-            lines: ['Hungry, you need', 'pizza!', 'go to Restaurant!'],
-            startTime: 0,
-            duration: 2000,
-            interval: 400,
-            isActive: false
-        },
-        noEnergy: {
-            lines: ['Too little energy', 'score, Professor'],
-            startTime: 0,
-            duration: 2000,
-            interval: 400,
-            isActive: false,
-            nextMessage: 'finalGameOver'
-        },
-        gameOver: {
-            lines: ['You caught', 'the Evil Swine... :('],
-            startTime: 0,
-            duration: 2000,
-            interval: 400,
-            isActive: false,
-            nextMessage: 'finalGameOver'
-        },
-        finalGameOver: {
-            lines: ['GAME OVER'],
-            startTime: 0,
-            duration: Infinity,
-            interval: 0,
-            isActive: false,
-            isPermanent: true,
-            showNewGameButton: true
-        },
-        suinaMala: {
-            lines: ['Evil Swine!'],
-            startTime: 0,
-            duration: 800,
-            interval: 200,
-            isActive: false
-        },
-        gustoClosed: {
-            lines: ['Restaurant is closed', 'Try again later'],
-            startTime: 0,
-            duration: 2000,
-            interval: 400,
-            isActive: false
-        },
-        chesterClosed: {
-            lines: ['Pub is closed', 'Try again later'],
-            startTime: 0,
-            duration: 2000,
-            interval: 400,
-            isActive: false
-        }
-    };
+        this.screenMessages = {
+            diegoWarning: {
+                lines: ['Your friend Diego', 'needs your help', 'at the Pub!'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            },
+            diegoGameOver: {
+                lines: ['Your friend Diego', 'waited for you', "in vain, friendship is", 'broken forever'],
+                startTime: 0,
+                duration: 3000,
+                interval: 400,
+                isActive: false,
+                nextMessage: 'finalGameOver'
+            },
+            lowLove: {
+                lines: ['Too little love', 'score, Professor'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false,
+                nextMessage: 'finalGameOver'
+            },
+            lowEnergy: {
+                lines: ['Hungry, you need', 'pizza!', 'go to Restaurant!'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            },
+            noEnergy: {
+                lines: ['Too little energy', 'score, Professor'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false,
+                nextMessage: 'finalGameOver'
+            },
+            gameOver: {
+                lines: ['You caught', 'the Evil Swine... :('],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false,
+                nextMessage: 'finalGameOver'
+            },
+            finalGameOver: {
+                lines: ['GAME OVER'],
+                startTime: 0,
+                duration: Infinity,
+                interval: 0,
+                isActive: false,
+                isPermanent: true,
+                showNewGameButton: true
+            },
+            suinaMala: {
+                lines: ['Evil Swine!'],
+                startTime: 0,
+                duration: 800,
+                interval: 200,
+                isActive: false
+            },
+            gustoClosed: {
+                lines: ['Restaurant is closed', 'Try again later'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            },
+            chesterClosed: {
+                lines: ['Pub is closed', 'Try again later'],
+                startTime: 0,
+                duration: 2000,
+                interval: 400,
+                isActive: false
+            }
+        };
 
         // Initialize new game button
         this.newGameButton = {
@@ -2285,10 +2334,52 @@ this.screenMessages = {
         
         // Add resize listener
         window.addEventListener('resize', () => this.handleResize());
-
-        // Initial UI state setup
-        this.updateUIVisibility();
     }
+
+
+
+    updateUIVisibility() {
+        const shouldShowControls = !this.isSplashVisible && !this.isWinScreenVisible;
+        
+        // Update mobile controls visibility
+        if (window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT) {
+            if (this.actionContainer) {
+                this.actionContainer.style.display = shouldShowControls ? 'flex' : 'none';
+            }
+            if (this.mobileControls) {
+                this.mobileControls.style.display = shouldShowControls ? 'block' : 'none';
+            }
+
+        // Add joystick control here
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.input?.joystick) {
+    if (shouldShowControls) {
+        gameInstance.input.joystick.showControls();
+    } else {
+        gameInstance.input.joystick.hideControls();
+    }
+        }
+
+
+
+
+        }
+
+        const gameInstance = window.gameInstance;
+        if (gameInstance?.scoreManager) {
+            gameInstance.scoreManager.setVisibility(shouldShowControls);
+        }
+
+        if (gameInstance?.levelManager) {
+            if (this.isSplashVisible || this.isWinScreenVisible) {
+                gameInstance.levelManager.pauseFriendshipCountdown();
+            } else {
+                gameInstance.levelManager.resumeFriendshipCountdown();
+            }
+        }
+    }
+
+
 
     async initAudio() {
         const gameInstance = window.gameInstance;
@@ -2355,11 +2446,9 @@ this.screenMessages = {
     showWinScreen() {
         const gameInstance = window.gameInstance;
         if (gameInstance?.audioManager?.initialized) {
-            // Stop background music immediately
             if (gameInstance.audioManager.currentMusicSource) {
                 gameInstance.audioManager.currentMusicSource.stop();
             }
-            // Play win sound
             gameInstance.audioManager.playSound('win');
         }
         this.isWinScreenVisible = true;
@@ -2375,25 +2464,6 @@ this.screenMessages = {
 
         if (this.isClickInButton(x, y, this.winScreenButtons.playAgain)) {
             window.location.reload();
-        }
-    }
-
-    updateUIVisibility() {
-        if (this.touchControls) {
-            this.touchControls.style.display = (this.isSplashVisible || this.isWinScreenVisible) ? 'none' : 'flex';
-        }
-
-        const gameInstance = window.gameInstance;
-        if (gameInstance?.scoreManager) {
-            gameInstance.scoreManager.setVisibility(!this.isSplashVisible && !this.isWinScreenVisible);
-        }
-
-        if (gameInstance?.levelManager) {
-            if (this.isSplashVisible || this.isWinScreenVisible) {
-                gameInstance.levelManager.pauseFriendshipCountdown();
-            } else {
-                gameInstance.levelManager.resumeFriendshipCountdown();
-            }
         }
     }
 
@@ -2428,30 +2498,26 @@ this.screenMessages = {
             this.calculateSplashDimensions();
         }
         this.calculateWinScreenDimensions();
+        this.updateUIVisibility();
     }
 
     showSuinaMalaMessage() {
-        console.log('Showing Suina Mala message');
         this.setScreenMessage('suinaMala');
     }
 
     showGameOverMessage() {
-        console.log('Showing Game Over message');
         this.setScreenMessage('gameOver');
     }
 
     showLowLoveMessage() {
-        console.log('Showing Low Love message');
         this.setScreenMessage('lowLove');
     }
 
     showLowEnergyWarning() {
-        console.log('Showing Low Energy warning');
         this.setScreenMessage('lowEnergy');
     }
 
     showNoEnergyMessage() {
-        console.log('Showing No Energy message');
         this.setScreenMessage('noEnergy');
     }
 
@@ -2537,31 +2603,6 @@ this.screenMessages = {
         message.isActive = true;
     }
 
-
-// In setSplashVisibility method
-setSplashVisibility(visible) {
-    this.isSplashVisible = visible;
-    
-    // Show/hide mobile controls
-    const actionContainer = document.getElementById('action-container');
-    if (actionContainer) {
-        actionContainer.style.display = visible ? 'none' : 'flex';
-    }
-    
-    // Show/hide joystick
-    const gameInstance = window.gameInstance;
-    if (gameInstance?.input?.joystick) {
-        if (visible) {
-            gameInstance.input.joystick.hide();
-        } else {
-            gameInstance.input.joystick.show();
-        }
-    }
-    
-    this.updateUIVisibility();
-}
-
-
     drawScreenMessage(type) {
         const message = this.screenMessages[type];
         if (!message || !message.isActive) return;
@@ -2591,11 +2632,10 @@ setSplashVisibility(visible) {
             this.ctx.strokeStyle = '#000000';
             this.ctx.lineWidth = 3;
             
-            const x = this.ctx.canvas.width / 2;
+const x = this.ctx.canvas.width / 2;
             const baseY = this.ctx.canvas.height / 2;
-            
 
-message.lines.forEach((line, index) => {
+            message.lines.forEach((line, index) => {
                 const y = baseY + (index - (message.lines.length - 1) / 2) * 40;
                 this.ctx.strokeText(line, x, y);
                 this.ctx.fillText(line, x, y);
@@ -2612,27 +2652,22 @@ message.lines.forEach((line, index) => {
     draw(player, sprites, camera) {
         this.clear();
         
-        // Draw background
         this.drawBackground(this.levelManager.getCurrentLevelBackground(), camera);
         
-        // Draw characters
         if (this.levelManager?.characters) {
             this.drawCharacters(camera);
         }
         
-        // Draw player
         if (player && sprites.professore) {
             this.drawPlayer(player, sprites.professore, camera);
         }
 
-        // Check for win condition
         const gameInstance = window.gameInstance;
         if (!this.hasTriggeredWin && gameInstance?.scoreManager?.scores?.love >= 100) {
             this.showWinScreen();
             this.hasTriggeredWin = true;
         }
 
-        // Draw win screen if visible
         if (this.isWinScreenVisible && this.winScreen) {
             this.ctx.drawImage(
                 this.winScreen,
@@ -2641,18 +2676,15 @@ message.lines.forEach((line, index) => {
                 this.winScreenDimensions.width,
                 this.winScreenDimensions.height
             );
-            return; // Don't draw anything else when win screen is showing
+            return;
         }
         
-        // Only draw scores if splash is not visible
         if (!this.isSplashVisible) {
-            // Draw messages
             Object.keys(this.screenMessages).forEach(type => {
                 this.drawScreenMessage(type);
             });
         }
 
-        // Draw splash screen on top if visible
         if (this.isSplashVisible) {
             this.drawSplashScreen();
         }
@@ -2668,58 +2700,43 @@ message.lines.forEach((line, index) => {
                 camera.width, camera.height
             );
         }
-   
 
-
-
-
-
-if (this.levelManager?.currentLevel === 1 && !this.hasShownArrow) {
-    const currentTime = performance.now();
-    const isVisible = Math.floor(currentTime / 500) % 2 === 0;
-    
-    if (isVisible) {
-        this.ctx.save();
-        this.ctx.font = 'bold 48px Arial';
-        this.ctx.fillStyle = 'white';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('↖️', 100, 200);
-        this.ctx.restore();
+        if (this.levelManager?.currentLevel === 1 && !this.hasShownArrow) {
+            const currentTime = performance.now();
+            const isVisible = Math.floor(currentTime / 500) % 2 === 0;
+            
+            if (isVisible) {
+                this.ctx.save();
+                this.ctx.font = 'bold 48px Arial';
+                this.ctx.fillStyle = 'white';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('↖️', 100, 200);
+                this.ctx.restore();
+            }
+        }
     }
-}
- }
-
-
-
-
-
-
-
 
     handleSplashClick(e) {
         if (!this.isSplashVisible) return;
 
         if (this.showingInstructions) {
             this.setSplashVisibility(false);
-            this.initAudio();  // Initialize audio when leaving instructions
+            this.initAudio();
             return;
         }
 
-        // Get click position relative to canvas
         const rect = this.canvas.getBoundingClientRect();
         const scaleX = this.canvas.width / rect.width;
         const scaleY = this.canvas.height / rect.height;
         const x = (e.clientX - rect.left) * scaleX;
         const y = (e.clientY - rect.top) * scaleY;
 
-        // Check START button
         if (this.isClickInButton(x, y, this.splashButtons.start)) {
             this.setSplashVisibility(false);
-            this.initAudio();  // Initialize audio when clicking start
+            this.initAudio();
             return;
         }
 
-        // Check INSTRUCTIONS button
         if (this.isClickInButton(x, y, this.splashButtons.instructions)) {
             this.showInstructions();
             return;
@@ -2727,7 +2744,6 @@ if (this.levelManager?.currentLevel === 1 && !this.hasShownArrow) {
     }
 
     isClickInButton(x, y, button) {
-        // For splash screen buttons
         if (this.isSplashVisible) {
             const actualX = this.splashDimensions.x + (button.x * this.splashDimensions.width);
             const actualY = this.splashDimensions.y + (button.y * this.splashDimensions.height);
@@ -2738,9 +2754,7 @@ if (this.levelManager?.currentLevel === 1 && !this.hasShownArrow) {
                    x <= actualX + actualWidth && 
                    y >= actualY && 
                    y <= actualY + actualHeight;
-        }
-        // For win screen buttons
-        else if (this.isWinScreenVisible) {
+        } else if (this.isWinScreenVisible) {
             const actualX = this.winScreenDimensions.x + (button.x * this.winScreenDimensions.width);
             const actualY = this.winScreenDimensions.y + (button.y * this.winScreenDimensions.height);
             const actualWidth = button.width * this.winScreenDimensions.width;
@@ -2885,11 +2899,23 @@ if (this.levelManager?.currentLevel === 1 && !this.hasShownArrow) {
             this.newGameButton.element = null;
         }
 
+        if (this.actionContainer) {
+            this.actionContainer.style.display = 'none';
+        }
+
+        if (this.mobileControls) {
+            this.mobileControls.style.display = 'none';
+        }
+
         this.splashScreenReady = false;
         this.splashScreen = null;
         this.isSplashVisible = false;
     }
 }
+
+
+
+
 
 
 
@@ -3803,6 +3829,7 @@ update(player, worldBounds, input) {
 
 
 
+// Player.js
 // Player.js
 import { CONFIG } from '../config.js';
 import { BaseCharacter } from './BaseCharacter.js';

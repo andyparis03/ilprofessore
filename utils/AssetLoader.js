@@ -48,6 +48,8 @@ export class AssetLoader {
                 instructionsScreen,
                 professoreidle,
                 professorewalking,
+                professorepunchL,
+                professorepunchR,
                 skullSprite,
                 millyidle,
                 millyspritesheet,
@@ -61,6 +63,7 @@ export class AssetLoader {
                 suinaevilidle,
                 suinaevilwalking,
                 suinaevilattack,
+		suinaevilpunch,
                 walteridle,
                 walterwalking,
                 walterattack,
@@ -89,13 +92,18 @@ export class AssetLoader {
                 diegosound,
                 millysound,
                 recharge,
-                win
+                win,
+		urlo
             ] = await Promise.all([
                 AssetLoader.loadImage('./assets/sprites/splash.png'),
                 AssetLoader.loadImage('./assets/sprites/winscreen.png'),
                 AssetLoader.loadImage('./assets/sprites/instructions.png'),
                 AssetLoader.loadImage('./assets/sprites/professore/professore-idle.png'),
                 AssetLoader.loadImage('./assets/sprites/professore/professore-spritesheet.png'),
+
+                AssetLoader.loadImage('./assets/sprites/professore/professore-punchL.png'),
+                AssetLoader.loadImage('./assets/sprites/professore/professore-punchR.png'),
+
                 AssetLoader.loadImage('./assets/sprites/skull.png'),
                 AssetLoader.loadImage('./assets/sprites/milly/milly-idle.png'),
                 AssetLoader.loadImage('./assets/sprites/milly/milly-spritesheet.png'),
@@ -109,6 +117,7 @@ export class AssetLoader {
                 AssetLoader.loadImage('./assets/sprites/suinaEvil/suinaevil-idle.png'),
                 AssetLoader.loadImage('./assets/sprites/suinaEvil/suinaevil-spritesheet.png'),
                 AssetLoader.loadImage('./assets/sprites/suinaEvil/suinaevil-attack.png'),
+                AssetLoader.loadImage('./assets/sprites/suinaEvil/suinaevil-punch.png'),
                 AssetLoader.loadImage('./assets/sprites/walter/walter-idle.png'),
                 AssetLoader.loadImage('./assets/sprites/walter/walter-spritesheet.png'),
                 AssetLoader.loadImage('./assets/sprites/walter/walter-attack.png'),
@@ -137,18 +146,19 @@ export class AssetLoader {
                 AssetLoader.loadSound(audioContext, './assets/sounds/diego-sound.mp3'),
                 AssetLoader.loadSound(audioContext, './assets/sounds/milly-sound.mp3'),
                 AssetLoader.loadSound(audioContext, './assets/sounds/recharge.mp3'),
-                AssetLoader.loadSound(audioContext, './assets/sounds/win.mp3')
+                AssetLoader.loadSound(audioContext, './assets/sounds/win.mp3'),
+		AssetLoader.loadSound(audioContext, './assets/sounds/urlo.mp3')
             ]);
 
             console.log('All assets loaded successfully');
 
             return {
                 sprites: {
-                    professore: { idle: professoreidle, walking: professorewalking, freeze: skullSprite },
+                    professore: { idle: professoreidle, walking: professorewalking, freeze: skullSprite, punchL: professorepunchL, punchR: professorepunchR },
                     milly: { idle: millyidle, spritesheet: millyspritesheet, interact: millyinteract },
                     suina1: { idle: suina1idle, walking: suina1walking, attack: suina1attack },
                     suina2: { idle: suina2idle, walking: suina2walking, attack: suina1attack },
-                    suinaevil: { idle: suinaevilidle, walking: suinaevilwalking, attack: suina1attack },
+                    suinaevil: { idle: suinaevilidle, walking: suinaevilwalking, attack: suina1attack, punch: suinaevilpunch },
                     walter: { idle: walteridle, walking: walterwalking, attack: walterattack },
                     diego: { idle: diegoidle, walking: diegowalking, attack: diegoattack },
                     splash: splashScreen,
@@ -180,7 +190,8 @@ export class AssetLoader {
                     diegosound,
                     millysound,
                     recharge,
-                    win
+                    win,
+		    urlo,
                 },
                 audioContext
             };
