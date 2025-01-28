@@ -72,13 +72,13 @@ canvas {
 #bacio {
   position: absolute;
   bottom: 0px; /* Height of button (70px) + gap (15px) */
-  right: 70px;
+  right: 80px;
 }
 
 #punch {
   position: absolute;
-  bottom: 65px; /* Height of button (70px) + gap (15px) */
-  right: 70px;
+  bottom: 80px; /* Height of button (70px) + gap (15px) */
+  right: 80px;
 }
 
 #fuck {
@@ -87,8 +87,8 @@ canvas {
 
 
 .action-btn {
-  width: 60px;
-  height: 60px;
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
   background: rgba(76, 175, 80, 0.8);
   border: none;
