@@ -37,6 +37,7 @@ canvas {
     height: 65px;
     border-radius: 50%;
     touch-action: manipulation;
+  pointer-events: auto;
 
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
