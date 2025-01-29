@@ -24,19 +24,21 @@ canvas {
 
 #back-button {
   position: fixed;
-  top: 500px;
-  left: 800px;
-  padding: 10px 20px;
-  background-color: rgba(0, 0, 0, 0.5);
+  padding: 50px 20px;
+ background: rgba(76, 175, 80, 0.8);
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 5px;
+    border: none;
   font-size: 16px;
   cursor: pointer;
   z-index: 1000;
   display: none;
-    background-color: transparent;
     border: none;
+    width: 65px;  
+    height: 65px;
+    border-radius: 50%;
+    touch-action: manipulation;
+
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 #back-button img {
@@ -87,7 +89,7 @@ canvas {
 
 #back-button {
         bottom: 90px;  
-        right: 80px;    
+        right: 95px;    
         left: auto;    
         top: auto;      
         padding: 8px 16px;
