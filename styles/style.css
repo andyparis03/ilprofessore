@@ -46,6 +46,7 @@ canvas {
   width: 80%;
   height: 80%;
   object-fit: contain;
+  pointer-events: none;
 }
 
 #back-button:hover {
@@ -61,6 +62,8 @@ canvas {
   width: 100%;
   height: 40vh;
   z-index: 1000;
+  pointer-events: auto;
+  touch-action: none;
 }
 
 #action-container {
@@ -69,7 +72,7 @@ canvas {
   bottom: 10px;
   pointer-events: auto;
   z-index: 1001;
-  touch-action: manipulation;
+  touch-action: none;
 }
 
 .button-grid {
@@ -78,14 +81,39 @@ canvas {
   grid-template-rows: repeat(2, 70px);
   gap: 10px;
   pointer-events: auto;
-  touch-action: manipulation;
+  touch-action: none;
 }
 
-/* Make all buttons in the grid behave the same */
-.button-grid button {
+/* Base styles for all interactive buttons */
+.action-btn, #back-button {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(76, 175, 80, 0.8);
+  border: none;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: auto;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1001;
+  position: relative;
+}
+
+/* Active state for all buttons */
+.action-btn:active,
+.action-btn.active,
+#back-button:active,
+#back-button.active {
+  transform: scale(0.9);
+  background: rgba(56, 142, 60, 0.9);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Level 1 layout - hide back button */
@@ -120,32 +148,6 @@ canvas {
 
 #fuck {
   grid-area: fuck;
-}
-
-.action-btn {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  background: rgba(76, 175, 80, 0.8);
-  border: none;
-  color: white;
-  font-size: 24px;
-  font-weight: bold;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  pointer-events: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1001;
-}
-
-.action-btn:active,
-.action-btn.active {
-  transform: scale(0.9);
-  background: rgba(56, 142, 60, 0.9);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Joystick Styles */
