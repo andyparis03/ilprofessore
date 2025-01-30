@@ -69,8 +69,18 @@ export class LevelManager {
 
     updateBackButtonVisibility() {
         const backButton = document.getElementById('back-button');
+        const mobileControls = document.getElementById('mobile-controls');
+        
         if (backButton) {
             backButton.style.display = this.currentLevel === 1 ? 'none' : 'block';
+        }
+        
+        if (mobileControls) {
+            if (this.currentLevel === 1) {
+                mobileControls.classList.add('level-1');
+            } else {
+                mobileControls.classList.remove('level-1');
+            }
         }
     }
 
