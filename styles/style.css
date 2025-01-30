@@ -64,37 +64,41 @@ canvas {
 }
 
 #action-container {
-
   position: absolute;
   right: 15px;
   bottom: 10px;
-  gap: 0px;
   pointer-events: auto;
 }
 
-#bacio {
-  position: absolute;
-  bottom: 0px; /* Height of button (70px) + gap (15px) */
-  right: 80px;
-}
-
-#punch {
-  position: absolute;
-  bottom: 80px; 
-  right: 0px; 
-}
-
-#fuck {
-  margin-left: 85px; 
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 70px);
+  grid-template-rows: repeat(2, 70px);
+  gap: 10px;
 }
 
 #back-button {
-        bottom: 90px;  
-        right: 95px;    
-        left: auto;    
-        top: auto;      
-        padding: 8px 16px;
-        font-size: 14px;
+  position: relative;
+  bottom: auto;
+  right: auto;
+  left: auto;
+  top: auto;
+  padding: 8px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#back-button img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
+
+#punch, #bacio, #fuck {
+  position: relative;
+  margin: 0;
 }
 
 .action-btn {
@@ -110,6 +114,9 @@ canvas {
   -webkit-tap-highlight-color: transparent;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .action-btn:active,
