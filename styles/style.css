@@ -77,6 +77,40 @@ canvas {
   gap: 10px;
 }
 
+/* Level 1 layout - hide back button */
+.level-1 #back-button-slot {
+  display: none;
+}
+
+.level-1 .button-grid {
+  grid-template-areas:
+    ". punch"
+    "bacio fuck";
+}
+
+/* Other levels layout */
+.button-grid {
+  grid-template-areas:
+    "back punch"
+    "bacio fuck";
+}
+
+#back-button-slot {
+  grid-area: back;
+}
+
+#punch {
+  grid-area: punch;
+}
+
+#bacio {
+  grid-area: bacio;
+}
+
+#fuck {
+  grid-area: fuck;
+}
+
 #back-button {
   position: relative;
   bottom: auto;
@@ -88,17 +122,14 @@ canvas {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 70px;
+  height: 70px;
 }
 
 #back-button img {
   width: 80%;
   height: 80%;
   object-fit: contain;
-}
-
-#punch, #bacio, #fuck {
-  position: relative;
-  margin: 0;
 }
 
 .action-btn {
