@@ -10,7 +10,8 @@ constructor() {
         ArrowLeft: false,
         ArrowRight: false,
         KeyF: false,
-        KeyB: false
+        KeyB: false,
+        KeyP: false
     };
 
     this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||

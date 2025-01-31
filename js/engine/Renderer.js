@@ -663,6 +663,16 @@ const x = this.ctx.canvas.width / 2;
             return;
         }
 
+        // Handle punch sprites
+        if (player.isPunching) {
+            const punchSprite = player.direction === 'left' ? sprites.punchL : sprites.punchR;
+            if (punchSprite) {
+                this.ctx.drawImage(punchSprite, drawX, drawY, player.width, player.height);
+            }
+            return;
+        }
+
+        // Normal sprite handling
         if (player.isIdle) {
             if (sprites.idle) {
                 this.ctx.drawImage(sprites.idle, drawX, drawY, player.width, player.height);

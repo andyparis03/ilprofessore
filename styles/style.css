@@ -23,24 +23,28 @@ canvas {
 }
 
 #back-button {
-  position: relative;
-  bottom: auto;
-  right: auto;
-  left: auto;
-  top: auto;
-  padding: 8px;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 70px;
-  height: 70px;
+  position: fixed;
+  padding: 50px 20px;
+ background: rgba(76, 175, 80, 0.8);
+  color: white;
+    border: none;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 1000;
+  display: none;
+    border: none;
+    width: 65px;  
+    height: 65px;
+    border-radius: 50%;
+    touch-action: manipulation;
+  pointer-events: auto;
+
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 #back-button img {
-  width: 80%;
-  height: 80%;
-  object-fit: contain;
+    width: auto;
+    height: auto;
 }
 
 #back-button:hover {
@@ -105,6 +109,27 @@ canvas {
 
 #fuck {
   grid-area: fuck;
+}
+
+#back-button {
+  position: relative;
+  bottom: auto;
+  right: auto;
+  left: auto;
+  top: auto;
+  padding: 8px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+}
+
+#back-button img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
 }
 
 .action-btn {
@@ -180,6 +205,11 @@ canvas {
     left: 0;
     transform: none;
   }
+
+
+ 
+
+
 
   #mobile-controls {
     display: block;
