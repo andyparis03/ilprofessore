@@ -18,6 +18,9 @@ export class Player extends BaseCharacter {
             frame: 0,
             lastUpdate: performance.now()
         };
+        this.isPunching = false;
+        this.punchTimer = null;
+        this.lastPunchTime = 0;
     }
 
     forceStateUpdate() {
@@ -91,58 +94,127 @@ export class Player extends BaseCharacter {
         }
     }
 
-
-
-updateBehavior(input, worldBounds, deltaTime) {
-    if (this.freeze) {
-        this.velocity = { x: 0, y: 0 };
-        this.movementBuffer = { x: 0, y: 0 };
-        this.isIdle = true;
-        return;
-    }
-
-    this.currentInput = { ...input.keys };
-    
-    const movementVector = input.getMovementVector();
-    this.isIdle = movementVector.x === 0 && movementVector.y === 0;
-
-    if (!this.isIdle) {
-        const adjustedSpeed = this.speed * deltaTime;
-        
-        // Calculate velocity based on movement vector
-        this.velocity.x = movementVector.x * adjustedSpeed;
-        this.velocity.y = movementVector.y * adjustedSpeed;
-
-        // Update direction based on movement
-        if (Math.abs(movementVector.x) > Math.abs(movementVector.y)) {
-            this.direction = movementVector.x > 0 ? 'right' : 'left';
-        } else {
-            this.direction = movementVector.y > 0 ? 'down' : 'up';
+    updateBehavior(input, worldBounds, deltaTime) {
+        if (this.freeze) {
+            this.velocity = { x: 0, y: 0 };
+            this.movementBuffer = { x: 0, y: 0 };
+            this.isIdle = true;
+            return;
         }
 
-        // Add to movement buffer
-        this.movementBuffer.x += this.velocity.x;
-        this.movementBuffer.y += this.velocity.y;
+        this.currentInput = { ...input.keys };
+        
+        // Handle punch action
+        const currentTime = performance.now();
+        if (input.keys.KeyP && !this.isPunching && currentTime - this.lastPunchTime > 2000) {
+            this.isPunching = true;
+            this.lastPunchTime = currentTime;
+            
+            // Change sprite based on last direction
+            if (this.direction === 'left' || this.lastNonIdleDirection === 'left') {
+                this.currentSprite = 'punchL';
+                this.activeSprite = this.sprites.punchL;
+            } else {
+                this.currentSprite = 'punchR';
+                this.activeSprite = this.sprites.punchR;
+            }
 
-        // Apply whole pixel movements
-        const newX = this.x + Math.round(this.movementBuffer.x);
-        const newY = this.y + Math.round(this.movementBuffer.y);
+            // Play punch sound
+            const gameInstance = window.gameInstance;
+            if (gameInstance?.audioManager) {
+                gameInstance.audioManager.playSound('prof-punch');
+            }
 
-        // Clamp to world bounds
-        this.x = Math.min(Math.max(newX, 0), worldBounds.width - this.width);
-        this.y = Math.min(Math.max(newY, 0), worldBounds.height - this.height);
+            // Reset punch state after 2 seconds
+            this.punchTimer = setTimeout(() => {
+                this.isPunching = false;
+                this.currentSprite = this.isIdle ? 'idle' : 'walking';
+                this.activeSprite = this.sprites[this.currentSprite];
+            }, 2000);
+        }
 
-        // Remove used movement from buffer
-        this.movementBuffer.x -= Math.round(this.movementBuffer.x);
-        this.movementBuffer.y -= Math.round(this.movementBuffer.y);
+        // Handle movement only if not punching
+        if (!this.isPunching) {
+            const movementVector = input.getMovementVector();
+            this.isIdle = movementVector.x === 0 && movementVector.y === 0;
 
-        // Update last position
-        this.lastX = this.x;
-        this.lastY = this.y;
-    } else {
-        // Reset movement buffer when idle
-        this.movementBuffer.x = 0;
-        this.movementBuffer.y = 0;
+            if (!this.isIdle) {
+                const adjustedSpeed = this.speed * deltaTime;
+                
+                // Calculate velocity based on movement vector
+                this.velocity.x = movementVector.x * adjustedSpeed;
+                this.velocity.y = movementVector.y * adjustedSpeed;
+
+                // Update direction based on movement
+                if (Math.abs(movementVector.x) > Math.abs(movementVector.y)) {
+                    this.direction = movementVector.x > 0 ? 'right' : 'left';
+                    this.lastNonIdleDirection = this.direction;
+                } else {
+                    this.direction = movementVector.y > 0 ? 'down' : 'up';
+                }
+
+                // Add to movement buffer
+                this.movementBuffer.x += this.velocity.x;
+                this.movementBuffer.y += this.velocity.y;
+
+                // Apply whole pixel movements
+                const newX = this.x + Math.round(this.movementBuffer.x);
+                const newY = this.y + Math.round(this.movementBuffer.y);
+
+                // Clamp to world bounds
+                this.x = Math.min(Math.max(newX, 0), worldBounds.width - this.width);
+                this.y = Math.min(Math.max(newY, 0), worldBounds.height - this.height);
+
+                // Remove used movement from buffer
+                this.movementBuffer.x -= Math.round(this.movementBuffer.x);
+                this.movementBuffer.y -= Math.round(this.movementBuffer.y);
+
+                // Update last position
+                this.lastX = this.x;
+                this.lastY = this.y;
+            } else {
+                // Reset movement buffer when idle
+                this.movementBuffer.x = 0;
+                this.movementBuffer.y = 0;
+            }
+        }
+
+        // Check for collision with suina evil when punching
+        if (this.isPunching) {
+            const gameInstance = window.gameInstance;
+            if (gameInstance?.levelManager?.characters) {
+                gameInstance.levelManager.characters.forEach(character => {
+                    if (character.type === 'suinaevil' && this.checkCollision(character)) {
+                        // Play punch hit sound
+                        if (gameInstance.audioManager) {
+                            gameInstance.audioManager.playSound('prof-punch');
+                        }
+
+                        // Change suina evil sprite and play sound
+                        character.currentSprite = 'punch';
+                        character.activeSprite = character.sprites.punch;
+                        
+                        setTimeout(() => {
+                            if (gameInstance.audioManager) {
+                                gameInstance.audioManager.playSound('urlo');
+                            }
+                            // Remove the suina evil
+                            character.isVisible = false;
+                            // Spawn a new regular suina
+                            gameInstance.levelManager.spawnCharacter('suina1');
+                        }, 2000);
+                    }
+                });
+            }
+        }
     }
-}
+
+    cleanup() {
+        if (this.punchTimer) {
+            clearTimeout(this.punchTimer);
+            this.punchTimer = null;
+        }
+        this.isPunching = false;
+        super.cleanup();
+    }
 }

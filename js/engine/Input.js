@@ -40,7 +40,8 @@ constructor() {
     setupMobileControls() {
         const actionButtons = {
             'bacio': 'KeyB',
-            'fuck': 'KeyF'
+            'fuck': 'KeyF',
+            'punch': 'KeyP'
         };
 
         Object.entries(actionButtons).forEach(([buttonId, keyCode]) => {

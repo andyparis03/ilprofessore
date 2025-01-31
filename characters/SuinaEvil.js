@@ -37,11 +37,13 @@ export class SuinaEvil extends BaseCharacter {
         this.hasInteracted = false;
         this.canInteract = false;
         this.isGameOverTriggered = false;
+        this.isPunched = false;
 
         // Timers
         this.disappearanceTimer = null;
         this.interactionCooldown = null;
         this.gameOverAnimationInProgress = false;
+        this.punchTimer = null;
     }
 
     updateBehavior(player, worldBounds, deltaTime, input) {
@@ -53,16 +55,20 @@ export class SuinaEvil extends BaseCharacter {
 
         // First collision detection
         if (isCollidingNow && !this.isColliding && !this.isDisappearing) {
-            this.handleInitialCollision();
+            if (player.isPunching && !this.isPunched) {
+                this.handlePunch();
+            } else {
+                this.handleInitialCollision();
+            }
         }
 
         // Handle button interactions
-        if (this.canInteract && !this.isDisappearing) {
+        if (this.canInteract && !this.isDisappearing && !this.isPunched) {
             this.handleInteraction(input, player);
         }
 
         // Handle movement if not in collision or disappearing state
-        if (!this.isColliding && !this.isDisappearing) {
+        if (!this.isColliding && !this.isDisappearing && !this.isPunched) {
             this.handleMovement(player, deltaTime, worldBounds);
         }
     }
@@ -97,71 +103,96 @@ export class SuinaEvil extends BaseCharacter {
         }, 2000);
     }
 
+    handlePunch() {
+        const gameInstance = window.gameInstance;
+        this.isPunched = true;
+        this.isColliding = true;
+        this.canInteract = false;
 
-handleInteraction(input, player) {
-    const gameInstance = window.gameInstance;
-    
-    if (input.keys.KeyB) {
-        if (gameInstance?.audioManager) {
-            console.log('buzz');
-            gameInstance.audioManager.playSound('buzz');
-
-            if (gameInstance.scoreManager) {
-                // Use the centralized message system
-                if (gameInstance.renderer) {
-                    gameInstance.renderer.showSuinaMalaMessage();
-                }
-                gameInstance.scoreManager.increaseScore('love', -5);
-                gameInstance.scoreManager.scoreAnimation.addAnimation(5, true);
-		gameInstance.scoreManager.increaseScore('energy', -10);
-            }
+        // Change to punch sprite
+        if (this.sprites.punch) {
+            this.currentSprite = 'punch';
+            this.activeSprite = this.sprites.punch;
         }
 
-        this.triggerDisappearance();
-    }
-    else if (input.keys.KeyF && !this.isGameOverTriggered) {
-        this.triggerGameOver(player);
-    }
-}
+        // Play urlo sound after a short delay
+        setTimeout(() => {
+            if (gameInstance?.audioManager) {
+                gameInstance.audioManager.playSound('urlo');
+            }
+        }, 500);
 
-triggerGameOver(player) {
-    const gameInstance = window.gameInstance;
-    if (!gameInstance) return;
-
-    this.isGameOverTriggered = true;
-    this.gameOverAnimationInProgress = true;
-
-    // Play evil sound effect
-    if (gameInstance.audioManager) {
-        gameInstance.audioManager.playSound('buzz');  // Added buzz sound back
-        gameInstance.audioManager.playSound('suina_evil');
+        // Set disappearance timer
+        this.punchTimer = setTimeout(() => {
+            this.isVisible = false;
+            // Spawn a new regular suina
+            if (gameInstance?.levelManager) {
+                gameInstance.levelManager.spawnCharacter('suina1');
+            }
+        }, 2000);
     }
 
-    // Trigger game over sequence
-    if (gameInstance.gameState) {
-        gameInstance.gameState.triggerJailGameOver(player);
+    handleInteraction(input, player) {
+        const gameInstance = window.gameInstance;
+        
+        if (input.keys.KeyB) {
+            if (gameInstance?.audioManager) {
+                console.log('buzz');
+                gameInstance.audioManager.playSound('buzz');
+
+                if (gameInstance.scoreManager) {
+                    // Use the centralized message system
+                    if (gameInstance.renderer) {
+                        gameInstance.renderer.showSuinaMalaMessage();
+                    }
+                    gameInstance.scoreManager.increaseScore('love', -5);
+                    gameInstance.scoreManager.scoreAnimation.addAnimation(5, true);
+                    gameInstance.scoreManager.increaseScore('energy', -10);
+                }
+            }
+
+            this.triggerDisappearance();
+        }
+        else if (input.keys.KeyF && !this.isGameOverTriggered) {
+            this.triggerGameOver(player);
+        }
     }
 
-    // Show game over message sequence
-    if (gameInstance.renderer) {
-        gameInstance.renderer.showGameOverMessage();
+    triggerGameOver(player) {
+        const gameInstance = window.gameInstance;
+        if (!gameInstance) return;
+
+        this.isGameOverTriggered = true;
+        this.gameOverAnimationInProgress = true;
+
+        // Play evil sound effect
+        if (gameInstance.audioManager) {
+            gameInstance.audioManager.playSound('buzz');  // Added buzz sound back
+            gameInstance.audioManager.playSound('suina_evil');
+        }
+
+        // Trigger game over sequence
+        if (gameInstance.gameState) {
+            gameInstance.gameState.triggerJailGameOver(player);
+        }
+
+        // Show game over message sequence
+        if (gameInstance.renderer) {
+            gameInstance.renderer.showGameOverMessage();
+        }
+
+        // Clean up interaction state
+        this.canInteract = false;
+        if (this.disappearanceTimer) {
+            clearTimeout(this.disappearanceTimer);
+        }
+
+        // Start disappearance after game over animation
+        setTimeout(() => {
+            this.gameOverAnimationInProgress = false;
+            this.startDisappearance();
+        }, 2000);
     }
-
-    // Clean up interaction state
-    this.canInteract = false;
-    if (this.disappearanceTimer) {
-        clearTimeout(this.disappearanceTimer);
-    }
-
-    // Start disappearance after game over animation
-    setTimeout(() => {
-        this.gameOverAnimationInProgress = false;
-        this.startDisappearance();
-    }, 2000);
-}
-
-
-
 
     triggerDisappearance() {
         this.canInteract = false;
@@ -277,15 +308,16 @@ triggerGameOver(player) {
     }
 
     cleanup() {
+        if (this.punchTimer) {
+            clearTimeout(this.punchTimer);
+            this.punchTimer = null;
+        }
         if (this.disappearanceTimer) {
             clearTimeout(this.disappearanceTimer);
             this.disappearanceTimer = null;
         }
-        if (this.interactionCooldown) {
-            clearTimeout(this.interactionCooldown);
-            this.interactionCooldown = null;
-        }
         this.canInteract = false;
+        this.isPunched = false;
         this.isGameOverTriggered = false;
         this.gameOverAnimationInProgress = false;
         super.cleanup();
