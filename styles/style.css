@@ -35,9 +35,6 @@ canvas {
   justify-content: center;
   width: 70px;
   height: 70px;
-  pointer-events: auto;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
 }
 
 #back-button img {
@@ -96,8 +93,6 @@ canvas {
 
 #back-button-slot {
   grid-area: back;
-  pointer-events: auto;
-  touch-action: manipulation;
 }
 
 #punch {
