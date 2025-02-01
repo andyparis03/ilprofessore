@@ -106,7 +106,12 @@ export class Player extends BaseCharacter {
         
         // Handle punch action
         const currentTime = performance.now();
-        if (input.keys.KeyP && !this.isPunching && currentTime - this.lastPunchTime > 2000) {
+        console.log('Current input keys:', input.keys); // Debug log current input state
+        console.log('Is punching:', this.isPunching); // Debug log punch state
+        console.log('Time since last punch:', currentTime - this.lastPunchTime); // Debug log punch cooldown
+
+        if (input.keys.KeyP && !this.isPunching && currentTime - this.lastPunchTime > 100) {
+            console.log('Punch action triggered!'); // Debug log when punch is triggered
             this.isPunching = true;
             this.lastPunchTime = currentTime;
             
@@ -119,18 +124,22 @@ export class Player extends BaseCharacter {
                 this.activeSprite = this.sprites.punchR;
             }
 
-            // Play punch sound
+            // Play punch sound - Always play when punching
             const gameInstance = window.gameInstance;
             if (gameInstance?.audioManager) {
-                gameInstance.audioManager.playSound('prof-punch');
+                console.log('Playing punch sound'); // Debug log sound play attempt
+                gameInstance.audioManager.playSound('professore_punch');
+            } else {
+                console.warn('Audio manager not available'); // Debug log if audio manager is missing
             }
 
-            // Reset punch state after 2 seconds
+            // Reset punch state after 0.1 seconds
             this.punchTimer = setTimeout(() => {
+                console.log('Resetting punch state'); // Debug log punch state reset
                 this.isPunching = false;
                 this.currentSprite = this.isIdle ? 'idle' : 'walking';
                 this.activeSprite = this.sprites[this.currentSprite];
-            }, 2000);
+            }, 100);
         }
 
         // Handle movement only if not punching
@@ -185,11 +194,6 @@ export class Player extends BaseCharacter {
             if (gameInstance?.levelManager?.characters) {
                 gameInstance.levelManager.characters.forEach(character => {
                     if (character.type === 'suinaevil' && this.checkCollision(character)) {
-                        // Play punch hit sound
-                        if (gameInstance.audioManager) {
-                            gameInstance.audioManager.playSound('prof-punch');
-                        }
-
                         // Change suina evil sprite and play sound
                         character.currentSprite = 'punch';
                         character.activeSprite = character.sprites.punch;

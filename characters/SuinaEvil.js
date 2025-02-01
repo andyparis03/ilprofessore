@@ -120,7 +120,7 @@ export class SuinaEvil extends BaseCharacter {
             if (gameInstance?.audioManager) {
                 gameInstance.audioManager.playSound('urlo');
             }
-        }, 500);
+        }, 100);
 
         // Set disappearance timer
         this.punchTimer = setTimeout(() => {
@@ -129,7 +129,7 @@ export class SuinaEvil extends BaseCharacter {
             if (gameInstance?.levelManager) {
                 gameInstance.levelManager.spawnCharacter('suina1');
             }
-        }, 2000);
+        }, 100);
     }
 
     handleInteraction(input, player) {

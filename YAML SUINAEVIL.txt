@@ -1,0 +1,31 @@
+Collision Handling: I want to handle collision between il professore and Suina Evil according to the following YAML rules:
+
+  characters:
+    - name: "SuinaEvil"
+    - name: "Il professore"
+   interactions:
+    on_collision:
+      - targets: ["Suinaevil"]
+        effects:
+          - "Play sound: suinaevileeeek (once)"
+          - "Change sprite to: suina1-attack.png"
+          - "wait for the B or F OR Punch action and then disappear from the canavas"
+	if Punch action 
+
+
+
+    specific_actions:
+      - targets: ["Suina1"]
+    condition: "Press B button within 2 seconds after sprite change"
+    action: 
+       - "Increase Love score by 10 points"
+      effects:
+        - "Play sound: suinafuck (once)"
+
+       - targets: ["Suina1"]
+    condition: "Press F button within 2 seconds after sprite change"
+    action: 
+       - "Increase Love score by 20 points"
+      effects:
+        - "Play sound: suinafuck (once)"
+        

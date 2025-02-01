@@ -47,11 +47,13 @@ constructor() {
         Object.entries(actionButtons).forEach(([buttonId, keyCode]) => {
             const element = document.getElementById(buttonId);
             if (element) {
+                console.log(`Setting up mobile control for ${buttonId}`);
                 ['touchstart', 'mousedown'].forEach(eventType => {
                     element.addEventListener(eventType, (e) => {
                         e.preventDefault();
                         this.setKey(keyCode, true);
                         element.classList.add('active');
+                        console.log(`${buttonId} pressed, setting ${keyCode} to true`);
                     });
                 });
 
@@ -60,8 +62,11 @@ constructor() {
                         e.preventDefault();
                         this.setKey(keyCode, false);
                         element.classList.remove('active');
+                        console.log(`${buttonId} released, setting ${keyCode} to false`);
                     });
                 });
+            } else {
+                console.warn(`Button element with id ${buttonId} not found`);
             }
         });
     }
