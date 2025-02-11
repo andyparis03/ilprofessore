@@ -3,39 +3,39 @@ import { CONFIG } from '../../config.js';
 import { JoystickController } from './JoystickController.js';
 
 export class InputHandler {
-constructor() {
-    this.keys = {
-        ArrowUp: false,
-        ArrowDown: false,
-        ArrowLeft: false,
-        ArrowRight: false,
-        KeyF: false,
-        KeyB: false,
-        KeyP: false
-    };
+    constructor() {
+        // Keep exact original property order and structure
+        this.keys = {
+            ArrowUp: false,
+            ArrowDown: false,
+            ArrowLeft: false,
+            ArrowRight: false,
+            KeyF: false,
+            KeyB: false,
+            KeyP: false
+        };
 
-    this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
-        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        // Preserve original device detection exactly
+        this.isMobile = window.innerWidth <= CONFIG.CANVAS.MOBILE_BREAKPOINT ||
+            /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    // Always set up keyboard controls
-    this.setupKeyboardControls();
-    
+        // Initialize joystick first if mobile (original order)
+        this.joystick = null;
+        
+        // Set up keyboard first - maintain original initialization order
+        this.setupKeyboardControls();
 
-
-    // Set up mobile controls only if needed
-    if (this.isMobile) {
-        this.joystick = new JoystickController();
-        this.setupMobileControls();
+        // Handle mobile setup after keyboard - preserve timing
+        if (this.isMobile) {
+            this.joystick = new JoystickController();
+            this.setupMobileControls();
+        }
     }
-}
-    
 
     setupKeyboardControls() {
         window.addEventListener('keydown', (e) => this.setKey(e.code, true));
         window.addEventListener('keyup', (e) => this.setKey(e.code, false));
     }
-
-
 
     setupMobileControls() {
         const actionButtons = {
@@ -48,6 +48,8 @@ constructor() {
             const element = document.getElementById(buttonId);
             if (element) {
                 console.log(`Setting up mobile control for ${buttonId}`);
+                
+                // Maintain exact original event order
                 ['touchstart', 'mousedown'].forEach(eventType => {
                     element.addEventListener(eventType, (e) => {
                         e.preventDefault();
@@ -78,17 +80,25 @@ constructor() {
     }
 
     getMovementVector() {
+        // Mobile check first - preserve original order
         if (this.isMobile && this.joystick) {
             const joystickInput = this.joystick.getInput();
-            return joystickInput.active ? joystickInput.vector : { x: 0, y: 0 };
+            if (joystickInput.active) {
+                return joystickInput.vector;
+            }
+            return { x: 0, y: 0 };
         }
 
+        // Original keyboard vector calculation
         const vector = { x: 0, y: 0 };
+        
+        // Keep original key check order
         if (this.keys.ArrowRight) vector.x += 1;
         if (this.keys.ArrowLeft) vector.x -= 1;
         if (this.keys.ArrowDown) vector.y += 1;
         if (this.keys.ArrowUp) vector.y -= 1;
 
+        // Original diagonal movement normalization
         if (vector.x !== 0 && vector.y !== 0) {
             const magnitude = Math.sqrt(2);
             vector.x /= magnitude;

@@ -5,15 +5,18 @@ export class GameStateManager {
         this.isGameOver = false;
         this.gameOverType = null;
         this.jailOverlay = null;
+        
+        // Keep original transition state structure
         this.transitionState = {
             active: false,
             startTime: null,
             duration: 1000
         };
-        this.initializeJailOverlay();  // Changed name to be more accurate
+
+        this.initializeJailOverlay();
     }
 
-    initializeJailOverlay() {  // Renamed method
+    initializeJailOverlay() {
         try {
             this.jailOverlay = new Image();
             this.jailOverlay.src = './assets/sprites/jail.png';
@@ -30,29 +33,23 @@ export class GameStateManager {
         }
     }
 
+    // Maintain exact original method signature and execution flow
     triggerJailGameOver(player) {
         console.log('Triggering jail game over sequence');
         if (this.isGameOver) return;
 
+        // Preserve original execution order
         this.isGameOver = true;
         this.gameOverType = 'jail';
         this.transitionState.active = true;
         this.transitionState.startTime = performance.now();
 
-        // Use the centralized message system
+        // Keep renderer interactions in original order
         if (this.game.renderer) {
             this.game.renderer.showGameOverMessage();
         }
 
-        // Set flash start time in renderer
-        if (this.game.renderer) {
-            console.log('Setting flash start time');
-            this.game.renderer.setFlashStartTime();
-        } else {
-            console.warn('Renderer not available for flash timing');
-        }
-
-        // Handle player state
+        // Maintain exact player state management
         if (player) {
             console.log('Setting player game over state');
             player.freeze = true;
@@ -61,7 +58,15 @@ export class GameStateManager {
             player.movementBuffer = { x: 0, y: 0 };
         }
 
-        // Stop background music with fade out
+        // Set flash start time in renderer - keep original order
+        if (this.game.renderer) {
+            console.log('Setting flash start time');
+            this.game.renderer.setFlashStartTime();
+        } else {
+            console.warn('Renderer not available for flash timing');
+        }
+
+        // Keep original audio handling
         if (this.game.audioManager?.currentMusicSource) {
             const gainNode = this.game.audioManager.musicGainNode;
             const currentTime = this.game.audioManager.audioContext.currentTime;
@@ -73,7 +78,7 @@ export class GameStateManager {
             }, 1000);
         }
 
-        // Animate score reset
+        // Maintain original score animation sequence
         if (this.game.scoreManager) {
             this.game.scoreManager.scoreAnimation.animateScoreReset(
                 this.game.scoreManager,
@@ -101,7 +106,7 @@ export class GameStateManager {
         this.transitionState.active = false;
         this.transitionState.startTime = null;
 
-        // Reset player state if available
+        // Keep original player reset logic
         if (this.game?.player) {
             this.game.player.freeze = false;
             if (this.game.assets?.sprites?.professore) {
@@ -109,12 +114,12 @@ export class GameStateManager {
             }
         }
 
-        // Reset score animation if available
+        // Keep original animation reset
         if (this.game?.scoreManager?.scoreAnimation) {
             this.game.scoreManager.scoreAnimation.cleanup();
         }
 
-        // Reset audio if available
+        // Keep original audio reset
         if (this.game?.audioManager) {
             this.game.audioManager.musicGainNode.gain.setValueAtTime(
                 this.game.audioManager.musicGainNode.gain.defaultValue,
